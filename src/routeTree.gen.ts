@@ -15,9 +15,11 @@ import { Route as AppRouteImport } from './routes/app'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppIndexRouteImport } from './routes/app.index'
 import { Route as AppTenantsRouteImport } from './routes/app.tenants'
+import { Route as AppPropertiesRouteImport } from './routes/app.properties'
 import { Route as AppOwnersRouteImport } from './routes/app.owners'
 import { Route as AppBuyersRouteImport } from './routes/app.buyers'
 import { Route as AppAmenitiesRouteImport } from './routes/app.amenities'
+import { Route as AppPropertiesIdRouteImport } from './routes/app.properties.$id'
 
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
@@ -49,6 +51,11 @@ const AppTenantsRoute = AppTenantsRouteImport.update({
   path: '/tenants',
   getParentRoute: () => AppRoute,
 } as any)
+const AppPropertiesRoute = AppPropertiesRouteImport.update({
+  id: '/properties',
+  path: '/properties',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppOwnersRoute = AppOwnersRouteImport.update({
   id: '/owners',
   path: '/owners',
@@ -64,6 +71,11 @@ const AppAmenitiesRoute = AppAmenitiesRouteImport.update({
   path: '/amenities',
   getParentRoute: () => AppRoute,
 } as any)
+const AppPropertiesIdRoute = AppPropertiesIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => AppPropertiesRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -73,8 +85,10 @@ export interface FileRoutesByFullPath {
   '/app/amenities': typeof AppAmenitiesRoute
   '/app/buyers': typeof AppBuyersRoute
   '/app/owners': typeof AppOwnersRoute
+  '/app/properties': typeof AppPropertiesRouteWithChildren
   '/app/tenants': typeof AppTenantsRoute
   '/app/': typeof AppIndexRoute
+  '/app/properties/$id': typeof AppPropertiesIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -83,8 +97,10 @@ export interface FileRoutesByTo {
   '/app/amenities': typeof AppAmenitiesRoute
   '/app/buyers': typeof AppBuyersRoute
   '/app/owners': typeof AppOwnersRoute
+  '/app/properties': typeof AppPropertiesRouteWithChildren
   '/app/tenants': typeof AppTenantsRoute
   '/app': typeof AppIndexRoute
+  '/app/properties/$id': typeof AppPropertiesIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -95,8 +111,10 @@ export interface FileRoutesById {
   '/app/amenities': typeof AppAmenitiesRoute
   '/app/buyers': typeof AppBuyersRoute
   '/app/owners': typeof AppOwnersRoute
+  '/app/properties': typeof AppPropertiesRouteWithChildren
   '/app/tenants': typeof AppTenantsRoute
   '/app/': typeof AppIndexRoute
+  '/app/properties/$id': typeof AppPropertiesIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -108,8 +126,10 @@ export interface FileRouteTypes {
     | '/app/amenities'
     | '/app/buyers'
     | '/app/owners'
+    | '/app/properties'
     | '/app/tenants'
     | '/app/'
+    | '/app/properties/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -118,8 +138,10 @@ export interface FileRouteTypes {
     | '/app/amenities'
     | '/app/buyers'
     | '/app/owners'
+    | '/app/properties'
     | '/app/tenants'
     | '/app'
+    | '/app/properties/$id'
   id:
     | '__root__'
     | '/'
@@ -129,8 +151,10 @@ export interface FileRouteTypes {
     | '/app/amenities'
     | '/app/buyers'
     | '/app/owners'
+    | '/app/properties'
     | '/app/tenants'
     | '/app/'
+    | '/app/properties/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -184,6 +208,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppTenantsRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/properties': {
+      id: '/app/properties'
+      path: '/properties'
+      fullPath: '/app/properties'
+      preLoaderRoute: typeof AppPropertiesRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/owners': {
       id: '/app/owners'
       path: '/owners'
@@ -205,13 +236,33 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAmenitiesRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/properties/$id': {
+      id: '/app/properties/$id'
+      path: '/$id'
+      fullPath: '/app/properties/$id'
+      preLoaderRoute: typeof AppPropertiesIdRouteImport
+      parentRoute: typeof AppPropertiesRoute
+    }
   }
 }
+
+interface AppPropertiesRouteChildren {
+  AppPropertiesIdRoute: typeof AppPropertiesIdRoute
+}
+
+const AppPropertiesRouteChildren: AppPropertiesRouteChildren = {
+  AppPropertiesIdRoute: AppPropertiesIdRoute,
+}
+
+const AppPropertiesRouteWithChildren = AppPropertiesRoute._addFileChildren(
+  AppPropertiesRouteChildren,
+)
 
 interface AppRouteChildren {
   AppAmenitiesRoute: typeof AppAmenitiesRoute
   AppBuyersRoute: typeof AppBuyersRoute
   AppOwnersRoute: typeof AppOwnersRoute
+  AppPropertiesRoute: typeof AppPropertiesRouteWithChildren
   AppTenantsRoute: typeof AppTenantsRoute
   AppIndexRoute: typeof AppIndexRoute
 }
@@ -220,6 +271,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppAmenitiesRoute: AppAmenitiesRoute,
   AppBuyersRoute: AppBuyersRoute,
   AppOwnersRoute: AppOwnersRoute,
+  AppPropertiesRoute: AppPropertiesRouteWithChildren,
   AppTenantsRoute: AppTenantsRoute,
   AppIndexRoute: AppIndexRoute,
 }
