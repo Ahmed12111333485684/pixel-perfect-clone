@@ -1,0 +1,265 @@
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
+import { useTranslation } from "react-i18next";
+import { api, type PropertyDto, type Owner, type Amenity, type PropertyStatus } from "@/lib/api";
+import { useAuth } from "@/lib/auth";
+import { PageHeader, StatusBadge } from "@/components/PageHeader";
+import { DataTable, type Column } from "@/components/DataTable";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
+import { FormDialog, ConfirmDialog } from "@/components/FormDialog";
+import { Plus, ExternalLink } from "lucide-react";
+import { toast } from "sonner";
+import { propertyStatusTone, formatDate } from "@/lib/format";
+
+const PROPERTY_TYPES = ["Apartment", "Villa", "Office", "Land", "Shop", "Warehouse"];
+const STATUSES: PropertyStatus[] = ["Pending", "Approved", "Rejected", "Sold"];
+
+export const Route = createFileRoute("/app/properties")({
+  component: PropertiesPage,
+});
+
+function PropertiesPage() {
+  const { t } = useTranslation();
+  const auth = useAuth();
+  const qc = useQueryClient();
+
+  const list = useQuery({ queryKey: ["properties"], queryFn: () => api<PropertyDto[]>("/api/properties") });
+  const owners = useQuery({
+    queryKey: ["owners"],
+    queryFn: () => api<Owner[]>("/api/owners"),
+    enabled: auth.isStaff,
+  });
+  const amenities = useQuery({ queryKey: ["amenities"], queryFn: () => api<Amenity[]>("/api/amenities") });
+
+  const [creating, setCreating] = useState(false);
+  const [editing, setEditing] = useState<PropertyDto | null>(null);
+  const [deleting, setDeleting] = useState<PropertyDto | null>(null);
+  const [statusOf, setStatusOf] = useState<PropertyDto | null>(null);
+
+  const upsert = useMutation({
+    mutationFn: async (vals: { id?: number; ownerId: number; name: string; address: string; type: string; amenityIds: number[] }) => {
+      if (vals.id) await api(`/api/properties/${vals.id}`, { method: "PUT", body: vals });
+      else await api("/api/properties", { method: "POST", body: vals });
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["properties"] }); toast.success(t("common.success")); setCreating(false); setEditing(null); },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const del = useMutation({
+    mutationFn: (id: number) => api(`/api/properties/${id}`, { method: "DELETE" }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["properties"] }); toast.success(t("common.deleted")); setDeleting(null); },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const updateStatus = useMutation({
+    mutationFn: ({ id, status }: { id: number; status: PropertyStatus }) =>
+      api(`/api/properties/${id}/status`, { method: "PUT", body: { status } }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["properties"] }); toast.success(t("common.updated")); setStatusOf(null); },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const cols: Column<PropertyDto>[] = [
+    { key: "name", header: t("common.name"), cell: (r) => <span className="font-medium">{r.name}</span> },
+    { key: "address", header: t("common.address"), cell: (r) => <span className="text-muted-foreground">{r.address}</span> },
+    { key: "type", header: t("common.type"), cell: (r) => r.type },
+    {
+      key: "status", header: t("common.status"),
+      cell: (r) => (
+        <StatusBadge tone={propertyStatusTone(r.status)}>{t(`propertyStatus.${r.status}`)}</StatusBadge>
+      ),
+    },
+    { key: "owner", header: t("nav.owners"), cell: (r) => `#${r.ownerId}` },
+    {
+      key: "open", header: "", className: "w-12",
+      cell: (r) => (
+        <Link
+          to="/app/properties/$id"
+          params={{ id: String(r.id) }}
+          onClick={(e) => e.stopPropagation()}
+          className="text-muted-foreground hover:text-foreground"
+        >
+          <ExternalLink className="h-4 w-4" />
+        </Link>
+      ),
+    },
+    { key: "created", header: t("common.createdAt"), cell: (r) => formatDate(r.createdAt) },
+  ];
+
+  return (
+    <div>
+      <PageHeader
+        title={t("nav.properties")}
+        actions={
+          <Button onClick={() => setCreating(true)}>
+            <Plus className="me-1 h-4 w-4" />{t("common.add")}
+          </Button>
+        }
+      />
+
+      <DataTable
+        columns={cols}
+        rows={list.data}
+        loading={list.isLoading}
+        error={list.error}
+        rowKey={(r) => r.id}
+        onEdit={(r) => setEditing(r)}
+        onDelete={(r) => setDeleting(r)}
+      />
+
+      <PropertyDialog
+        open={creating || !!editing}
+        onOpenChange={(v) => { if (!v) { setCreating(false); setEditing(null); } }}
+        property={editing}
+        owners={owners.data ?? []}
+        amenities={amenities.data ?? []}
+        defaultOwnerId={!auth.isStaff ? auth.user?.ownerId : undefined}
+        canPickOwner={auth.isStaff}
+        submitting={upsert.isPending}
+        onSubmit={(vals) => upsert.mutate({ ...vals, id: editing?.id })}
+      />
+
+      <ConfirmDialog
+        open={!!deleting}
+        onOpenChange={(v) => !v && setDeleting(null)}
+        title={`${t("common.delete")}: ${deleting?.name ?? ""}`}
+        destructive
+        loading={del.isPending}
+        onConfirm={() => deleting && del.mutate(deleting.id)}
+      />
+
+      {auth.isStaff && (
+        <StatusDialog
+          property={statusOf}
+          onOpenChange={(v) => !v && setStatusOf(null)}
+          submitting={updateStatus.isPending}
+          onSubmit={(s) => statusOf && updateStatus.mutate({ id: statusOf.id, status: s })}
+        />
+      )}
+    </div>
+  );
+}
+
+function PropertyDialog({
+  open, onOpenChange, property, owners, amenities, defaultOwnerId, canPickOwner, onSubmit, submitting,
+}: {
+  open: boolean; onOpenChange: (v: boolean) => void; property: PropertyDto | null;
+  owners: Owner[]; amenities: Amenity[]; defaultOwnerId?: number; canPickOwner: boolean;
+  onSubmit: (v: { ownerId: number; name: string; address: string; type: string; amenityIds: number[] }) => void;
+  submitting?: boolean;
+}) {
+  const { t } = useTranslation();
+  const [ownerId, setOwnerId] = useState<string>(String(property?.ownerId ?? defaultOwnerId ?? ""));
+  const [type, setType] = useState<string>(property?.type ?? "Apartment");
+  const [picked, setPicked] = useState<Set<number>>(new Set(property?.amenities?.map((a) => a.id) ?? []));
+
+  // Reset state when reopening with a different property
+  const key = `${property?.id ?? "new"}-${open}`;
+
+  return (
+    <FormDialog
+      key={key}
+      open={open}
+      onOpenChange={onOpenChange}
+      title={property ? t("common.edit") : t("common.add")}
+      submitting={submitting}
+      size="lg"
+      onSubmit={(e) => {
+        e.preventDefault();
+        const fd = new FormData(e.currentTarget);
+        const oid = canPickOwner ? Number(ownerId) : (defaultOwnerId ?? Number(ownerId));
+        onSubmit({
+          ownerId: oid,
+          name: String(fd.get("name") ?? ""),
+          address: String(fd.get("address") ?? ""),
+          type,
+          amenityIds: Array.from(picked),
+        });
+      }}
+    >
+      {canPickOwner && (
+        <div className="space-y-2">
+          <Label>{t("nav.owners")}</Label>
+          <Select value={ownerId} onValueChange={setOwnerId}>
+            <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
+            <SelectContent>
+              {owners.map((o) => <SelectItem key={o.id} value={String(o.id)}>{o.fullName}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div className="space-y-2">
+          <Label htmlFor="name">{t("common.name")}</Label>
+          <Input id="name" name="name" defaultValue={property?.name ?? ""} required />
+        </div>
+        <div className="space-y-2">
+          <Label>{t("common.type")}</Label>
+          <Select value={type} onValueChange={setType}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {PROPERTY_TYPES.map((p) => <SelectItem key={p} value={p}>{p}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="address">{t("common.address")}</Label>
+        <Input id="address" name="address" defaultValue={property?.address ?? ""} required />
+      </div>
+      <div className="space-y-2">
+        <Label>{t("nav.amenities")}</Label>
+        <div className="grid max-h-48 grid-cols-2 gap-2 overflow-y-auto rounded-md border border-border p-3 sm:grid-cols-3">
+          {amenities.length === 0 ? (
+            <span className="text-xs text-muted-foreground">{t("common.empty")}</span>
+          ) : amenities.map((a) => {
+            const checked = picked.has(a.id);
+            return (
+              <label key={a.id} className="flex items-center gap-2 text-sm">
+                <Checkbox
+                  checked={checked}
+                  onCheckedChange={(v) => {
+                    const next = new Set(picked);
+                    if (v) next.add(a.id); else next.delete(a.id);
+                    setPicked(next);
+                  }}
+                />
+                {a.name}
+              </label>
+            );
+          })}
+        </div>
+      </div>
+    </FormDialog>
+  );
+}
+
+function StatusDialog({ property, onOpenChange, onSubmit, submitting }: {
+  property: PropertyDto | null; onOpenChange: (v: boolean) => void;
+  onSubmit: (s: PropertyStatus) => void; submitting?: boolean;
+}) {
+  const { t } = useTranslation();
+  const [val, setVal] = useState<PropertyStatus>(property?.status ?? "Pending");
+  return (
+    <FormDialog
+      open={!!property}
+      onOpenChange={onOpenChange}
+      title={t("common.status")}
+      submitting={submitting}
+      onSubmit={(e) => { e.preventDefault(); onSubmit(val); }}
+    >
+      <Select value={val} onValueChange={(v) => setVal(v as PropertyStatus)}>
+        <SelectTrigger><SelectValue /></SelectTrigger>
+        <SelectContent>
+          {STATUSES.map((s) => <SelectItem key={s} value={s}>{t(`propertyStatus.${s}`)}</SelectItem>)}
+        </SelectContent>
+      </Select>
+    </FormDialog>
+  );
+}
