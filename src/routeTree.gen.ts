@@ -14,7 +14,9 @@ import { Route as ListPropertyRouteImport } from './routes/list-property'
 import { Route as AppRouteImport } from './routes/app'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppIndexRouteImport } from './routes/app.index'
+import { Route as AppTenantsRouteImport } from './routes/app.tenants'
 import { Route as AppOwnersRouteImport } from './routes/app.owners'
+import { Route as AppBuyersRouteImport } from './routes/app.buyers'
 import { Route as AppAmenitiesRouteImport } from './routes/app.amenities'
 
 const LoginRoute = LoginRouteImport.update({
@@ -42,9 +44,19 @@ const AppIndexRoute = AppIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AppRoute,
 } as any)
+const AppTenantsRoute = AppTenantsRouteImport.update({
+  id: '/tenants',
+  path: '/tenants',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppOwnersRoute = AppOwnersRouteImport.update({
   id: '/owners',
   path: '/owners',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppBuyersRoute = AppBuyersRouteImport.update({
+  id: '/buyers',
+  path: '/buyers',
   getParentRoute: () => AppRoute,
 } as any)
 const AppAmenitiesRoute = AppAmenitiesRouteImport.update({
@@ -59,7 +71,9 @@ export interface FileRoutesByFullPath {
   '/list-property': typeof ListPropertyRoute
   '/login': typeof LoginRoute
   '/app/amenities': typeof AppAmenitiesRoute
+  '/app/buyers': typeof AppBuyersRoute
   '/app/owners': typeof AppOwnersRoute
+  '/app/tenants': typeof AppTenantsRoute
   '/app/': typeof AppIndexRoute
 }
 export interface FileRoutesByTo {
@@ -67,7 +81,9 @@ export interface FileRoutesByTo {
   '/list-property': typeof ListPropertyRoute
   '/login': typeof LoginRoute
   '/app/amenities': typeof AppAmenitiesRoute
+  '/app/buyers': typeof AppBuyersRoute
   '/app/owners': typeof AppOwnersRoute
+  '/app/tenants': typeof AppTenantsRoute
   '/app': typeof AppIndexRoute
 }
 export interface FileRoutesById {
@@ -77,7 +93,9 @@ export interface FileRoutesById {
   '/list-property': typeof ListPropertyRoute
   '/login': typeof LoginRoute
   '/app/amenities': typeof AppAmenitiesRoute
+  '/app/buyers': typeof AppBuyersRoute
   '/app/owners': typeof AppOwnersRoute
+  '/app/tenants': typeof AppTenantsRoute
   '/app/': typeof AppIndexRoute
 }
 export interface FileRouteTypes {
@@ -88,7 +106,9 @@ export interface FileRouteTypes {
     | '/list-property'
     | '/login'
     | '/app/amenities'
+    | '/app/buyers'
     | '/app/owners'
+    | '/app/tenants'
     | '/app/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -96,7 +116,9 @@ export interface FileRouteTypes {
     | '/list-property'
     | '/login'
     | '/app/amenities'
+    | '/app/buyers'
     | '/app/owners'
+    | '/app/tenants'
     | '/app'
   id:
     | '__root__'
@@ -105,7 +127,9 @@ export interface FileRouteTypes {
     | '/list-property'
     | '/login'
     | '/app/amenities'
+    | '/app/buyers'
     | '/app/owners'
+    | '/app/tenants'
     | '/app/'
   fileRoutesById: FileRoutesById
 }
@@ -153,11 +177,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppIndexRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/tenants': {
+      id: '/app/tenants'
+      path: '/tenants'
+      fullPath: '/app/tenants'
+      preLoaderRoute: typeof AppTenantsRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/owners': {
       id: '/app/owners'
       path: '/owners'
       fullPath: '/app/owners'
       preLoaderRoute: typeof AppOwnersRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/buyers': {
+      id: '/app/buyers'
+      path: '/buyers'
+      fullPath: '/app/buyers'
+      preLoaderRoute: typeof AppBuyersRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/amenities': {
@@ -172,13 +210,17 @@ declare module '@tanstack/react-router' {
 
 interface AppRouteChildren {
   AppAmenitiesRoute: typeof AppAmenitiesRoute
+  AppBuyersRoute: typeof AppBuyersRoute
   AppOwnersRoute: typeof AppOwnersRoute
+  AppTenantsRoute: typeof AppTenantsRoute
   AppIndexRoute: typeof AppIndexRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
   AppAmenitiesRoute: AppAmenitiesRoute,
+  AppBuyersRoute: AppBuyersRoute,
   AppOwnersRoute: AppOwnersRoute,
+  AppTenantsRoute: AppTenantsRoute,
   AppIndexRoute: AppIndexRoute,
 }
 
@@ -193,3 +235,12 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
+}
