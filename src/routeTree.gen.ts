@@ -14,6 +14,8 @@ import { Route as ListPropertyRouteImport } from './routes/list-property'
 import { Route as AppRouteImport } from './routes/app'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppIndexRouteImport } from './routes/app.index'
+import { Route as AppOwnersRouteImport } from './routes/app.owners'
+import { Route as AppAmenitiesRouteImport } from './routes/app.amenities'
 
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
@@ -40,18 +42,32 @@ const AppIndexRoute = AppIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AppRoute,
 } as any)
+const AppOwnersRoute = AppOwnersRouteImport.update({
+  id: '/owners',
+  path: '/owners',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAmenitiesRoute = AppAmenitiesRouteImport.update({
+  id: '/amenities',
+  path: '/amenities',
+  getParentRoute: () => AppRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/app': typeof AppRouteWithChildren
   '/list-property': typeof ListPropertyRoute
   '/login': typeof LoginRoute
+  '/app/amenities': typeof AppAmenitiesRoute
+  '/app/owners': typeof AppOwnersRoute
   '/app/': typeof AppIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/list-property': typeof ListPropertyRoute
   '/login': typeof LoginRoute
+  '/app/amenities': typeof AppAmenitiesRoute
+  '/app/owners': typeof AppOwnersRoute
   '/app': typeof AppIndexRoute
 }
 export interface FileRoutesById {
@@ -60,14 +76,37 @@ export interface FileRoutesById {
   '/app': typeof AppRouteWithChildren
   '/list-property': typeof ListPropertyRoute
   '/login': typeof LoginRoute
+  '/app/amenities': typeof AppAmenitiesRoute
+  '/app/owners': typeof AppOwnersRoute
   '/app/': typeof AppIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/app' | '/list-property' | '/login' | '/app/'
+  fullPaths:
+    | '/'
+    | '/app'
+    | '/list-property'
+    | '/login'
+    | '/app/amenities'
+    | '/app/owners'
+    | '/app/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/list-property' | '/login' | '/app'
-  id: '__root__' | '/' | '/app' | '/list-property' | '/login' | '/app/'
+  to:
+    | '/'
+    | '/list-property'
+    | '/login'
+    | '/app/amenities'
+    | '/app/owners'
+    | '/app'
+  id:
+    | '__root__'
+    | '/'
+    | '/app'
+    | '/list-property'
+    | '/login'
+    | '/app/amenities'
+    | '/app/owners'
+    | '/app/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -114,14 +153,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppIndexRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/owners': {
+      id: '/app/owners'
+      path: '/owners'
+      fullPath: '/app/owners'
+      preLoaderRoute: typeof AppOwnersRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/amenities': {
+      id: '/app/amenities'
+      path: '/amenities'
+      fullPath: '/app/amenities'
+      preLoaderRoute: typeof AppAmenitiesRouteImport
+      parentRoute: typeof AppRoute
+    }
   }
 }
 
 interface AppRouteChildren {
+  AppAmenitiesRoute: typeof AppAmenitiesRoute
+  AppOwnersRoute: typeof AppOwnersRoute
   AppIndexRoute: typeof AppIndexRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
+  AppAmenitiesRoute: AppAmenitiesRoute,
+  AppOwnersRoute: AppOwnersRoute,
   AppIndexRoute: AppIndexRoute,
 }
 
@@ -136,3 +193,12 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
+}
