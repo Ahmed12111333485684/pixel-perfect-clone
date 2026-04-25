@@ -51,7 +51,7 @@ interface ConfirmDialogProps {
   title: string;
   description?: string;
   confirmLabel?: string;
-  onConfirm: () => void | Promise<void>;
+  onConfirm: () => unknown;
   destructive?: boolean;
   loading?: boolean;
 }
