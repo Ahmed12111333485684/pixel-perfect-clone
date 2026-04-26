@@ -30,3 +30,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Misc
+propertymanagementapi--v1.json

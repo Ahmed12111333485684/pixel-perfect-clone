@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { FormDialog, ConfirmDialog } from "@/components/FormDialog";
-import { CheckCircle2, ExternalLink, Home, Inbox, Mail, MapPin, Phone } from "lucide-react";
+import { CheckCircle2, ExternalLink, FileImage, Home, Inbox, Mail, MapPin, Phone } from "lucide-react";
 import { toast } from "sonner";
 import { leadStatusTone, formatDateTime } from "@/lib/format";
 
@@ -143,67 +143,188 @@ function LeadsPage() {
       >
         {selected && (
           <div className="space-y-4">
+            {/* Status & Intent Badges */}
             <div className="flex flex-wrap gap-2">
               <StatusBadge tone={leadStatusTone(selected.status)}>{t(`leadStatus.${selected.status}`)}</StatusBadge>
               <StatusBadge tone="info">{t(`intent.${selected.intent}`)}</StatusBadge>
             </div>
-            <div className="grid gap-2 text-sm">
-              <div className="flex items-center gap-2"><span className="font-medium">{selected.fullName}</span></div>
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <Phone className="h-3.5 w-3.5" /> {selected.phone}
-              </div>
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <Mail className="h-3.5 w-3.5" /> {selected.email}
-              </div>
-              <div className="text-xs text-muted-foreground">
-                {t("common.nationalId")}: <span className="font-mono">{selected.ownerNationalId}</span>
-              </div>
-              <div className="text-xs text-muted-foreground">
-                {t("common.createdAt")}: {formatDateTime(selected.createdAt)}
-              </div>
-            </div>
 
+            {/* Submitted Property Section */}
             <div className="rounded-md border border-border bg-muted/30 p-3">
-              <div className="mb-2 flex items-center justify-between gap-2">
-                <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                  {t("common.propertyDetails")}
+              <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                {t("common.submittedProperty")}
+              </h3>
+              <div className="space-y-2 text-sm">
+                <div>
+                  <span className="text-xs font-medium text-muted-foreground">
+                    {t("common.name")}:
+                  </span>
+                  <div className="font-medium">{selected.propertyName || t("common.notProvided")}</div>
+                </div>
+                <div>
+                  <span className="text-xs font-medium text-muted-foreground">
+                    {t("common.address")}:
+                  </span>
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <MapPin className="h-3.5 w-3.5" />
+                    <span>{selected.propertyAddress || t("common.notProvided")}</span>
+                  </div>
+                </div>
+                <div>
+                  <span className="text-xs font-medium text-muted-foreground">
+                    {t("common.type")}:
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <Home className="h-3.5 w-3.5" />
+                    <span>{selected.propertyType || t("common.notProvided")}</span>
+                  </div>
+                </div>
+                <div>
+                  <span className="text-xs font-medium text-muted-foreground">
+                    {t("common.intent")}:
+                  </span>
+                  <div>{t(`intent.${selected.intent}`)}</div>
                 </div>
                 {selected.propertyId && (
-                  <Link
-                    to="/app/properties/$id"
-                    params={{ id: String(selected.propertyId) }}
-                    className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
-                  >
-                    <ExternalLink className="h-3.5 w-3.5" />
-                    {t("common.open")}
-                  </Link>
-                )}
-              </div>
-              {selected.propertyId ? (
-                selectedProperty.data ? (
-                  <div className="space-y-1 text-sm">
-                    <div className="font-medium">{selectedProperty.data.name}</div>
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                      <MapPin className="h-3.5 w-3.5" />
-                      <span>{selectedProperty.data.address}</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                      <Home className="h-3.5 w-3.5" />
-                      <span>{selectedProperty.data.type}</span>
-                      <span>#{selectedProperty.data.id}</span>
+                  <div>
+                    <span className="text-xs font-medium text-muted-foreground">
+                      {t("common.propertyId")}:
+                    </span>
+                    <div className="flex items-center justify-between">
+                      <span className="font-mono text-xs">#{selected.propertyId}</span>
+                      <Link
+                        to="/app/properties/$id"
+                        params={{ id: String(selected.propertyId) }}
+                        className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
+                      >
+                        <ExternalLink className="h-3.5 w-3.5" />
+                        {t("common.open")}
+                      </Link>
                     </div>
                   </div>
-                ) : (
-                  <div className="text-sm text-muted-foreground">{t("common.loading")}</div>
-                )
-              ) : (
-                <div className="text-sm text-muted-foreground">{selected.propertyName}</div>
+                )}
+              </div>
+              {/* Linked property preview (optional enhancement) */}
+              {selected.propertyId && selectedProperty.data && (
+                <div className="mt-3 border-t border-border pt-3">
+                  <div className="text-xs font-medium text-muted-foreground mb-2">
+                    {t("common.linkedProperty")}
+                  </div>
+                  <div className="space-y-1 text-xs bg-background rounded p-2">
+                    <div className="font-medium">{selectedProperty.data.name}</div>
+                    <div>{selectedProperty.data.address}</div>
+                    <div className="text-muted-foreground">{selectedProperty.data.type}</div>
+                  </div>
+                </div>
               )}
             </div>
 
+            {/* Contact Section */}
+            <div className="rounded-md border border-border bg-muted/30 p-3">
+              <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                {t("common.contact")}
+              </h3>
+              <div className="space-y-2 text-sm">
+                <div>
+                  <span className="text-xs font-medium text-muted-foreground">
+                    {t("common.fullName")}:
+                  </span>
+                  <div className="font-medium">{selected.fullName || t("common.notProvided")}</div>
+                </div>
+                <div>
+                  <span className="text-xs font-medium text-muted-foreground">
+                    {t("common.phone")}:
+                  </span>
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Phone className="h-3.5 w-3.5" /> {selected.phone || t("common.notProvided")}
+                  </div>
+                </div>
+                <div>
+                  <span className="text-xs font-medium text-muted-foreground">
+                    {t("common.email")}:
+                  </span>
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Mail className="h-3.5 w-3.5" /> {selected.email || t("common.notProvided")}
+                  </div>
+                </div>
+                <div>
+                  <span className="text-xs font-medium text-muted-foreground">
+                    {t("common.nationalId")}:
+                  </span>
+                  <div className="font-mono text-xs">{selected.ownerNationalId || t("common.notProvided")}</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Timing Section */}
+            <div className="rounded-md border border-border bg-muted/30 p-3">
+              <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                {t("common.timing")}
+              </h3>
+              <div className="space-y-2 text-sm">
+                <div>
+                  <span className="text-xs font-medium text-muted-foreground">
+                    {t("common.submittedAt")}:
+                  </span>
+                  <div>{formatDateTime(selected.createdAt)}</div>
+                </div>
+                {selected.preferredContactAt && (
+                  <div>
+                    <span className="text-xs font-medium text-muted-foreground">
+                      {t("common.preferredContactAt")}:
+                    </span>
+                    <div>{formatDateTime(selected.preferredContactAt)}</div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Notes Section */}
             {selected.notes && (
-              <div className="rounded-md border border-border bg-muted/40 p-3 text-sm">{selected.notes}</div>
+              <div className="rounded-md border border-border bg-muted/40 p-3">
+                <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  {t("common.notes")}
+                </h3>
+                <div className="text-sm">{selected.notes}</div>
+              </div>
             )}
+
+            {/* Submitted Images Section */}
+            {selected.images && selected.images.length > 0 && (
+              <div className="rounded-md border border-border bg-muted/30 p-3">
+                <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  {t("common.submittedImages")}
+                </h3>
+                <div className="grid grid-cols-3 gap-2">
+                  {selected.images.map((img) => (
+                    <a
+                      key={img.id}
+                      href={`/api/Leads/${selected.id}/images/${img.id}/file`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="group relative overflow-hidden rounded-md border border-border bg-muted aspect-square flex items-center justify-center hover:bg-muted/80 transition-colors"
+                    >
+                      {img.url ? (
+                        <img
+                          src={img.url}
+                          alt={`Lead image ${img.id}`}
+                          className="h-full w-full object-cover group-hover:opacity-75"
+                        />
+                      ) : (
+                        <div className="flex items-center justify-center text-muted-foreground">
+                          <FileImage className="h-4 w-4" />
+                        </div>
+                      )}
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <ExternalLink className="h-4 w-4 text-white" />
+                      </div>
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Action Buttons */}
             <div className="flex flex-wrap gap-2 pt-2">
               <Button variant="outline" size="sm" onClick={() => setEditing(selected)}>{t("common.edit")}</Button>
               {selected.status !== "ClosedWon" && (

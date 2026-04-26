@@ -112,6 +112,11 @@ const en = {
     contactInformation: "Contact information",
     ownerInformation: "Owner information",
     leadId: "Lead ID",
+    submittedProperty: "Submitted property",
+    linkedProperty: "Linked property",
+    timing: "Timing",
+    submittedAt: "Submitted at",
+    submittedImages: "Submitted images",
   },
   auth: {
     title: "Sign in to Estatly",
@@ -308,6 +313,11 @@ const ar = {
     contactInformation: "معلومات التواصل",
     ownerInformation: "معلومات المالك",
     leadId: "معرّف الطلب",
+    submittedProperty: "العقار المُرسل",
+    linkedProperty: "العقار المرتبط",
+    timing: "التوقيت",
+    submittedAt: "تاريخ الإرسال",
+    submittedImages: "الصور المُرسلة",
   },
   auth: {
     title: "تسجيل الدخول إلى إستيتلي",
