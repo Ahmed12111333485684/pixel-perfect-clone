@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { api, type PropertyDto, type PropertyImage, type PropertyStatus } from "@/lib/api";
+import { api, resolveApiAssetUrl, type PropertyDto, type PropertyImage, type PropertyStatus } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { PageHeader, StatusBadge, LoadingBlock, ErrorBlock, EmptyState } from "@/components/PageHeader";
 import { Button } from "@/components/ui/button";
@@ -182,7 +182,7 @@ function PropertyDetail() {
                     }`}
                   >
                     <img
-                      src={img.url}
+                      src={resolveApiAssetUrl(img.url)}
                       alt={img.originalFileName}
                       className="h-full w-full object-cover"
                       loading="lazy"

@@ -1,8 +1,8 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { createFileRoute, Link, Outlet } from "@tanstack/react-router";
+import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { api, type PropertyDto, type Owner, type Amenity, type PropertyStatus } from "@/lib/api";
+import { api, resolveApiAssetUrl, type PropertyDto, type PropertyImage, type Owner, type Amenity, type PropertyStatus } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { PageHeader, StatusBadge } from "@/components/PageHeader";
 import { DataTable, type Column } from "@/components/DataTable";
@@ -17,6 +17,8 @@ import { FormDialog, ConfirmDialog } from "@/components/FormDialog";
 import { Plus, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 import { propertyStatusTone, formatDate } from "@/lib/format";
+import { useNavigate } from "@tanstack/react-router";
+
 
 const PROPERTY_TYPES = ["Apartment", "Villa", "Office", "Land", "Shop", "Warehouse"];
 const STATUSES: PropertyStatus[] = ["Pending", "Approved", "Rejected", "Sold"];
@@ -26,6 +28,7 @@ export const Route = createFileRoute("/app/properties")({
 });
 
 function PropertiesPage() {
+  const navigate = useNavigate();
   const { t } = useTranslation();
   const auth = useAuth();
   const qc = useQueryClient();
@@ -37,6 +40,27 @@ function PropertiesPage() {
     enabled: auth.isStaff,
   });
   const amenities = useQuery({ queryKey: ["amenities"], queryFn: () => api<Amenity[]>("/api/amenities") });
+
+  const propertyImageQueries = useQueries({
+    queries: (list.data ?? []).map((property) => ({
+      queryKey: ["property-images-preview", property.id],
+      queryFn: () => api<PropertyImage[]>(`/api/properties/${property.id}/images`),
+      staleTime: 60_000,
+      enabled: !list.isLoading,
+    })),
+  });
+
+  const propertyThumbnailById = useMemo(() => {
+    const map = new Map<number, string>();
+    (list.data ?? []).forEach((property, index) => {
+      const images = propertyImageQueries[index]?.data ?? [];
+      const primary = images.find((img) => img.isPrimary) ?? images[0];
+      if (primary?.url) {
+        map.set(property.id, resolveApiAssetUrl(primary.url));
+      }
+    });
+    return map;
+  }, [list.data, propertyImageQueries]);
 
   const [creating, setCreating] = useState(false);
   const [editing, setEditing] = useState<PropertyDto | null>(null);
@@ -66,6 +90,23 @@ function PropertiesPage() {
   });
 
   const cols: Column<PropertyDto>[] = [
+    {
+      key: "image", header: t("common.images"), className: "w-20",
+      cell: (r) => {
+        const src = propertyThumbnailById.get(r.id);
+        if (!src) {
+          return <div className="h-10 w-14 rounded-md border border-border bg-muted" />;
+        }
+        return (
+          <img
+            src={src}
+            alt={r.name}
+            className="h-10 w-14 rounded-md border border-border object-cover"
+            loading="lazy"
+          />
+        );
+      },
+    },
     { key: "name", header: t("common.name"), cell: (r) => <span className="font-medium">{r.name}</span> },
     { key: "address", header: t("common.address"), cell: (r) => <span className="text-muted-foreground">{r.address}</span> },
     { key: "type", header: t("common.type"), cell: (r) => r.type },
@@ -78,16 +119,40 @@ function PropertiesPage() {
     { key: "owner", header: t("nav.owners"), cell: (r) => `#${r.ownerId}` },
     {
       key: "open", header: "", className: "w-12",
-      cell: (r) => (
-        <Link
-          to="/app/properties/$id"
-          params={{ id: String(r.id) }}
-          onClick={(e) => e.stopPropagation()}
-          className="text-muted-foreground hover:text-foreground"
-        >
-          <ExternalLink className="h-4 w-4" />
-        </Link>
-      ),
+      // cell: (r) => (
+      //   <Link
+      //     to="/app/properties/$id"
+      //     params={{ id: String(r.id) }}
+      //     title={t("common.details")}
+      //     onClick={(e) => e.stopPropagation()}
+      //     className="text-muted-foreground hover:text-foreground"
+      //   >
+      //     <ExternalLink className="h-4 w-4" />
+      //   </Link>
+      // ),
+    //   cell: (r) => (
+    // <button
+    //   onClick={() => {
+    //     console.log("clicked", r.id);
+    //   }}
+    // >
+    //   Open
+    // </button>
+    //   ),
+
+    cell: (r) => (
+  <div
+    onClick={(e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      console.log("NAVIGATING", r.id);
+      navigate({ to: "/app/properties/$id", params: { id: String(r.id) } });
+    }}
+    className="cursor-pointer text-blue-500"
+  >
+    OPEN
+  </div>
+),
     },
     { key: "created", header: t("common.createdAt"), cell: (r) => formatDate(r.createdAt) },
   ];
@@ -142,6 +207,7 @@ function PropertiesPage() {
           onSubmit={(s) => statusOf && updateStatus.mutate({ id: statusOf.id, status: s })}
         />
       )}
+      <Outlet />  {/* ← add this */}
     </div>
   );
 }

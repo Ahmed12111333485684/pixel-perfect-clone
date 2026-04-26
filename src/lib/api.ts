@@ -4,8 +4,16 @@ const TOKEN_KEY = "estatly.token";
 
 export function getApiBaseUrl(): string {
   // Configurable via VITE_API_BASE_URL. Falls back to localhost.
-  const url = (import.meta.env.VITE_API_BASE_URL as string | undefined) ?? "http://localhost:5000";
+  const url = (import.meta.env.VITE_API_BASE_URL as string | undefined) ?? "http://localhost:5015";
   return url.replace(/\/+$/, "");
+}
+
+export function resolveApiAssetUrl(urlOrPath: string | undefined | null): string {
+  if (!urlOrPath) return "";
+  if (/^https?:\/\//i.test(urlOrPath)) return urlOrPath;
+  const base = getApiBaseUrl();
+  const normalizedPath = urlOrPath.startsWith("/") ? urlOrPath : `/${urlOrPath}`;
+  return `${base}${normalizedPath}`;
 }
 
 export function getStoredToken(): string | null {
