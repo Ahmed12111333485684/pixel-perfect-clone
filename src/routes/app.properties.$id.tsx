@@ -6,7 +6,10 @@ import { api, resolveApiAssetUrl, type PropertyDto, type PropertyImage, type Pro
 import { useAuth } from "@/lib/auth";
 import { PageHeader, StatusBadge, LoadingBlock, ErrorBlock, EmptyState } from "@/components/PageHeader";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Star, Trash2, Upload, ImagePlus, X, ChevronLeft, ChevronRight, ExternalLink } from "lucide-react";
+import {
+  ArrowLeft, Star, Trash2, Upload, ImagePlus, X, ChevronLeft, ChevronRight, ExternalLink,
+  MapPin, Home, Hash, CalendarDays, User, Phone, Mail, IdCard, Clock, Info, Sparkles, Image as ImageIcon,
+} from "lucide-react";
 import { toast } from "sonner";
 import { propertyStatusTone, formatDate } from "@/lib/format";
 import {
@@ -18,6 +21,25 @@ export const Route = createFileRoute("/app/properties/$id")({
 });
 
 const STATUSES: PropertyStatus[] = ["Pending", "Approved", "Rejected", "Sold"];
+
+// Map of well-known DTO keys -> i18n label keys (so optional fields render with proper translations)
+const FIELD_LABEL_KEYS: Record<string, string> = {
+  preferredContactAt: "common.preferredContactAt",
+  lastContactedAt: "common.lastContactedAt",
+  assignedToUsername: "common.assignedTo",
+  notes: "common.notes",
+  intent: "common.intent",
+  fullName: "common.fullName",
+  phone: "common.phone",
+  email: "common.email",
+  ownerNationalId: "common.nationalId",
+  nationalId: "common.nationalId",
+  description: "common.description",
+};
+
+const KNOWN_TOP_KEYS = new Set(["id", "ownerId", "name", "address", "type", "status", "createdAt", "amenities"]);
+// Fields rendered explicitly in dedicated sections — exclude from "additional" bucket.
+const CONTACT_KEYS = new Set(["fullName", "phone", "email", "preferredContactAt", "lastContactedAt", "assignedToUsername", "ownerNationalId", "nationalId", "notes"]);
 
 function PropertyDetail() {
   const { id } = Route.useParams();
@@ -86,6 +108,7 @@ function PropertyDetail() {
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
 
   const sorted = (images.data ?? []).slice().sort((a, b) => a.sortOrder - b.sortOrder);
+  const primary = sorted.find((i) => i.isPrimary) ?? sorted[0];
 
   const onDropOnto = (overId: number) => {
     if (dragId === null || dragId === overId) return;
@@ -104,10 +127,11 @@ function PropertyDetail() {
 
   const p = property.data;
 
-  // Show every field on the DTO, including any extra/optional ones the API may return.
-  const knownKeys = new Set(["id", "ownerId", "name", "address", "type", "status", "createdAt", "amenities"]);
-  const extraEntries = Object.entries(p as unknown as Record<string, unknown>).filter(
-    ([k, v]) => !knownKeys.has(k) && v !== null && v !== undefined && v !== ""
+  // Bucket the DTO into contact-style fields and miscellaneous extras.
+  const allEntries = Object.entries(p as unknown as Record<string, unknown>);
+  const contactEntries = allEntries.filter(([k, v]) => CONTACT_KEYS.has(k) && hasValue(v));
+  const additionalEntries = allEntries.filter(
+    ([k, v]) => !KNOWN_TOP_KEYS.has(k) && !CONTACT_KEYS.has(k) && hasValue(v),
   );
 
   return (
@@ -121,7 +145,7 @@ function PropertyDetail() {
         title={p.name}
         subtitle={p.address}
         actions={
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <StatusBadge tone={propertyStatusTone(p.status)}>{t(`propertyStatus.${p.status}`)}</StatusBadge>
             {auth.isStaff && (
               <Select value={p.status} onValueChange={(v) => updateStatus.mutate(v as PropertyStatus)}>
@@ -144,53 +168,122 @@ function PropertyDetail() {
         }
       />
 
-      <div className="grid gap-6 lg:grid-cols-3">
-        <div className="space-y-4 lg:col-span-1">
-          {/* Property information */}
-          <div className="space-y-1 rounded-2xl border border-border bg-card p-5 shadow-card">
-            <div className="mb-2 text-xs uppercase tracking-wide text-muted-foreground">{t("common.information")}</div>
-            <DetailRow label={t("common.propertyId")} value={`#${p.id}`} />
-            <DetailRow label={t("common.name")} value={p.name} />
-            <DetailRow label={t("common.address")} value={p.address} />
-            <DetailRow label={t("common.type")} value={p.type} />
-            <DetailRow label={t("common.status")} value={
-              <StatusBadge tone={propertyStatusTone(p.status)}>{t(`propertyStatus.${p.status}`)}</StatusBadge>
-            } />
-            <DetailRow label={t("common.createdAt")} value={formatDate(p.createdAt)} />
-            {extraEntries.map(([k, v]) => (
-              <DetailRow
-                key={k}
-                label={humanizeKey(k)}
-                value={renderValue(v)}
-              />
-            ))}
-          </div>
-
-          {/* Owner */}
-          <div className="space-y-1 rounded-2xl border border-border bg-card p-5 shadow-card">
-            <div className="mb-2 text-xs uppercase tracking-wide text-muted-foreground">{t("nav.owners")}</div>
-            <DetailRow label={t("common.ownerId")} value={`#${p.ownerId}`} />
-            {auth.isStaff && owner.data && (
-              <>
-                <DetailRow label={t("common.fullName")} value={owner.data.fullName} />
-                <DetailRow label={t("common.phone")} value={owner.data.phone} />
-                <DetailRow label={t("common.email")} value={owner.data.email} />
-                <DetailRow label={t("common.nationalId")} value={owner.data.nationalId} />
-              </>
+      {/* Hero card — mirrors the intake form's elegant card surface */}
+      <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-elegant">
+        <div className="grid gap-0 md:grid-cols-5">
+          <div className="relative aspect-[4/3] bg-muted md:col-span-3 md:aspect-auto md:min-h-[320px]">
+            {primary ? (
+              <button
+                type="button"
+                onClick={() => setLightboxIndex(sorted.indexOf(primary))}
+                className="group absolute inset-0 h-full w-full cursor-zoom-in"
+                aria-label={primary.originalFileName}
+              >
+                <img
+                  src={resolveApiAssetUrl(primary.url)}
+                  alt={primary.originalFileName}
+                  className="h-full w-full object-cover transition group-hover:scale-[1.02]"
+                />
+                <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
+                {sorted.length > 1 && (
+                  <span className="absolute end-3 bottom-3 inline-flex items-center gap-1 rounded-full bg-black/60 px-2.5 py-1 text-xs font-medium text-white backdrop-blur">
+                    <ImageIcon className="h-3.5 w-3.5" />
+                    {t("common.photoCount", { count: sorted.length })}
+                  </span>
+                )}
+              </button>
+            ) : (
+              <div className="flex h-full w-full flex-col items-center justify-center gap-2 text-muted-foreground">
+                <ImagePlus className="h-8 w-8" />
+                <span className="text-sm">{t("common.noImages")}</span>
+              </div>
             )}
           </div>
+          <div className="flex flex-col justify-between gap-4 p-6 md:col-span-2">
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 text-xs uppercase tracking-wide text-muted-foreground">
+                <Hash className="h-3.5 w-3.5" />
+                <span>{t("common.propertyId")}</span>
+                <span className="font-mono text-foreground">#{p.id}</span>
+              </div>
+              <h2 className="font-display text-2xl font-semibold leading-tight">{p.name}</h2>
+              <div className="flex items-start gap-2 text-sm text-muted-foreground">
+                <MapPin className="mt-0.5 h-4 w-4 flex-shrink-0 text-gold" />
+                <span>{p.address}</span>
+              </div>
+              <div className="flex flex-wrap gap-2 pt-1">
+                <Chip icon={<Home className="h-3.5 w-3.5" />}>{p.type}</Chip>
+                <Chip icon={<CalendarDays className="h-3.5 w-3.5" />}>{formatDate(p.createdAt)}</Chip>
+                {p.amenities && p.amenities.length > 0 && (
+                  <Chip icon={<Sparkles className="h-3.5 w-3.5" />}>
+                    {p.amenities.length} {t("nav.amenities").toLowerCase()}
+                  </Chip>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
 
-          {/* Amenities */}
-          <div className="rounded-2xl border border-border bg-card p-5 shadow-card">
-            <div className="mb-3 text-xs uppercase tracking-wide text-muted-foreground">{t("nav.amenities")}</div>
+      {/* Sectioned cards — matching the intake form structure */}
+      <div className="mt-6 grid gap-6 lg:grid-cols-3">
+        <div className="space-y-6 lg:col-span-2">
+          <SectionCard title={t("common.propertyDetails")} icon={<Info className="h-4 w-4" />}>
+            <FieldGrid>
+              <FieldItem icon={<Home className="h-4 w-4" />} label={t("common.name")} value={p.name} />
+              <FieldItem icon={<MapPin className="h-4 w-4" />} label={t("common.address")} value={p.address} />
+              <FieldItem icon={<Home className="h-4 w-4" />} label={t("common.type")} value={p.type} />
+              <FieldItem
+                icon={<Info className="h-4 w-4" />}
+                label={t("common.status")}
+                value={<StatusBadge tone={propertyStatusTone(p.status)}>{t(`propertyStatus.${p.status}`)}</StatusBadge>}
+              />
+              <FieldItem icon={<CalendarDays className="h-4 w-4" />} label={t("common.createdAt")} value={formatDate(p.createdAt)} />
+              <FieldItem icon={<Hash className="h-4 w-4" />} label={t("common.propertyId")} value={`#${p.id}`} />
+            </FieldGrid>
+          </SectionCard>
+
+          {contactEntries.length > 0 && (
+            <SectionCard title={t("common.contactInformation")} icon={<User className="h-4 w-4" />}>
+              <FieldGrid>
+                {contactEntries.map(([k, v]) => (
+                  <FieldItem
+                    key={k}
+                    icon={iconForKey(k)}
+                    label={labelFor(k, t)}
+                    value={renderValue(v, t)}
+                    full={k === "notes"}
+                  />
+                ))}
+              </FieldGrid>
+            </SectionCard>
+          )}
+
+          {additionalEntries.length > 0 && (
+            <SectionCard title={t("common.additionalInfo")} icon={<Info className="h-4 w-4" />}>
+              <FieldGrid>
+                {additionalEntries.map(([k, v]) => (
+                  <FieldItem
+                    key={k}
+                    icon={iconForKey(k)}
+                    label={labelFor(k, t)}
+                    value={renderValue(v, t)}
+                  />
+                ))}
+              </FieldGrid>
+            </SectionCard>
+          )}
+
+          <SectionCard title={t("nav.amenities")} icon={<Sparkles className="h-4 w-4" />}>
             {p.amenities && p.amenities.length > 0 ? (
-              <div className="flex flex-wrap gap-1.5">
+              <div className="flex flex-wrap gap-2">
                 {p.amenities.map((a) => (
                   <span
                     key={a.id}
-                    className="rounded-full bg-accent px-2.5 py-0.5 text-xs text-accent-foreground"
+                    className="inline-flex items-center gap-1.5 rounded-full border border-border bg-accent/50 px-3 py-1 text-xs font-medium text-accent-foreground"
                     title={a.description}
                   >
+                    <Sparkles className="h-3 w-3 text-gold" />
                     {a.name}
                   </span>
                 ))}
@@ -198,42 +291,70 @@ function PropertyDetail() {
             ) : (
               <span className="text-sm text-muted-foreground">{t("common.none")}</span>
             )}
-          </div>
+          </SectionCard>
+        </div>
+
+        <div className="space-y-6 lg:col-span-1">
+          {auth.isStaff && (
+            <SectionCard title={t("common.ownerInformation")} icon={<User className="h-4 w-4" />}>
+              <div className="space-y-3 text-sm">
+                <FieldItem icon={<Hash className="h-4 w-4" />} label={t("common.ownerId")} value={`#${p.ownerId}`} full />
+                {owner.data ? (
+                  <>
+                    <FieldItem icon={<User className="h-4 w-4" />} label={t("common.fullName")} value={owner.data.fullName} full />
+                    <FieldItem icon={<Phone className="h-4 w-4" />} label={t("common.phone")} value={owner.data.phone} full />
+                    <FieldItem icon={<Mail className="h-4 w-4" />} label={t("common.email")} value={owner.data.email} full />
+                    <FieldItem icon={<IdCard className="h-4 w-4" />} label={t("common.nationalId")} value={owner.data.nationalId} full />
+                  </>
+                ) : owner.isLoading ? (
+                  <div className="text-xs text-muted-foreground">{t("common.loading")}</div>
+                ) : null}
+              </div>
+            </SectionCard>
+          )}
 
           <div>
-            <Link to="/app/properties" className="text-sm text-muted-foreground hover:text-foreground">
-              ← {t("nav.properties")}
+            <Link to="/app/properties" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
+              <ArrowLeft className="h-3.5 w-3.5 rtl:rotate-180" />
+              {t("nav.properties")}
             </Link>
           </div>
         </div>
+      </div>
 
-        <div className="rounded-2xl border border-border bg-card p-5 shadow-card lg:col-span-2">
-          <div className="mb-3 flex items-center justify-between">
-            <h3 className="font-display text-lg font-semibold">
-              {t("common.images")} {sorted.length > 0 && <span className="ms-2 text-sm text-muted-foreground">({sorted.length})</span>}
-            </h3>
-            <input
-              ref={inputRef}
-              type="file"
-              accept="image/*"
-              multiple
-              hidden
-              onChange={(e) => {
-                const files = Array.from(e.target.files ?? []);
-                if (files.length) upload.mutate(files);
-                if (inputRef.current) inputRef.current.value = "";
-              }}
-            />
-            <Button size="sm" onClick={() => inputRef.current?.click()} disabled={upload.isPending}>
-              <Upload className="me-1 h-4 w-4" />
-              {upload.isPending ? t("common.submitting") : t("common.upload")}
-            </Button>
-          </div>
-
-          {images.isLoading ? <LoadingBlock /> :
-            sorted.length === 0 ? (
-              <EmptyState icon={<ImagePlus className="h-6 w-6" />} message={t("common.noImages")} />
-            ) : (
+      {/* Gallery section — matches the intake form's Photos section */}
+      <div className="mt-6">
+        <SectionCard
+          title={t("common.gallery")}
+          icon={<ImageIcon className="h-4 w-4" />}
+          action={
+            <>
+              <input
+                ref={inputRef}
+                type="file"
+                accept="image/*"
+                multiple
+                hidden
+                onChange={(e) => {
+                  const files = Array.from(e.target.files ?? []);
+                  if (files.length) upload.mutate(files);
+                  if (inputRef.current) inputRef.current.value = "";
+                }}
+              />
+              <Button size="sm" onClick={() => inputRef.current?.click()} disabled={upload.isPending}>
+                <Upload className="me-1 h-4 w-4" />
+                {upload.isPending ? t("common.submitting") : t("common.upload")}
+              </Button>
+            </>
+          }
+          subtitle={sorted.length > 0 ? t("common.photoCount", { count: sorted.length }) : undefined}
+        >
+          {images.isLoading ? (
+            <LoadingBlock />
+          ) : sorted.length === 0 ? (
+            <EmptyState icon={<ImagePlus className="h-6 w-6" />} message={t("common.noImages")} />
+          ) : (
+            <>
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
                 {sorted.map((img, idx) => (
                   <div
@@ -288,11 +409,12 @@ function PropertyDetail() {
                   </div>
                 ))}
               </div>
-            )}
-          {sorted.length > 1 && (
-            <p className="mt-3 text-xs text-muted-foreground">{t("common.dragToReorder")}</p>
+              {sorted.length > 1 && (
+                <p className="mt-3 text-xs text-muted-foreground">{t("common.dragToReorder")}</p>
+              )}
+            </>
           )}
-        </div>
+        </SectionCard>
       </div>
 
       {lightboxIndex !== null && sorted[lightboxIndex] && (
@@ -307,13 +429,12 @@ function PropertyDetail() {
   );
 }
 
-function DetailRow({ label, value }: { label: string; value: React.ReactNode }) {
-  return (
-    <div className="flex items-start justify-between gap-4 border-b border-border py-2 text-sm last:border-0">
-      <span className="text-muted-foreground">{label}</span>
-      <span className="text-end font-medium break-words">{value}</span>
-    </div>
-  );
+/* -------------------- helpers & sub-components -------------------- */
+
+function hasValue(v: unknown) {
+  if (v === null || v === undefined || v === "") return false;
+  if (Array.isArray(v) && v.length === 0) return false;
+  return true;
 }
 
 function humanizeKey(k: string) {
@@ -323,23 +444,100 @@ function humanizeKey(k: string) {
     .trim();
 }
 
-function renderValue(v: unknown): React.ReactNode {
-  if (v === null || v === undefined) return "—";
-  if (typeof v === "boolean") return v ? "Yes" : "No";
-  if (typeof v === "number" || typeof v === "string") {
-    const s = String(v);
-    // ISO date detection
-    if (typeof v === "string" && /^\d{4}-\d{2}-\d{2}T/.test(s)) {
-      return formatDate(s);
-    }
-    return s;
+function labelFor(k: string, t: (k: string) => string): string {
+  const i18nKey = FIELD_LABEL_KEYS[k];
+  if (i18nKey) {
+    const translated = t(i18nKey);
+    if (translated && translated !== i18nKey) return translated;
   }
-  if (Array.isArray(v)) return v.length === 0 ? "—" : v.map((x) => (typeof x === "object" ? JSON.stringify(x) : String(x))).join(", ");
-  try {
-    return JSON.stringify(v);
-  } catch {
-    return String(v);
+  return humanizeKey(k);
+}
+
+function iconForKey(k: string): React.ReactNode {
+  const cls = "h-4 w-4";
+  if (/phone/i.test(k)) return <Phone className={cls} />;
+  if (/email/i.test(k)) return <Mail className={cls} />;
+  if (/name/i.test(k)) return <User className={cls} />;
+  if (/(nationalId|deed|number|id$)/i.test(k)) return <IdCard className={cls} />;
+  if (/(date|At$|time)/i.test(k)) return <Clock className={cls} />;
+  if (/address|location/i.test(k)) return <MapPin className={cls} />;
+  if (/note/i.test(k)) return <Info className={cls} />;
+  if (/assigned/i.test(k)) return <User className={cls} />;
+  return <Info className={cls} />;
+}
+
+function renderValue(v: unknown, t: (k: string) => string): React.ReactNode {
+  if (!hasValue(v)) return <span className="text-muted-foreground">{t("common.notProvided")}</span>;
+  if (typeof v === "boolean") return v ? t("common.yes") : t("common.no");
+  if (typeof v === "number") return String(v);
+  if (typeof v === "string") {
+    if (/^\d{4}-\d{2}-\d{2}T/.test(v)) return formatDate(v);
+    return v;
   }
+  if (Array.isArray(v)) return v.map((x) => (typeof x === "object" ? JSON.stringify(x) : String(x))).join(", ");
+  try { return JSON.stringify(v); } catch { return String(v); }
+}
+
+function SectionCard({
+  title, subtitle, icon, action, children,
+}: {
+  title: string;
+  subtitle?: string;
+  icon?: React.ReactNode;
+  action?: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="rounded-2xl border border-border bg-card p-6 shadow-card">
+      <div className="mb-5 flex items-start justify-between gap-3">
+        <div className="flex items-center gap-2.5">
+          {icon && (
+            <span className="grid h-8 w-8 place-items-center rounded-lg bg-gold-gradient text-gold-foreground shadow-gold">
+              {icon}
+            </span>
+          )}
+          <div>
+            <h3 className="font-display text-lg font-semibold leading-tight">{title}</h3>
+            {subtitle && <p className="text-xs text-muted-foreground">{subtitle}</p>}
+          </div>
+        </div>
+        {action && <div className="flex items-center gap-2">{action}</div>}
+      </div>
+      {children}
+    </section>
+  );
+}
+
+function FieldGrid({ children }: { children: React.ReactNode }) {
+  return <div className="grid gap-4 sm:grid-cols-2">{children}</div>;
+}
+
+function FieldItem({
+  icon, label, value, full,
+}: {
+  icon?: React.ReactNode;
+  label: string;
+  value: React.ReactNode;
+  full?: boolean;
+}) {
+  return (
+    <div className={`rounded-xl border border-border bg-background/40 p-3 ${full ? "sm:col-span-2" : ""}`}>
+      <div className="flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+        {icon}
+        <span>{label}</span>
+      </div>
+      <div className="mt-1 break-words text-sm font-medium text-foreground">{value}</div>
+    </div>
+  );
+}
+
+function Chip({ children, icon }: { children: React.ReactNode; icon?: React.ReactNode }) {
+  return (
+    <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-background/60 px-2.5 py-1 text-xs font-medium text-foreground">
+      {icon}
+      {children}
+    </span>
+  );
 }
 
 function Lightbox({
