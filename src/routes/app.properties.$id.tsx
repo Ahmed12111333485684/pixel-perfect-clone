@@ -232,7 +232,7 @@ function PropertyDetail() {
 
           {images.isLoading ? <LoadingBlock /> :
             sorted.length === 0 ? (
-              <EmptyState icon={<ImagePlus className="h-6 w-6" />} title={t("common.noImages")} />
+              <EmptyState icon={<ImagePlus className="h-6 w-6" />} message={t("common.noImages")} />
             ) : (
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
                 {sorted.map((img, idx) => (
