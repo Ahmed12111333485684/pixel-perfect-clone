@@ -1,4 +1,4 @@
-import { createFileRoute, Outlet } from "@tanstack/react-router";
+import { createFileRoute, Link, Outlet } from "@tanstack/react-router";
 import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -14,7 +14,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { FormDialog, ConfirmDialog } from "@/components/FormDialog";
-import { Plus, ExternalLink } from "lucide-react";
+import { Plus } from "lucide-react";
 import { toast } from "sonner";
 import { propertyStatusTone, formatDate } from "@/lib/format";
 
@@ -117,17 +117,15 @@ function PropertiesPage() {
     {
       key: "open", header: "", className: "w-20",
       cell: (r) => (
-        <a
-          href={`/app/properties/${r.id}`}
-          target="_blank"
-          rel="noopener noreferrer"
+        <Link
+          to="/app/properties/$id"
+          params={{ id: String(r.id) }}
           onClick={(e) => e.stopPropagation()}
           title={t("common.details")}
           className="inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline"
         >
-          <ExternalLink className="h-4 w-4" />
           {t("common.open")}
-        </a>
+        </Link>
       ),
     },
     { key: "created", header: t("common.createdAt"), cell: (r) => formatDate(r.createdAt) },
@@ -183,7 +181,7 @@ function PropertiesPage() {
           onSubmit={(s) => statusOf && updateStatus.mutate({ id: statusOf.id, status: s })}
         />
       )}
-      <Outlet />  {/* ← add this */}
+      <Outlet />
     </div>
   );
 }

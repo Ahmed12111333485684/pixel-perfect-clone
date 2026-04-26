@@ -1,15 +1,15 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { api, type Lead, type LeadIntent, type LeadStatus } from "@/lib/api";
+import { api, type Lead, type LeadIntent, type LeadStatus, type PropertyDto } from "@/lib/api";
 import { PageHeader, StatusBadge, LoadingBlock, ErrorBlock, EmptyState } from "@/components/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { FormDialog, ConfirmDialog } from "@/components/FormDialog";
-import { CheckCircle2, Inbox, Mail, Phone } from "lucide-react";
+import { CheckCircle2, ExternalLink, Home, Inbox, Mail, MapPin, Phone } from "lucide-react";
 import { toast } from "sonner";
 import { leadStatusTone, formatDateTime } from "@/lib/format";
 
@@ -55,6 +55,12 @@ function LeadsPage() {
       setApproving(null); setSelected(null);
     },
     onError: (e: Error) => toast.error(e.message),
+  });
+
+  const selectedProperty = useQuery({
+    queryKey: ["lead-property", selected?.propertyId],
+    queryFn: () => api<PropertyDto>(`/api/properties/${selected?.propertyId}`),
+    enabled: !!selected?.propertyId,
   });
 
   const grouped = useMemo(() => {
@@ -107,6 +113,12 @@ function LeadsPage() {
                     >
                       <div className="text-sm font-medium">{l.propertyName}</div>
                       <div className="mt-0.5 truncate text-xs text-muted-foreground">{l.fullName} · {t(`intent.${l.intent}`)}</div>
+                      {l.propertyId && (
+                        <div className="mt-2 inline-flex items-center gap-1 rounded-full border border-border bg-muted/60 px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
+                          <Home className="h-3 w-3" />
+                          {t("common.propertyId")}: #{l.propertyId}
+                        </div>
+                      )}
                     </button>
                   ))}
                   {grouped[s].length === 0 && (
@@ -150,6 +162,45 @@ function LeadsPage() {
                 {t("common.createdAt")}: {formatDateTime(selected.createdAt)}
               </div>
             </div>
+
+            <div className="rounded-md border border-border bg-muted/30 p-3">
+              <div className="mb-2 flex items-center justify-between gap-2">
+                <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  {t("common.propertyDetails")}
+                </div>
+                {selected.propertyId && (
+                  <Link
+                    to="/app/properties/$id"
+                    params={{ id: String(selected.propertyId) }}
+                    className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
+                  >
+                    <ExternalLink className="h-3.5 w-3.5" />
+                    {t("common.open")}
+                  </Link>
+                )}
+              </div>
+              {selected.propertyId ? (
+                selectedProperty.data ? (
+                  <div className="space-y-1 text-sm">
+                    <div className="font-medium">{selectedProperty.data.name}</div>
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <MapPin className="h-3.5 w-3.5" />
+                      <span>{selectedProperty.data.address}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <Home className="h-3.5 w-3.5" />
+                      <span>{selectedProperty.data.type}</span>
+                      <span>#{selectedProperty.data.id}</span>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-sm text-muted-foreground">{t("common.loading")}</div>
+                )
+              ) : (
+                <div className="text-sm text-muted-foreground">{selected.propertyName}</div>
+              )}
+            </div>
+
             {selected.notes && (
               <div className="rounded-md border border-border bg-muted/40 p-3 text-sm">{selected.notes}</div>
             )}

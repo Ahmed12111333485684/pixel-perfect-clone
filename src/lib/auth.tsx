@@ -29,6 +29,25 @@ interface AuthUser {
   exp?: number;
 }
 
+const AUTH_USER_KEY = "estatly.user";
+
+function getStoredUser(): AuthUser | null {
+  if (typeof window === "undefined") return null;
+  const raw = window.localStorage.getItem(AUTH_USER_KEY);
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw) as AuthUser;
+  } catch {
+    return null;
+  }
+}
+
+function setStoredUser(user: AuthUser | null) {
+  if (typeof window === "undefined") return;
+  if (user) window.localStorage.setItem(AUTH_USER_KEY, JSON.stringify(user));
+  else window.localStorage.removeItem(AUTH_USER_KEY);
+}
+
 export interface AuthState {
   isAuthenticated: boolean;
   user: AuthUser | null;
@@ -47,7 +66,12 @@ function userFromToken(token: string, fallbackUsername?: string, fallbackRole?: 
   if (!payload) return null;
   const role = (Array.isArray(payload.role) ? payload.role[0] : payload.role) as Role | undefined;
   const finalRole = (role ?? fallbackRole ?? "OwnerClient") as Role;
-  const username = (payload.unique_name as string) ?? fallbackUsername ?? "user";
+  const tokenUsername = typeof payload.unique_name === "string" ? payload.unique_name.trim() : "";
+  const responseUsername = fallbackUsername?.trim();
+  const username =
+    responseUsername && (!tokenUsername || tokenUsername.toLowerCase() === "user")
+      ? responseUsername
+      : tokenUsername || responseUsername || "user";
   const ownerIdRaw = payload.owner_id;
   const ownerId = ownerIdRaw !== undefined ? Number(ownerIdRaw) : undefined;
   return { username, role: finalRole, ownerId: Number.isNaN(ownerId) ? undefined : ownerId, exp: payload.exp };
@@ -61,12 +85,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const stored = getStoredToken();
     if (stored) {
-      const u = userFromToken(stored);
+      const persistedUser = getStoredUser();
+      const u = persistedUser ?? userFromToken(stored);
       if (u && (!u.exp || u.exp * 1000 > Date.now())) {
         setToken(stored);
         setUser(u);
       } else {
         setStoredToken(null);
+        setStoredUser(null);
       }
     }
     setBootstrapped(true);
@@ -85,11 +111,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
     setToken(res.token);
     setUser(u);
+    setStoredUser(u);
     return u;
   };
 
   const logout = () => {
     setStoredToken(null);
+    setStoredUser(null);
     setToken(null);
     setUser(null);
   };

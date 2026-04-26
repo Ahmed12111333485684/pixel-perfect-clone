@@ -155,15 +155,6 @@ function PropertyDetail() {
                 </SelectContent>
               </Select>
             )}
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => window.open(`/app/properties/${propId}`, "_blank", "noopener,noreferrer")}
-              title={t("common.openInNewTab")}
-            >
-              <ExternalLink className="me-1 h-4 w-4" />
-              {t("common.openInNewTab")}
-            </Button>
           </div>
         }
       />
