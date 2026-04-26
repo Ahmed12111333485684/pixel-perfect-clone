@@ -118,41 +118,20 @@ function PropertiesPage() {
     },
     { key: "owner", header: t("nav.owners"), cell: (r) => `#${r.ownerId}` },
     {
-      key: "open", header: "", className: "w-12",
-      // cell: (r) => (
-      //   <Link
-      //     to="/app/properties/$id"
-      //     params={{ id: String(r.id) }}
-      //     title={t("common.details")}
-      //     onClick={(e) => e.stopPropagation()}
-      //     className="text-muted-foreground hover:text-foreground"
-      //   >
-      //     <ExternalLink className="h-4 w-4" />
-      //   </Link>
-      // ),
-    //   cell: (r) => (
-    // <button
-    //   onClick={() => {
-    //     console.log("clicked", r.id);
-    //   }}
-    // >
-    //   Open
-    // </button>
-    //   ),
-
-    cell: (r) => (
-  <a
-    href={`/app/properties/${r.id}`}
-    target="_blank"
-    rel="noopener noreferrer"
-    onClick={(e) => e.stopPropagation()}
-    title={t("common.details")}
-    className="inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline"
-  >
-    <ExternalLink className="h-4 w-4" />
-    {t("common.open") ?? "Open"}
-  </a>
-),
+      key: "open", header: "", className: "w-20",
+      cell: (r) => (
+        <a
+          href={`/app/properties/${r.id}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={(e) => e.stopPropagation()}
+          title={t("common.details")}
+          className="inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline"
+        >
+          <ExternalLink className="h-4 w-4" />
+          {t("common.open")}
+        </a>
+      ),
     },
     { key: "created", header: t("common.createdAt"), cell: (r) => formatDate(r.createdAt) },
   ];
