@@ -141,17 +141,17 @@ function PropertiesPage() {
     //   ),
 
     cell: (r) => (
-  <div
-    onClick={(e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      console.log("NAVIGATING", r.id);
-      navigate({ to: "/app/properties/$id", params: { id: String(r.id) } });
-    }}
-    className="cursor-pointer text-blue-500"
+  <a
+    href={`/app/properties/${r.id}`}
+    target="_blank"
+    rel="noopener noreferrer"
+    onClick={(e) => e.stopPropagation()}
+    title={t("common.details")}
+    className="inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline"
   >
-    OPEN
-  </div>
+    <ExternalLink className="h-4 w-4" />
+    {t("common.open") ?? "Open"}
+  </a>
 ),
     },
     { key: "created", header: t("common.createdAt"), cell: (r) => formatDate(r.createdAt) },
