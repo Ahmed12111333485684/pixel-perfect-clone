@@ -1,4 +1,4 @@
-import { createFileRoute, Link, Outlet } from "@tanstack/react-router";
+import { createFileRoute, Outlet } from "@tanstack/react-router";
 import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -17,8 +17,6 @@ import { FormDialog, ConfirmDialog } from "@/components/FormDialog";
 import { Plus, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 import { propertyStatusTone, formatDate } from "@/lib/format";
-import { useNavigate } from "@tanstack/react-router";
-
 
 const PROPERTY_TYPES = ["Apartment", "Villa", "Office", "Land", "Shop", "Warehouse"];
 const STATUSES: PropertyStatus[] = ["Pending", "Approved", "Rejected", "Sold"];
@@ -28,7 +26,6 @@ export const Route = createFileRoute("/app/properties")({
 });
 
 function PropertiesPage() {
-  const navigate = useNavigate();
   const { t } = useTranslation();
   const auth = useAuth();
   const qc = useQueryClient();
