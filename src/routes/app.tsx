@@ -17,6 +17,9 @@ import {
 
 export const Route = createFileRoute("/app")({
   beforeLoad: () => {
+    // Auth token lives in localStorage (client-only). Skip the guard during
+    // SSR so opening backoffice URLs in a new tab doesn't bounce to /login.
+    if (typeof window === "undefined") return;
     if (!getStoredToken()) {
       throw redirect({ to: "/login" });
     }
