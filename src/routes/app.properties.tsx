@@ -1,4 +1,4 @@
-import { createFileRoute, Link, Outlet } from "@tanstack/react-router";
+import { createFileRoute, Outlet } from "@tanstack/react-router";
 import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -17,8 +17,6 @@ import { FormDialog, ConfirmDialog } from "@/components/FormDialog";
 import { Plus, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 import { propertyStatusTone, formatDate } from "@/lib/format";
-import { useNavigate } from "@tanstack/react-router";
-
 
 const PROPERTY_TYPES = ["Apartment", "Villa", "Office", "Land", "Shop", "Warehouse"];
 const STATUSES: PropertyStatus[] = ["Pending", "Approved", "Rejected", "Sold"];
@@ -28,7 +26,6 @@ export const Route = createFileRoute("/app/properties")({
 });
 
 function PropertiesPage() {
-  const navigate = useNavigate();
   const { t } = useTranslation();
   const auth = useAuth();
   const qc = useQueryClient();
@@ -118,41 +115,20 @@ function PropertiesPage() {
     },
     { key: "owner", header: t("nav.owners"), cell: (r) => `#${r.ownerId}` },
     {
-      key: "open", header: "", className: "w-12",
-      // cell: (r) => (
-      //   <Link
-      //     to="/app/properties/$id"
-      //     params={{ id: String(r.id) }}
-      //     title={t("common.details")}
-      //     onClick={(e) => e.stopPropagation()}
-      //     className="text-muted-foreground hover:text-foreground"
-      //   >
-      //     <ExternalLink className="h-4 w-4" />
-      //   </Link>
-      // ),
-    //   cell: (r) => (
-    // <button
-    //   onClick={() => {
-    //     console.log("clicked", r.id);
-    //   }}
-    // >
-    //   Open
-    // </button>
-    //   ),
-
-    cell: (r) => (
-  <div
-    onClick={(e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      console.log("NAVIGATING", r.id);
-      navigate({ to: "/app/properties/$id", params: { id: String(r.id) } });
-    }}
-    className="cursor-pointer text-blue-500"
-  >
-    OPEN
-  </div>
-),
+      key: "open", header: "", className: "w-20",
+      cell: (r) => (
+        <a
+          href={`/app/properties/${r.id}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={(e) => e.stopPropagation()}
+          title={t("common.details")}
+          className="inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline"
+        >
+          <ExternalLink className="h-4 w-4" />
+          {t("common.open")}
+        </a>
+      ),
     },
     { key: "created", header: t("common.createdAt"), cell: (r) => formatDate(r.createdAt) },
   ];
