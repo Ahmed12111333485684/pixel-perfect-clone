@@ -106,7 +106,7 @@ function PropertyDetail() {
 
   // Show every field on the DTO, including any extra/optional ones the API may return.
   const knownKeys = new Set(["id", "ownerId", "name", "address", "type", "status", "createdAt", "amenities"]);
-  const extraEntries = Object.entries(p as Record<string, unknown>).filter(
+  const extraEntries = Object.entries(p as unknown as Record<string, unknown>).filter(
     ([k, v]) => !knownKeys.has(k) && v !== null && v !== undefined && v !== ""
   );
 
