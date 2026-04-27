@@ -23,7 +23,11 @@ export function FormDialog({
   const { t } = useTranslation();
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className={size === "lg" ? "sm:max-w-2xl" : "sm:max-w-md"}>
+      <DialogContent
+        className={`max-h-[90vh] overflow-y-auto rounded-xl ${
+          size === "lg" ? "sm:max-w-2xl" : "sm:max-w-md"
+        }`}
+      >
         <form onSubmit={onSubmit} className="space-y-4">
           <DialogHeader>
             <DialogTitle className="font-display">{title}</DialogTitle>

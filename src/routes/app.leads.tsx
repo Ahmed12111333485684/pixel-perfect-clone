@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { FormDialog, ConfirmDialog } from "@/components/FormDialog";
-import { CheckCircle2, ExternalLink, FileImage, Home, Inbox, Mail, MapPin, Phone } from "lucide-react";
+import { CheckCircle2, ChevronLeft, ChevronRight, ExternalLink, FileImage, Home, Inbox, Mail, MapPin, Phone, X } from "lucide-react";
 import { toast } from "sonner";
 import { leadStatusTone, formatDateTime } from "@/lib/format";
 
@@ -18,7 +18,6 @@ const STATUSES: LeadStatus[] = ["New", "Contacted", "Qualified", "ClosedLost", "
 
 export const Route = createFileRoute("/app/leads")({ component: LeadsPage });
 
-// Hook for images
 function useAuthenticatedImage(src: string) {
   const [blobUrl, setBlobUrl] = useState<string | null>(null);
 
@@ -44,6 +43,92 @@ function AuthImg({ src, alt, className }: { src: string; alt: string; className?
   return <img src={blobUrl} alt={alt} className={className} />;
 }
 
+function LeadLightbox({
+  images,
+  index,
+  onClose,
+  onChange,
+}: {
+  images: { src: string; alt: string }[];
+  index: number;
+  onClose: () => void;
+  onChange: (i: number) => void;
+}) {
+  const img = images[index];
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+      else if (e.key === "ArrowRight") onChange((index + 1) % images.length);
+      else if (e.key === "ArrowLeft") onChange((index - 1 + images.length) % images.length);
+    };
+    window.addEventListener("keydown", onKey);
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [index, images.length, onChange, onClose]);
+
+  if (!img) return null;
+
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      className="fixed inset-0 z-[60] flex items-center justify-center bg-black/90 p-4"
+      onClick={onClose}
+    >
+      <button
+        type="button"
+        onClick={(e) => { e.stopPropagation(); onClose(); }}
+        className="absolute end-4 top-4 grid h-10 w-10 place-items-center rounded-full bg-white/10 text-white transition hover:bg-white/20"
+        aria-label="Close"
+      >
+        <X className="h-5 w-5" />
+      </button>
+
+      {images.length > 1 && (
+        <>
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); onChange((index - 1 + images.length) % images.length); }}
+            className="absolute start-4 top-1/2 grid h-12 w-12 -translate-y-1/2 place-items-center rounded-full bg-white/10 text-white transition hover:bg-white/20"
+            aria-label="Previous"
+          >
+            <ChevronLeft className="h-6 w-6" />
+          </button>
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); onChange((index + 1) % images.length); }}
+            className="absolute end-4 top-1/2 grid h-12 w-12 -translate-y-1/2 place-items-center rounded-full bg-white/10 text-white transition hover:bg-white/20"
+            aria-label="Next"
+          >
+            <ChevronRight className="h-6 w-6" />
+          </button>
+        </>
+      )}
+
+      <figure
+        className="flex max-h-full max-w-6xl flex-col items-center"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <AuthImg
+          src={img.src}
+          alt={img.alt}
+          className="max-h-[80vh] max-w-full rounded-lg object-contain shadow-2xl"
+        />
+        <figcaption className="mt-3 flex items-center gap-3 text-sm text-white/80">
+          <span>{img.alt}</span>
+          <span className="text-white/40">·</span>
+          <span>{index + 1} / {images.length}</span>
+        </figcaption>
+      </figure>
+    </div>
+  );
+}
+
 function LeadsPage() {
   const { t } = useTranslation();
   const qc = useQueryClient();
@@ -53,6 +138,8 @@ function LeadsPage() {
   const [selected, setSelected] = useState<Lead | null>(null);
   const [editing, setEditing] = useState<Lead | null>(null);
   const [approving, setApproving] = useState<Lead | null>(null);
+  const [lightboxImages, setLightboxImages] = useState<{ src: string; alt: string }[]>([]);
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
 
   const list = useQuery({
     queryKey: ["leads", intent, status],
@@ -94,6 +181,16 @@ function LeadsPage() {
     (list.data ?? []).forEach((l) => m[l.status].push(l));
     return m;
   }, [list.data]);
+
+  const openLightbox = (lead: Lead, startIndex: number) => {
+    setLightboxImages(
+      (lead.images ?? []).map((i) => ({
+        src: resolveApiAssetUrl(`/api/leads/${lead.id}/images/${i.id}/file`),
+        alt: i.originalFileName,
+      }))
+    );
+    setLightboxIndex(startIndex);
+  };
 
   return (
     <div>
@@ -182,40 +279,30 @@ function LeadsPage() {
               </h3>
               <div className="space-y-2 text-sm">
                 <div>
-                  <span className="text-xs font-medium text-muted-foreground">
-                    {t("common.name")}:
-                  </span>
+                  <span className="text-xs font-medium text-muted-foreground">{t("common.name")}:</span>
                   <div className="font-medium">{selected.propertyName || t("common.notProvided")}</div>
                 </div>
                 <div>
-                  <span className="text-xs font-medium text-muted-foreground">
-                    {t("common.address")}:
-                  </span>
+                  <span className="text-xs font-medium text-muted-foreground">{t("common.address")}:</span>
                   <div className="flex items-center gap-2 text-muted-foreground">
                     <MapPin className="h-3.5 w-3.5" />
                     <span>{selected.propertyAddress || t("common.notProvided")}</span>
                   </div>
                 </div>
                 <div>
-                  <span className="text-xs font-medium text-muted-foreground">
-                    {t("common.type")}:
-                  </span>
+                  <span className="text-xs font-medium text-muted-foreground">{t("common.type")}:</span>
                   <div className="flex items-center gap-2">
                     <Home className="h-3.5 w-3.5" />
                     <span>{selected.propertyType || t("common.notProvided")}</span>
                   </div>
                 </div>
                 <div>
-                  <span className="text-xs font-medium text-muted-foreground">
-                    {t("common.intent")}:
-                  </span>
+                  <span className="text-xs font-medium text-muted-foreground">{t("common.intent")}:</span>
                   <div>{t(`intent.${selected.intent}`)}</div>
                 </div>
                 {selected.propertyId && (
                   <div>
-                    <span className="text-xs font-medium text-muted-foreground">
-                      {t("common.propertyId")}:
-                    </span>
+                    <span className="text-xs font-medium text-muted-foreground">{t("common.propertyId")}:</span>
                     <div className="flex items-center justify-between">
                       <span className="font-mono text-xs">#{selected.propertyId}</span>
                       <Link
@@ -230,7 +317,6 @@ function LeadsPage() {
                   </div>
                 )}
               </div>
-              {/* Linked property preview (optional enhancement) */}
               {selected.propertyId && selectedProperty.data && (
                 <div className="mt-3 border-t border-border pt-3">
                   <div className="text-xs font-medium text-muted-foreground mb-2">
@@ -252,31 +338,23 @@ function LeadsPage() {
               </h3>
               <div className="space-y-2 text-sm">
                 <div>
-                  <span className="text-xs font-medium text-muted-foreground">
-                    {t("common.fullName")}:
-                  </span>
+                  <span className="text-xs font-medium text-muted-foreground">{t("common.fullName")}:</span>
                   <div className="font-medium">{selected.fullName || t("common.notProvided")}</div>
                 </div>
                 <div>
-                  <span className="text-xs font-medium text-muted-foreground">
-                    {t("common.phone")}:
-                  </span>
+                  <span className="text-xs font-medium text-muted-foreground">{t("common.phone")}:</span>
                   <div className="flex items-center gap-2 text-muted-foreground">
                     <Phone className="h-3.5 w-3.5" /> {selected.phone || t("common.notProvided")}
                   </div>
                 </div>
                 <div>
-                  <span className="text-xs font-medium text-muted-foreground">
-                    {t("common.email")}:
-                  </span>
+                  <span className="text-xs font-medium text-muted-foreground">{t("common.email")}:</span>
                   <div className="flex items-center gap-2 text-muted-foreground">
                     <Mail className="h-3.5 w-3.5" /> {selected.email || t("common.notProvided")}
                   </div>
                 </div>
                 <div>
-                  <span className="text-xs font-medium text-muted-foreground">
-                    {t("common.nationalId")}:
-                  </span>
+                  <span className="text-xs font-medium text-muted-foreground">{t("common.nationalId")}:</span>
                   <div className="font-mono text-xs">{selected.ownerNationalId || t("common.notProvided")}</div>
                 </div>
               </div>
@@ -289,16 +367,12 @@ function LeadsPage() {
               </h3>
               <div className="space-y-2 text-sm">
                 <div>
-                  <span className="text-xs font-medium text-muted-foreground">
-                    {t("common.submittedAt")}:
-                  </span>
+                  <span className="text-xs font-medium text-muted-foreground">{t("common.submittedAt")}:</span>
                   <div>{formatDateTime(selected.createdAt)}</div>
                 </div>
                 {selected.preferredContactAt && (
                   <div>
-                    <span className="text-xs font-medium text-muted-foreground">
-                      {t("common.preferredContactAt")}:
-                    </span>
+                    <span className="text-xs font-medium text-muted-foreground">{t("common.preferredContactAt")}:</span>
                     <div>{formatDateTime(selected.preferredContactAt)}</div>
                   </div>
                 )}
@@ -316,37 +390,35 @@ function LeadsPage() {
             )}
 
             {/* Submitted Images Section */}
-            
             {selected.images && selected.images.length > 0 && (
-  <div className="rounded-md border border-border bg-muted/30 p-3">
-    <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-      {t("common.submittedImages")}
-    </h3>
-    <div className="grid grid-cols-3 gap-2">
-      {selected.images.map((img) => {
-        const src = resolveApiAssetUrl(`/api/leads/${selected.id}/images/${img.id}/file`);
-        return (
-          <a
-            key={img.id}
-            href={src}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="group relative overflow-hidden rounded-md border border-border bg-muted aspect-square flex items-center justify-center hover:bg-muted/80 transition-colors"
-          >
-            <AuthImg
-              src={src}
-              alt={img.originalFileName}
-              className="h-full w-full object-cover group-hover:opacity-75"
-            />
-            <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity">
-              <ExternalLink className="h-4 w-4 text-white" />
-            </div>
-          </a>
-        );
-      })}
-    </div>
-  </div>
-)}
+              <div className="rounded-md border border-border bg-muted/30 p-3">
+                <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  {t("common.submittedImages")}
+                </h3>
+                <div className="grid grid-cols-3 gap-2">
+                  {selected.images.map((img, idx) => {
+                    const src = resolveApiAssetUrl(`/api/leads/${selected.id}/images/${img.id}/file`);
+                    return (
+                      <button
+                        key={img.id}
+                        type="button"
+                        onClick={() => openLightbox(selected, idx)}
+                        className="group relative overflow-hidden rounded-md border border-border bg-muted aspect-square flex items-center justify-center hover:bg-muted/80 transition-colors cursor-zoom-in"
+                      >
+                        <AuthImg
+                          src={src}
+                          alt={img.originalFileName}
+                          className="h-full w-full object-cover group-hover:opacity-75"
+                        />
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <ExternalLink className="h-4 w-4 text-white" />
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
             {/* Action Buttons */}
             <div className="flex flex-wrap gap-2 pt-2">
@@ -388,7 +460,6 @@ function LeadsPage() {
                   {STATUSES.map((s) => <SelectItem key={s} value={s}>{t(`leadStatus.${s}`)}</SelectItem>)}
                 </SelectContent>
               </Select>
-              {/* Hidden mirror input so FormData picks it up */}
               <input type="hidden" name="status" defaultValue={editing.status} />
             </div>
             <div className="space-y-2">
@@ -408,6 +479,16 @@ function LeadsPage() {
         loading={approve.isPending}
         onConfirm={() => approving && approve.mutate(approving.id)}
       />
+
+      {/* Lightbox */}
+      {lightboxIndex !== null && lightboxImages.length > 0 && (
+        <LeadLightbox
+          images={lightboxImages}
+          index={lightboxIndex}
+          onClose={() => setLightboxIndex(null)}
+          onChange={setLightboxIndex}
+        />
+      )}
     </div>
   );
 }

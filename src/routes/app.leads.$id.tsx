@@ -1,9 +1,10 @@
 import { createFileRoute } from '@tanstack/react-router'
 
 export const Route = createFileRoute('/app/leads/$id')({
-  component: RouteComponent,
+  component: LeadReviewPage,
 })
 
-function RouteComponent() {
-  return <div>Hello "/app/leads/$id"!</div>
+function LeadReviewPage() {
+  const { id } = Route.useParams()
+  // your lead review UI here
 }
