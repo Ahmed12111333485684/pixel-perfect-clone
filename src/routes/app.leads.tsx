@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { api, type Lead, type LeadIntent, type LeadStatus, type PropertyDto } from "@/lib/api";
+import { api, resolveApiAssetUrl, type Lead, type LeadIntent, type LeadStatus, type PropertyDto } from "@/lib/api";
 import { PageHeader, StatusBadge, LoadingBlock, ErrorBlock, EmptyState } from "@/components/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -290,39 +290,37 @@ function LeadsPage() {
             )}
 
             {/* Submitted Images Section */}
+            
             {selected.images && selected.images.length > 0 && (
-              <div className="rounded-md border border-border bg-muted/30 p-3">
-                <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                  {t("common.submittedImages")}
-                </h3>
-                <div className="grid grid-cols-3 gap-2">
-                  {selected.images.map((img) => (
-                    <a
-                      key={img.id}
-                      href={`/api/Leads/${selected.id}/images/${img.id}/file`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="group relative overflow-hidden rounded-md border border-border bg-muted aspect-square flex items-center justify-center hover:bg-muted/80 transition-colors"
-                    >
-                      {img.url ? (
-                        <img
-                          src={img.url}
-                          alt={`Lead image ${img.id}`}
-                          className="h-full w-full object-cover group-hover:opacity-75"
-                        />
-                      ) : (
-                        <div className="flex items-center justify-center text-muted-foreground">
-                          <FileImage className="h-4 w-4" />
-                        </div>
-                      )}
-                      <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <ExternalLink className="h-4 w-4 text-white" />
-                      </div>
-                    </a>
-                  ))}
-                </div>
-              </div>
-            )}
+  <div className="rounded-md border border-border bg-muted/30 p-3">
+    <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+      {t("common.submittedImages")}
+    </h3>
+    <div className="grid grid-cols-3 gap-2">
+      {selected.images.map((img) => {
+        const src = resolveApiAssetUrl(`/api/leads/${selected.id}/images/${img.id}/file`);
+        return (
+          <a
+            key={img.id}
+            href={src}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="group relative overflow-hidden rounded-md border border-border bg-muted aspect-square flex items-center justify-center hover:bg-muted/80 transition-colors"
+          >
+            <img
+              src={src}
+              alt={img.originalFileName}
+              className="h-full w-full object-cover group-hover:opacity-75"
+            />
+            <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity">
+              <ExternalLink className="h-4 w-4 text-white" />
+            </div>
+          </a>
+        );
+      })}
+    </div>
+  </div>
+)}
 
             {/* Action Buttons */}
             <div className="flex flex-wrap gap-2 pt-2">
