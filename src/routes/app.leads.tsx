@@ -1,8 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { api, resolveApiAssetUrl, type Lead, type LeadIntent, type LeadStatus, type PropertyDto } from "@/lib/api";
+import { api, getApiBaseUrl, resolveApiAssetUrl, type Lead, type LeadIntent, type LeadStatus, type PropertyDto } from "@/lib/api";
 import { PageHeader, StatusBadge, LoadingBlock, ErrorBlock, EmptyState } from "@/components/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -17,6 +17,32 @@ const INTENTS: LeadIntent[] = ["Buy", "Rent", "Sell", "LetOut"];
 const STATUSES: LeadStatus[] = ["New", "Contacted", "Qualified", "ClosedLost", "ClosedWon"];
 
 export const Route = createFileRoute("/app/leads")({ component: LeadsPage });
+
+// Hook for images
+function useAuthenticatedImage(src: string) {
+  const [blobUrl, setBlobUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    let objectUrl: string;
+    api<Blob>(src.replace(getApiBaseUrl(), ""), { asBlob: true })
+      .then((blob) => {
+        objectUrl = URL.createObjectURL(blob);
+        setBlobUrl(objectUrl);
+      })
+      .catch(() => setBlobUrl(null));
+    return () => {
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+    };
+  }, [src]);
+
+  return blobUrl;
+}
+
+function AuthImg({ src, alt, className }: { src: string; alt: string; className?: string }) {
+  const blobUrl = useAuthenticatedImage(src);
+  if (!blobUrl) return <FileImage className="h-4 w-4 text-muted-foreground" />;
+  return <img src={blobUrl} alt={alt} className={className} />;
+}
 
 function LeadsPage() {
   const { t } = useTranslation();
@@ -307,7 +333,7 @@ function LeadsPage() {
             rel="noopener noreferrer"
             className="group relative overflow-hidden rounded-md border border-border bg-muted aspect-square flex items-center justify-center hover:bg-muted/80 transition-colors"
           >
-            <img
+            <AuthImg
               src={src}
               alt={img.originalFileName}
               className="h-full w-full object-cover group-hover:opacity-75"
