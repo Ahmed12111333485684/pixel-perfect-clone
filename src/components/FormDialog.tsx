@@ -24,6 +24,8 @@ export function FormDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
+        onPointerDownOutside={(e) => e.preventDefault()}
+        onInteractOutside={(e) => e.preventDefault()}
         className={`max-h-[90vh] overflow-y-auto rounded-xl ${
           size === "lg" ? "sm:max-w-2xl" : "sm:max-w-md"
         }`}

@@ -256,7 +256,7 @@ function LeadsPage() {
 
       {/* Lead detail drawer-like dialog */}
       <FormDialog
-        open={!!selected}
+        open={!!selected && lightboxIndex === null}
         onOpenChange={(v) => !v && setSelected(null)}
         title={selected?.propertyName ?? ""}
         description={selected?.propertyAddress}
