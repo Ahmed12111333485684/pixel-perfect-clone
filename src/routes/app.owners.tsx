@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { api, type Owner } from "@/lib/api";
+import { api, type Owner, type OwnerStats } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { PageHeader } from "@/components/PageHeader";
 import { DataTable, type Column } from "@/components/DataTable";
@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { FormDialog, ConfirmDialog } from "@/components/FormDialog";
-import { Plus, KeyRound } from "lucide-react";
+import { Plus, KeyRound, BarChart3 } from "lucide-react";
 import { toast } from "sonner";
 import { formatDate } from "@/lib/format";
 
