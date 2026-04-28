@@ -65,11 +65,25 @@ function PropertiesPage() {
   const [statusOf, setStatusOf] = useState<PropertyDto | null>(null);
 
   const upsert = useMutation({
-    mutationFn: async (vals: { id?: number; ownerId: number; name: string; address: string; type: string; amenityIds: number[] }) => {
-      if (vals.id) await api(`/api/properties/${vals.id}`, { method: "PUT", body: vals });
-      else await api("/api/properties", { method: "POST", body: vals });
+    mutationFn: async (vals: { id?: number; ownerId: number; name: string; address: string; type: string; amenityIds: number[]; files?: File[] }) => {
+      let propertyId: number;
+      if (vals.id) {
+        propertyId = vals.id;
+        await api(`/api/properties/${vals.id}`, { method: "PUT", body: { ownerId: vals.ownerId, name: vals.name, address: vals.address, type: vals.type, amenityIds: vals.amenityIds } });
+      } else {
+        const response = await api<{ id: number }>("/api/properties", { method: "POST", body: { ownerId: vals.ownerId, name: vals.name, address: vals.address, type: vals.type, amenityIds: vals.amenityIds } });
+        propertyId = response.id;
+      }
+      // Upload files if any
+      if (vals.files && vals.files.length > 0) {
+        for (const file of vals.files) {
+          const fd = new FormData();
+          fd.append("file", file);
+          await api(`/api/properties/${propertyId}/images`, { method: "POST", formData: fd });
+        }
+      }
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["properties"] }); toast.success(t("common.success")); setCreating(false); setEditing(null); },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["properties"] }); qc.invalidateQueries({ queryKey: ["property-images-preview"] }); toast.success(t("common.success")); setCreating(false); setEditing(null); },
     onError: (e: Error) => toast.error(e.message),
   });
 
@@ -191,22 +205,32 @@ function PropertyDialog({
 }: {
   open: boolean; onOpenChange: (v: boolean) => void; property: PropertyDto | null;
   owners: Owner[]; amenities: Amenity[]; defaultOwnerId?: number; canPickOwner: boolean;
-  onSubmit: (v: { ownerId: number; name: string; address: string; type: string; amenityIds: number[] }) => void;
+  onSubmit: (v: { ownerId: number; name: string; address: string; type: string; amenityIds: number[]; files?: File[] }) => void;
   submitting?: boolean;
 }) {
   const { t } = useTranslation();
   const [ownerId, setOwnerId] = useState<string>(String(property?.ownerId ?? defaultOwnerId ?? ""));
   const [type, setType] = useState<string>(property?.type ?? "Apartment");
   const [picked, setPicked] = useState<Set<number>>(new Set(property?.amenities?.map((a) => a.id) ?? []));
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
 
   // Reset state when reopening with a different property
   const key = `${property?.id ?? "new"}-${open}`;
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      setSelectedFiles(Array.from(e.target.files));
+    }
+  };
 
   return (
     <FormDialog
       key={key}
       open={open}
-      onOpenChange={onOpenChange}
+      onOpenChange={(v) => {
+        onOpenChange(v);
+        if (!v) setSelectedFiles([]);
+      }}
       title={property ? t("common.edit") : t("common.add")}
       submitting={submitting}
       size="lg"
@@ -220,6 +244,7 @@ function PropertyDialog({
           address: String(fd.get("address") ?? ""),
           type,
           amenityIds: Array.from(picked),
+          files: selectedFiles.length > 0 ? selectedFiles : undefined,
         });
       }}
     >
@@ -275,6 +300,22 @@ function PropertyDialog({
             );
           })}
         </div>
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="images">{t("common.images")}</Label>
+        <Input
+          id="images"
+          name="images"
+          type="file"
+          multiple
+          accept="image/*"
+          onChange={handleFileChange}
+        />
+        {selectedFiles.length > 0 && (
+          <div className="mt-2 text-sm text-muted-foreground">
+            {selectedFiles.length} {t("common.selected")}
+          </div>
+        )}
       </div>
     </FormDialog>
   );
