@@ -47,6 +47,7 @@ const NAV: NavItem[] = [
   { to: "/app/buyers", label: "nav.buyers", icon: ShoppingBag, staffOnly: true },
   { to: "/app/sales", label: "nav.sales", icon: BadgeDollarSign },
   { to: "/app/leads", label: "nav.leads", icon: Inbox, staffOnly: true },
+  { to: "/app/users", label: "nav.users", icon: ShieldCheck, adminOnly: true },
 ];
 
 function AppLayout() {
