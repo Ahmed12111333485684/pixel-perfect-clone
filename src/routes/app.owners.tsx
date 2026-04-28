@@ -141,6 +141,8 @@ function OwnersPage() {
         submitting={createAccount.isPending}
         onSubmit={(vals) => accountFor && createAccount.mutate({ id: accountFor.id, ...vals })}
       />
+
+      <StatsDialog owner={statsFor} onOpenChange={(v) => !v && setStatsFor(null)} />
     </div>
   );
 }
