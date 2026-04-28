@@ -33,6 +33,7 @@ function ContractsPage() {
   const [creatingTenant, setCreatingTenant] = useState(false);
   const [editing, setEditing] = useState<Contract | null>(null);
   const [deleting, setDeleting] = useState<Contract | null>(null);
+  const [search, setSearch] = useState("");
 
   const upsert = useMutation({
     mutationFn: async (vals: Partial<Contract> & { id?: number }) => {
@@ -79,15 +80,34 @@ function ContractsPage() {
     { key: "status", header: t("common.status"), cell: (r) => <StatusBadge tone={contractStatusTone(r.status)}>{t(`contractStatus.${r.status}`)}</StatusBadge> },
   ];
 
+  const filteredContracts = useMemo(() => {
+    if (!search.trim()) return list.data ?? [];
+    const lowerSearch = search.toLowerCase();
+    return (list.data ?? []).filter((contract) => {
+      const deedMatch = contract.deedNumber.toLowerCase().includes(lowerSearch);
+      const propMatch = (propertyLabelById.get(contract.propertyId) ?? "").toLowerCase().includes(lowerSearch);
+      const tenantMatch = (tenantLabelById.get(contract.tenantId) ?? "").toLowerCase().includes(lowerSearch);
+      return deedMatch || propMatch || tenantMatch;
+    });
+  }, [list.data, search, propertyLabelById, tenantLabelById]);
+
   return (
     <div>
       <PageHeader
         title={t("nav.contracts")}
         actions={auth.isStaff && <Button onClick={() => setCreating(true)}><Plus className="me-1 h-4 w-4" />{t("common.add")}</Button>}
       />
+      <div className="mb-4">
+        <Input
+          placeholder={t("common.search")}
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="max-w-sm"
+        />
+      </div>
       <DataTable
         columns={cols}
-        rows={list.data}
+        rows={filteredContracts}
         loading={list.isLoading}
         error={list.error}
         rowKey={(r) => r.id}

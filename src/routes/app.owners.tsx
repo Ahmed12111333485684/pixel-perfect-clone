@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { api, type Owner, type OwnerStats } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
@@ -30,6 +30,7 @@ function OwnersPage() {
   const [deleting, setDeleting] = useState<Owner | null>(null);
   const [accountFor, setAccountFor] = useState<Owner | null>(null);
   const [statsFor, setStatsFor] = useState<Owner | null>(null);
+  const [search, setSearch] = useState("");
 
   const upsert = useMutation({
     mutationFn: async (vals: Partial<Owner> & { id?: number }) => {
@@ -78,6 +79,18 @@ function OwnersPage() {
     { key: "created", header: t("common.createdAt"), cell: (r) => formatDate(r.createdAt) },
   ];
 
+  const filteredOwners = useMemo(() => {
+    if (!search.trim()) return list.data ?? [];
+    const lowerSearch = search.toLowerCase();
+    return (list.data ?? []).filter((owner) => {
+      const nameMatch = owner.fullName.toLowerCase().includes(lowerSearch);
+      const phoneMatch = owner.phone.toLowerCase().includes(lowerSearch);
+      const emailMatch = owner.email.toLowerCase().includes(lowerSearch);
+      const nidMatch = owner.nationalId.toLowerCase().includes(lowerSearch);
+      return nameMatch || phoneMatch || emailMatch || nidMatch;
+    });
+  }, [list.data, search]);
+
   return (
     <div>
       <PageHeader
@@ -90,6 +103,15 @@ function OwnersPage() {
           )
         }
       />
+
+      <div className="mb-4">
+        <Input
+          placeholder={t("common.search")}
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="max-w-sm"
+        />
+      </div>
 
       <DataTable
         columns={[
@@ -110,7 +132,7 @@ function OwnersPage() {
               }]
             : []),
         ]}
-        rows={list.data}
+        rows={filteredOwners}
         loading={list.isLoading}
         error={list.error}
         rowKey={(r) => r.id}

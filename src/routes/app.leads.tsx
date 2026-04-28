@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { FormDialog, ConfirmDialog } from "@/components/FormDialog";
 import { CheckCircle2, ChevronLeft, ChevronRight, ExternalLink, FileImage, Home, Inbox, Mail, MapPin, Phone, X } from "lucide-react";
-import { toast } from "sonner";
+import { Input } from "@/components/ui/input";
 import { leadStatusTone, formatDateTime } from "@/lib/format";
 
 const INTENTS: LeadIntent[] = ["Buy", "Rent", "Sell", "LetOut"];
@@ -135,6 +135,7 @@ function LeadsPage() {
 
   const [intent, setIntent] = useState<string>("all");
   const [status, setStatus] = useState<string>("all");
+  const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<Lead | null>(null);
   const [editing, setEditing] = useState<Lead | null>(null);
   const [approving, setApproving] = useState<Lead | null>(null);
@@ -178,9 +179,19 @@ function LeadsPage() {
 
   const grouped = useMemo(() => {
     const m: Record<LeadStatus, Lead[]> = { New: [], Contacted: [], Qualified: [], ClosedLost: [], ClosedWon: [] };
-    (list.data ?? []).forEach((l) => m[l.status].push(l));
+    let filtered = list.data ?? [];
+    if (search.trim()) {
+      const lowerSearch = search.toLowerCase();
+      filtered = filtered.filter((l) => {
+        const propMatch = (l.propertyName ?? "").toLowerCase().includes(lowerSearch);
+        const nameMatch = (l.fullName ?? "").toLowerCase().includes(lowerSearch);
+        const addressMatch = (l.propertyAddress ?? "").toLowerCase().includes(lowerSearch);
+        return propMatch || nameMatch || addressMatch;
+      });
+    }
+    filtered.forEach((l) => m[l.status].push(l));
     return m;
-  }, [list.data]);
+  }, [list.data, search]);
 
   const openLightbox = (lead: Lead, startIndex: number) => {
     setLightboxImages(
@@ -215,6 +226,15 @@ function LeadsPage() {
           </div>
         }
       />
+
+      <div className="mb-4">
+        <Input
+          placeholder={t("common.search")}
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="max-w-sm"
+        />
+      </div>
 
       {list.isLoading ? <LoadingBlock /> :
         list.error ? <ErrorBlock message={(list.error as Error).message} /> :

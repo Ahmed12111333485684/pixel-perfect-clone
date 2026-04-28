@@ -36,6 +36,7 @@ function SalesPage() {
   );
 
   const [creating, setCreating] = useState(false);
+  const [search, setSearch] = useState("");
 
   const create = useMutation({
     mutationFn: (vals: { propertyId: number; buyerClientId: number; salePrice: number; deedNumber: string; soldAt: string }) =>
@@ -46,11 +47,22 @@ function SalesPage() {
 
   const cols: Column<Sale>[] = [
     { key: "deed", header: t("common.deedNumber"), cell: (r) => <span className="font-mono text-xs">{r.deedNumber}</span> },
-    { key: "prop", header: t("nav.properties"), cell: (r) => `#${r.propertyId}` },
-    { key: "buyer", header: t("nav.buyers"), cell: (r) => `#${r.buyerClientId}` },
+    { key: "prop", header: t("nav.properties"), cell: (r) => propertyLabelById.get(r.propertyId) ?? `#${r.propertyId}` },
+    { key: "buyer", header: t("nav.buyers"), cell: (r) => buyerLabelById.get(r.buyerClientId) ?? `#${r.buyerClientId}` },
     { key: "price", header: t("common.salePrice"), cell: (r) => <span className="font-medium">{formatMoney(r.salePrice)}</span> },
     { key: "sold", header: t("common.soldAt"), cell: (r) => formatDate(r.soldAt) },
   ];
+
+  const filteredSales = useMemo(() => {
+    if (!search.trim()) return list.data ?? [];
+    const lowerSearch = search.toLowerCase();
+    return (list.data ?? []).filter((sale) => {
+      const deedMatch = sale.deedNumber.toLowerCase().includes(lowerSearch);
+      const propMatch = (propertyLabelById.get(sale.propertyId) ?? "").toLowerCase().includes(lowerSearch);
+      const buyerMatch = (buyerLabelById.get(sale.buyerClientId) ?? "").toLowerCase().includes(lowerSearch);
+      return deedMatch || propMatch || buyerMatch;
+    });
+  }, [list.data, search, propertyLabelById, buyerLabelById]);
 
   const [pid, setPid] = useState("");
   const [bid, setBid] = useState("");
@@ -61,7 +73,15 @@ function SalesPage() {
         title={t("nav.sales")}
         actions={auth.isStaff && <Button onClick={() => setCreating(true)}><Plus className="me-1 h-4 w-4" />{t("common.add")}</Button>}
       />
-      <DataTable columns={cols} rows={list.data} loading={list.isLoading} error={list.error} rowKey={(r) => r.id} />
+      <div className="mb-4">
+        <Input
+          placeholder={t("common.search")}
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="max-w-sm"
+        />
+      </div>
+      <DataTable columns={cols} rows={filteredSales} loading={list.isLoading} error={list.error} rowKey={(r) => r.id} />
       <FormDialog
         key={`sale-${creating}`}
         open={creating}

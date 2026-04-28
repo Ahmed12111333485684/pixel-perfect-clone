@@ -63,6 +63,7 @@ function PropertiesPage() {
   const [editing, setEditing] = useState<PropertyDto | null>(null);
   const [deleting, setDeleting] = useState<PropertyDto | null>(null);
   const [statusOf, setStatusOf] = useState<PropertyDto | null>(null);
+  const [search, setSearch] = useState("");
 
   const upsert = useMutation({
     mutationFn: async (vals: { id?: number; ownerId: number; name: string; address: string; type: string; amenityIds: number[]; files?: File[] }) => {
@@ -157,6 +158,17 @@ function PropertiesPage() {
     { key: "created", header: t("common.createdAt"), cell: (r) => formatDate(r.createdAt) },
   ];
 
+  const filteredProperties = useMemo(() => {
+    if (!search.trim()) return list.data ?? [];
+    const lowerSearch = search.toLowerCase();
+    return (list.data ?? []).filter((property) => {
+      const nameMatch = property.name.toLowerCase().includes(lowerSearch);
+      const addressMatch = property.address.toLowerCase().includes(lowerSearch);
+      const typeMatch = property.type.toLowerCase().includes(lowerSearch);
+      return nameMatch || addressMatch || typeMatch;
+    });
+  }, [list.data, search]);
+
   return (
     <div>
       <PageHeader
@@ -168,9 +180,18 @@ function PropertiesPage() {
         }
       />
 
+      <div className="mb-4">
+        <Input
+          placeholder={t("common.search")}
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="max-w-sm"
+        />
+      </div>
+
       <DataTable
         columns={cols}
-        rows={list.data}
+        rows={filteredProperties}
         loading={list.isLoading}
         error={list.error}
         rowKey={(r) => r.id}

@@ -29,6 +29,7 @@ function PaymentsPage() {
   const [creating, setCreating] = useState(false);
   const [editing, setEditing] = useState<Payment | null>(null);
   const [deleting, setDeleting] = useState<Payment | null>(null);
+  const [search, setSearch] = useState("");
 
   const upsert = useMutation({
     mutationFn: async (vals: Partial<Payment> & { id?: number }) => {
@@ -57,15 +58,34 @@ function PaymentsPage() {
     { key: "status", header: t("common.status"), cell: (r) => <StatusBadge tone={paymentStatusTone(r.status)}>{t(`paymentStatus.${r.status}`)}</StatusBadge> },
   ];
 
+  const filteredPayments = useMemo(() => {
+    if (!search.trim()) return list.data ?? [];
+    const lowerSearch = search.toLowerCase();
+    return (list.data ?? []).filter((payment) => {
+      const contractMatch = (contractLabelById.get(payment.contractId) ?? "").toLowerCase().includes(lowerSearch);
+      const dueDateMatch = formatDate(payment.dueDate).toLowerCase().includes(lowerSearch);
+      const statusMatch = t(`paymentStatus.${payment.status}`).toLowerCase().includes(lowerSearch);
+      return contractMatch || dueDateMatch || statusMatch;
+    });
+  }, [list.data, search, contractLabelById, t]);
+
   return (
     <div>
       <PageHeader
         title={t("nav.payments")}
         actions={auth.isStaff && <Button onClick={() => setCreating(true)}><Plus className="me-1 h-4 w-4" />{t("common.add")}</Button>}
       />
+      <div className="mb-4">
+        <Input
+          placeholder={t("common.search")}
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="max-w-sm"
+        />
+      </div>
       <DataTable
         columns={cols}
-        rows={list.data}
+        rows={filteredPayments}
         loading={list.isLoading}
         error={list.error}
         rowKey={(r) => r.id}
