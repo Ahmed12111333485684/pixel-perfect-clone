@@ -1,10 +1,10 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, Navigate } from "@tanstack/react-router";
 
-export const Route = createFileRoute('/app/leads/$id')({
-  component: LeadReviewPage,
-})
+export const Route = createFileRoute("/app/leads/$id")({
+  component: LeadRedirect,
+});
 
-function LeadReviewPage() {
-  const { id } = Route.useParams()
-  // your lead review UI here
+function LeadRedirect() {
+  // Lead details are shown inline on the leads board.
+  return <Navigate to="/app/leads" />;
 }

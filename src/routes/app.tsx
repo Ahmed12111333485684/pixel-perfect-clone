@@ -5,7 +5,7 @@ import { getStoredToken } from "@/lib/api";
 import {
   LayoutDashboard, Users, Building2, Sparkles, ContactRound,
   ScrollText, CreditCard, ShoppingBag, BadgeDollarSign, Inbox,
-  LogOut, ChevronRight,
+  LogOut, ChevronRight, ShieldCheck,
 } from "lucide-react";
 import { BrandLogo } from "@/components/BrandLogo";
 import { LanguageToggle } from "@/components/LanguageToggle";
@@ -33,6 +33,7 @@ interface NavItem {
   icon: React.ComponentType<{ className?: string }>;
   staffOnly?: boolean;
   ownerOnly?: boolean;
+  adminOnly?: boolean;
 }
 
 const NAV: NavItem[] = [
@@ -46,6 +47,7 @@ const NAV: NavItem[] = [
   { to: "/app/buyers", label: "nav.buyers", icon: ShoppingBag, staffOnly: true },
   { to: "/app/sales", label: "nav.sales", icon: BadgeDollarSign },
   { to: "/app/leads", label: "nav.leads", icon: Inbox, staffOnly: true },
+  { to: "/app/users", label: "nav.users", icon: ShieldCheck, adminOnly: true },
 ];
 
 function AppLayout() {
@@ -56,6 +58,7 @@ function AppLayout() {
   const visible = NAV.filter((n) => {
     if (n.staffOnly && !auth.isStaff) return false;
     if (n.ownerOnly && auth.user?.role !== "OwnerClient") return false;
+    if (n.adminOnly && !auth.hasRole("Admin")) return false;
     return true;
   });
 

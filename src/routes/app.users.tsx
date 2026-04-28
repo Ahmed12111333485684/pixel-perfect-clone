@@ -1,0 +1,239 @@
+import { createFileRoute, redirect } from "@tanstack/react-router";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
+import { useTranslation } from "react-i18next";
+import { api, getStoredToken, type UserDto, type Role } from "@/lib/api";
+import { useAuth } from "@/lib/auth";
+import { PageHeader, StatusBadge } from "@/components/PageHeader";
+import { DataTable, type Column } from "@/components/DataTable";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { FormDialog, ConfirmDialog } from "@/components/FormDialog";
+import { Plus, KeyRound } from "lucide-react";
+import { toast } from "sonner";
+import { formatDate } from "@/lib/format";
+
+const ROLES: Role[] = ["Admin", "AgencyOwner", "OwnerClient"];
+
+export const Route = createFileRoute("/app/users")({
+  beforeLoad: () => {
+    if (typeof window === "undefined") return;
+    if (!getStoredToken()) throw redirect({ to: "/login" });
+  },
+  component: UsersPage,
+});
+
+function UsersPage() {
+  const { t } = useTranslation();
+  const auth = useAuth();
+  const qc = useQueryClient();
+
+  const list = useQuery({
+    queryKey: ["users"],
+    queryFn: () => api<UserDto[]>("/api/users"),
+    enabled: auth.hasRole("Admin"),
+  });
+
+  const [creating, setCreating] = useState(false);
+  const [editing, setEditing] = useState<UserDto | null>(null);
+  const [deleting, setDeleting] = useState<UserDto | null>(null);
+  const [resetting, setResetting] = useState<UserDto | null>(null);
+
+  const upsert = useMutation({
+    mutationFn: async (vals: { id?: number; username: string; password?: string; role: Role }) => {
+      if (vals.id) {
+        const body: Record<string, unknown> = { username: vals.username, role: vals.role };
+        if (vals.password) body.password = vals.password;
+        await api(`/api/users/${vals.id}`, { method: "PUT", body });
+      } else {
+        await api("/api/users", { method: "POST", body: vals });
+      }
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["users"] });
+      toast.success(t("common.success"));
+      setCreating(false);
+      setEditing(null);
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const del = useMutation({
+    mutationFn: (id: number) => api(`/api/users/${id}`, { method: "DELETE" }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["users"] });
+      toast.success(t("common.deleted"));
+      setDeleting(null);
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const reset = useMutation({
+    mutationFn: (vals: { id: number; password: string }) =>
+      api(`/api/users/${vals.id}/reset-password`, { method: "POST", body: { password: vals.password } }),
+    onSuccess: () => {
+      toast.success(t("common.success"));
+      setResetting(null);
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  if (!auth.hasRole("Admin")) {
+    return (
+      <div className="rounded-xl border border-border bg-card p-8 text-center text-muted-foreground">
+        {t("common.adminOnly")}
+      </div>
+    );
+  }
+
+  const cols: Column<UserDto>[] = [
+    { key: "username", header: t("common.username"), cell: (r) => <span className="font-medium">{r.username}</span> },
+    {
+      key: "role",
+      header: t("common.role"),
+      cell: (r) => <StatusBadge tone={r.role === "Admin" ? "destructive" : r.role === "AgencyOwner" ? "info" : "neutral"}>{r.role}</StatusBadge>,
+    },
+    { key: "created", header: t("common.createdAt"), cell: (r) => formatDate(r.createdAt) },
+    {
+      key: "reset",
+      header: "",
+      className: "w-12",
+      cell: (r) => (
+        <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); setResetting(r); }} title={t("common.resetPassword")}>
+          <KeyRound className="h-4 w-4" />
+        </Button>
+      ),
+    },
+  ];
+
+  return (
+    <div>
+      <PageHeader
+        title={t("nav.users")}
+        actions={
+          <Button onClick={() => setCreating(true)}>
+            <Plus className="me-1 h-4 w-4" />
+            {t("common.add")}
+          </Button>
+        }
+      />
+      <DataTable
+        columns={cols}
+        rows={list.data}
+        loading={list.isLoading}
+        error={list.error}
+        rowKey={(r) => r.id}
+        onEdit={setEditing}
+        onDelete={setDeleting}
+      />
+
+      <UserDialog
+        open={creating || !!editing}
+        onOpenChange={(v) => { if (!v) { setCreating(false); setEditing(null); } }}
+        user={editing}
+        submitting={upsert.isPending}
+        onSubmit={(vals) => upsert.mutate({ ...vals, id: editing?.id })}
+      />
+
+      <ConfirmDialog
+        open={!!deleting}
+        onOpenChange={(v) => !v && setDeleting(null)}
+        title={`${t("common.delete")}: ${deleting?.username ?? ""}`}
+        destructive
+        loading={del.isPending}
+        onConfirm={() => deleting && del.mutate(deleting.id)}
+      />
+
+      <ResetPasswordDialog
+        user={resetting}
+        onOpenChange={(v) => !v && setResetting(null)}
+        submitting={reset.isPending}
+        onSubmit={(password) => resetting && reset.mutate({ id: resetting.id, password })}
+      />
+    </div>
+  );
+}
+
+function UserDialog({ open, onOpenChange, user, onSubmit, submitting }: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  user: UserDto | null;
+  onSubmit: (vals: { username: string; password?: string; role: Role }) => void;
+  submitting?: boolean;
+}) {
+  const { t } = useTranslation();
+  const [role, setRole] = useState<Role>(user?.role ?? "OwnerClient");
+
+  return (
+    <FormDialog
+      open={open}
+      onOpenChange={(v) => { if (!v) onOpenChange(false); else if (user) setRole(user.role); }}
+      title={user ? t("common.edit") : t("common.add")}
+      submitting={submitting}
+      onSubmit={(e) => {
+        e.preventDefault();
+        const fd = new FormData(e.currentTarget);
+        const password = String(fd.get("password") ?? "").trim();
+        onSubmit({
+          username: String(fd.get("username") ?? ""),
+          role,
+          ...(password ? { password } : {}),
+        });
+      }}
+    >
+      <div className="space-y-2">
+        <Label htmlFor="username">{t("common.username")}</Label>
+        <Input id="username" name="username" defaultValue={user?.username ?? ""} required />
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="password">
+          {t("common.password")} {user && <span className="text-xs text-muted-foreground">({t("common.optional")})</span>}
+        </Label>
+        <Input id="password" name="password" type="password" required={!user} />
+      </div>
+      <div className="space-y-2">
+        <Label>{t("common.role")}</Label>
+        <Select value={role} onValueChange={(v) => setRole(v as Role)}>
+          <SelectTrigger><SelectValue /></SelectTrigger>
+          <SelectContent>
+            {ROLES.map((r) => <SelectItem key={r} value={r}>{r}</SelectItem>)}
+          </SelectContent>
+        </Select>
+      </div>
+    </FormDialog>
+  );
+}
+
+function ResetPasswordDialog({ user, onOpenChange, onSubmit, submitting }: {
+  user: UserDto | null;
+  onOpenChange: (v: boolean) => void;
+  onSubmit: (password: string) => void;
+  submitting?: boolean;
+}) {
+  const { t } = useTranslation();
+  return (
+    <FormDialog
+      open={!!user}
+      onOpenChange={onOpenChange}
+      title={`${t("common.resetPassword")} — ${user?.username ?? ""}`}
+      submitting={submitting}
+      onSubmit={(e) => {
+        e.preventDefault();
+        const fd = new FormData(e.currentTarget);
+        const pw = String(fd.get("newPassword") ?? "").trim();
+        if (pw.length < 6) {
+          toast.error(t("common.passwordTooShort"));
+          return;
+        }
+        onSubmit(pw);
+      }}
+    >
+      <div className="space-y-2">
+        <Label htmlFor="newPassword">{t("common.newPassword")}</Label>
+        <Input id="newPassword" name="newPassword" type="password" required minLength={6} />
+      </div>
+    </FormDialog>
+  );
+}

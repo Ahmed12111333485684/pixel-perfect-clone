@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { api, type Owner } from "@/lib/api";
+import { api, type Owner, type OwnerStats } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { PageHeader } from "@/components/PageHeader";
 import { DataTable, type Column } from "@/components/DataTable";
@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { FormDialog, ConfirmDialog } from "@/components/FormDialog";
-import { Plus, KeyRound } from "lucide-react";
+import { Plus, KeyRound, BarChart3 } from "lucide-react";
 import { toast } from "sonner";
 import { formatDate } from "@/lib/format";
 
@@ -29,6 +29,7 @@ function OwnersPage() {
   const [creating, setCreating] = useState(false);
   const [deleting, setDeleting] = useState<Owner | null>(null);
   const [accountFor, setAccountFor] = useState<Owner | null>(null);
+  const [statsFor, setStatsFor] = useState<Owner | null>(null);
 
   const upsert = useMutation({
     mutationFn: async (vals: Partial<Owner> & { id?: number }) => {
@@ -95,11 +96,16 @@ function OwnersPage() {
           ...cols,
           ...(auth.isStaff
             ? [{
-                key: "acct", header: "", className: "w-12",
+                key: "actions2", header: "", className: "w-24",
                 cell: (r: Owner) => (
-                  <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); setAccountFor(r); }}>
-                    <KeyRound className="h-4 w-4" />
-                  </Button>
+                  <div className="flex items-center gap-1">
+                    <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); setStatsFor(r); }} title="Stats">
+                      <BarChart3 className="h-4 w-4" />
+                    </Button>
+                    <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); setAccountFor(r); }} title="Account">
+                      <KeyRound className="h-4 w-4" />
+                    </Button>
+                  </div>
                 ),
               }]
             : []),
@@ -135,6 +141,8 @@ function OwnersPage() {
         submitting={createAccount.isPending}
         onSubmit={(vals) => accountFor && createAccount.mutate({ id: accountFor.id, ...vals })}
       />
+
+      <StatsDialog owner={statsFor} onOpenChange={(v) => !v && setStatsFor(null)} />
     </div>
   );
 }
@@ -193,6 +201,42 @@ function AccountDialog({ owner, onOpenChange, onSubmit, submitting }: {
     >
       <FormField id="username" label={t("common.username")} />
       <FormField id="password" label={t("common.password")} type="password" />
+    </FormDialog>
+  );
+}
+
+function StatsDialog({ owner, onOpenChange }: { owner: Owner | null; onOpenChange: (v: boolean) => void }) {
+  const { t } = useTranslation();
+  const stats = useQuery({
+    queryKey: ["owner-stats", owner?.id],
+    queryFn: () => api<OwnerStats>(`/api/owners/${owner!.id}/stats`),
+    enabled: !!owner,
+  });
+  const entries = stats.data
+    ? Object.entries(stats.data).filter(([k, v]) => k !== "ownerId" && typeof v === "number")
+    : [];
+  return (
+    <FormDialog
+      open={!!owner}
+      onOpenChange={onOpenChange}
+      title={`${t("common.statistics")} — ${owner?.fullName ?? ""}`}
+      submitLabel={t("common.close")}
+      onSubmit={(e) => { e.preventDefault(); onOpenChange(false); }}
+    >
+      {stats.isLoading ? (
+        <div className="text-sm text-muted-foreground">{t("common.loading")}</div>
+      ) : entries.length === 0 ? (
+        <div className="text-sm text-muted-foreground">{t("common.empty")}</div>
+      ) : (
+        <div className="grid grid-cols-2 gap-3">
+          {entries.map(([k, v]) => (
+            <div key={k} className="rounded-lg border border-border bg-muted/30 p-3">
+              <div className="text-xs uppercase tracking-wide text-muted-foreground">{k.replace(/([A-Z])/g, " $1").trim()}</div>
+              <div className="mt-1 text-2xl font-semibold">{v as number}</div>
+            </div>
+          ))}
+        </div>
+      )}
     </FormDialog>
   );
 }

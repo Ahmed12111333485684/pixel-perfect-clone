@@ -14,6 +14,7 @@ import { Route as ListPropertyRouteImport } from './routes/list-property'
 import { Route as AppRouteImport } from './routes/app'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppIndexRouteImport } from './routes/app.index'
+import { Route as AppUsersRouteImport } from './routes/app.users'
 import { Route as AppTenantsRouteImport } from './routes/app.tenants'
 import { Route as AppSalesRouteImport } from './routes/app.sales'
 import { Route as AppPropertiesRouteImport } from './routes/app.properties'
@@ -49,6 +50,11 @@ const IndexRoute = IndexRouteImport.update({
 const AppIndexRoute = AppIndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppUsersRoute = AppUsersRouteImport.update({
+  id: '/users',
+  path: '/users',
   getParentRoute: () => AppRoute,
 } as any)
 const AppTenantsRoute = AppTenantsRouteImport.update({
@@ -121,6 +127,7 @@ export interface FileRoutesByFullPath {
   '/app/properties': typeof AppPropertiesRouteWithChildren
   '/app/sales': typeof AppSalesRoute
   '/app/tenants': typeof AppTenantsRoute
+  '/app/users': typeof AppUsersRoute
   '/app/': typeof AppIndexRoute
   '/app/leads/$id': typeof AppLeadsIdRoute
   '/app/properties/$id': typeof AppPropertiesIdRoute
@@ -138,6 +145,7 @@ export interface FileRoutesByTo {
   '/app/properties': typeof AppPropertiesRouteWithChildren
   '/app/sales': typeof AppSalesRoute
   '/app/tenants': typeof AppTenantsRoute
+  '/app/users': typeof AppUsersRoute
   '/app': typeof AppIndexRoute
   '/app/leads/$id': typeof AppLeadsIdRoute
   '/app/properties/$id': typeof AppPropertiesIdRoute
@@ -157,6 +165,7 @@ export interface FileRoutesById {
   '/app/properties': typeof AppPropertiesRouteWithChildren
   '/app/sales': typeof AppSalesRoute
   '/app/tenants': typeof AppTenantsRoute
+  '/app/users': typeof AppUsersRoute
   '/app/': typeof AppIndexRoute
   '/app/leads/$id': typeof AppLeadsIdRoute
   '/app/properties/$id': typeof AppPropertiesIdRoute
@@ -177,6 +186,7 @@ export interface FileRouteTypes {
     | '/app/properties'
     | '/app/sales'
     | '/app/tenants'
+    | '/app/users'
     | '/app/'
     | '/app/leads/$id'
     | '/app/properties/$id'
@@ -194,6 +204,7 @@ export interface FileRouteTypes {
     | '/app/properties'
     | '/app/sales'
     | '/app/tenants'
+    | '/app/users'
     | '/app'
     | '/app/leads/$id'
     | '/app/properties/$id'
@@ -212,6 +223,7 @@ export interface FileRouteTypes {
     | '/app/properties'
     | '/app/sales'
     | '/app/tenants'
+    | '/app/users'
     | '/app/'
     | '/app/leads/$id'
     | '/app/properties/$id'
@@ -259,6 +271,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/app/'
       preLoaderRoute: typeof AppIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/users': {
+      id: '/app/users'
+      path: '/users'
+      fullPath: '/app/users'
+      preLoaderRoute: typeof AppUsersRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/tenants': {
@@ -375,6 +394,7 @@ interface AppRouteChildren {
   AppPropertiesRoute: typeof AppPropertiesRouteWithChildren
   AppSalesRoute: typeof AppSalesRoute
   AppTenantsRoute: typeof AppTenantsRoute
+  AppUsersRoute: typeof AppUsersRoute
   AppIndexRoute: typeof AppIndexRoute
 }
 
@@ -388,6 +408,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppPropertiesRoute: AppPropertiesRouteWithChildren,
   AppSalesRoute: AppSalesRoute,
   AppTenantsRoute: AppTenantsRoute,
+  AppUsersRoute: AppUsersRoute,
   AppIndexRoute: AppIndexRoute,
 }
 
