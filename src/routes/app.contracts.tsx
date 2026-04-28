@@ -14,6 +14,7 @@ import { FormDialog, ConfirmDialog } from "@/components/FormDialog";
 import { Plus } from "lucide-react";
 import { toast } from "sonner";
 import { contractStatusTone, formatDate, formatMoney } from "@/lib/format";
+import { FormField } from "./app.owners";
 
 const STATUSES: ContractStatus[] = ["Active", "Expired", "Terminated", "Pending"];
 
@@ -29,6 +30,7 @@ function ContractsPage() {
   const tenants = useQuery({ queryKey: ["tenants"], queryFn: () => api<Tenant[]>("/api/tenants"), enabled: auth.isStaff });
 
   const [creating, setCreating] = useState(false);
+  const [creatingTenant, setCreatingTenant] = useState(false);
   const [editing, setEditing] = useState<Contract | null>(null);
   const [deleting, setDeleting] = useState<Contract | null>(null);
 
@@ -43,6 +45,17 @@ function ContractsPage() {
   const del = useMutation({
     mutationFn: (id: number) => api(`/api/contracts/${id}`, { method: "DELETE" }),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["contracts"] }); toast.success(t("common.deleted")); setDeleting(null); },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const createTenant = useMutation({
+    mutationFn: (vals: { fullName: string; phone: string; email: string; nationalId: string }) =>
+      api("/api/tenants", { method: "POST", body: vals }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["tenants"] });
+      toast.success(t("common.success"));
+      setCreatingTenant(false);
+    },
     onError: (e: Error) => toast.error(e.message),
   });
 
@@ -77,9 +90,33 @@ function ContractsPage() {
         contract={editing}
         properties={properties.data ?? []}
         tenants={tenants.data ?? []}
+        onAddTenant={() => setCreatingTenant(true)}
         submitting={upsert.isPending}
         onSubmit={(v) => upsert.mutate({ ...v, id: editing?.id })}
       />
+
+      <FormDialog
+        open={creatingTenant}
+        onOpenChange={(v) => !v && setCreatingTenant(false)}
+        title={t("nav.tenants")}
+        description={t("common.add")}
+        submitting={createTenant.isPending}
+        onSubmit={(e) => {
+          e.preventDefault();
+          const fd = new FormData(e.currentTarget);
+          createTenant.mutate({
+            fullName: String(fd.get("fullName") ?? ""),
+            phone: String(fd.get("phone") ?? ""),
+            email: String(fd.get("email") ?? ""),
+            nationalId: String(fd.get("nationalId") ?? ""),
+          });
+        }}
+      >
+        <FormField id="fullName" label={t("common.fullName")} />
+        <FormField id="phone" label={t("common.phone")} />
+        <FormField id="email" label={t("common.email")} type="email" />
+        <FormField id="nationalId" label={t("common.nationalId")} />
+      </FormDialog>
       <ConfirmDialog
         open={!!deleting}
         onOpenChange={(v) => !v && setDeleting(null)}
@@ -92,9 +129,10 @@ function ContractsPage() {
   );
 }
 
-function ContractDialog({ open, onOpenChange, contract, properties, tenants, onSubmit, submitting }: {
+function ContractDialog({ open, onOpenChange, contract, properties, tenants, onAddTenant, onSubmit, submitting }: {
   open: boolean; onOpenChange: (v: boolean) => void; contract: Contract | null;
   properties: PropertyDto[]; tenants: Tenant[];
+  onAddTenant: () => void;
   onSubmit: (v: { propertyId: number; tenantId: number; deedNumber: string; startDate: string; endDate: string; monthlyRent: number; status: ContractStatus }) => void;
   submitting?: boolean;
 }) {
@@ -132,16 +170,29 @@ function ContractDialog({ open, onOpenChange, contract, properties, tenants, onS
           <Select value={propertyId} onValueChange={setPropertyId}>
             <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
             <SelectContent>
-              {properties.map((p) => <SelectItem key={p.id} value={String(p.id)}>{p.name}</SelectItem>)}
+              {properties.map((property) => (
+                <SelectItem key={property.id} value={String(property.id)}>
+                  {property.name}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
         <div className="space-y-2">
-          <Label>{t("nav.tenants")}</Label>
+          <div className="flex items-center justify-between gap-2">
+            <Label>{t("nav.tenants")}</Label>
+            <Button type="button" variant="ghost" size="sm" onClick={onAddTenant} className="h-7 px-2 text-xs">
+              <Plus className="me-1 h-3 w-3" />{t("common.add")}
+            </Button>
+          </div>
           <Select value={tenantId} onValueChange={setTenantId}>
             <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
             <SelectContent>
-              {tenants.map((p) => <SelectItem key={p.id} value={String(p.id)}>{p.fullName}</SelectItem>)}
+              {tenants.map((tenant) => (
+                <SelectItem key={tenant.id} value={String(tenant.id)}>
+                  {tenant.fullName}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>

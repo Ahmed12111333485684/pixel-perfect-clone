@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { api, type Sale, type PropertyDto, type Buyer } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
@@ -24,6 +24,16 @@ function SalesPage() {
   const list = useQuery({ queryKey: ["sales"], queryFn: () => api<Sale[]>("/api/sales") });
   const properties = useQuery({ queryKey: ["properties"], queryFn: () => api<PropertyDto[]>("/api/properties"), enabled: auth.isStaff });
   const buyers = useQuery({ queryKey: ["buyers"], queryFn: () => api<Buyer[]>("/api/buyers"), enabled: auth.isStaff });
+
+  const propertyLabelById = useMemo(
+    () => new Map((properties.data ?? []).map((property) => [property.id, property.name])),
+    [properties.data],
+  );
+
+  const buyerLabelById = useMemo(
+    () => new Map((buyers.data ?? []).map((buyer) => [buyer.id, buyer.fullName])),
+    [buyers.data],
+  );
 
   const [creating, setCreating] = useState(false);
 
@@ -53,6 +63,7 @@ function SalesPage() {
       />
       <DataTable columns={cols} rows={list.data} loading={list.isLoading} error={list.error} rowKey={(r) => r.id} />
       <FormDialog
+        key={`sale-${creating}`}
         open={creating}
         onOpenChange={(v) => !v && setCreating(false)}
         title={t("common.add")}
@@ -76,7 +87,11 @@ function SalesPage() {
             <Select value={pid} onValueChange={setPid}>
               <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
               <SelectContent>
-                {(properties.data ?? []).map((p) => <SelectItem key={p.id} value={String(p.id)}>{p.name}</SelectItem>)}
+                {(properties.data ?? []).map((property) => (
+                  <SelectItem key={property.id} value={String(property.id)}>
+                    {propertyLabelById.get(property.id) ?? property.name}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
@@ -85,7 +100,11 @@ function SalesPage() {
             <Select value={bid} onValueChange={setBid}>
               <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
               <SelectContent>
-                {(buyers.data ?? []).map((b) => <SelectItem key={b.id} value={String(b.id)}>{b.fullName}</SelectItem>)}
+                {(buyers.data ?? []).map((buyer) => (
+                  <SelectItem key={buyer.id} value={String(buyer.id)}>
+                    {buyerLabelById.get(buyer.id) ?? buyer.fullName}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
