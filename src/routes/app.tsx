@@ -1,4 +1,5 @@
 import { createFileRoute, Outlet, redirect, Link, useRouterState } from "@tanstack/react-router";
+import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/lib/auth";
 import { getStoredToken } from "@/lib/api";
@@ -54,6 +55,28 @@ function AppLayout() {
   const auth = useAuth();
   const { t } = useTranslation();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+
+  useEffect(() => {
+    const cleanup = () => {
+      const hasOpenDialog = document.querySelector('[role="dialog"][data-state="open"]');
+      if (hasOpenDialog) return;
+
+      document.body.style.pointerEvents = "";
+      document.body.style.overflow = "";
+      document.body.removeAttribute("data-scroll-locked");
+
+      document.querySelectorAll<HTMLElement>('[data-state="open"]').forEach((node) => {
+        const className = typeof node.className === "string" ? node.className : "";
+        if (className.includes("fixed") && className.includes("inset-0") && className.includes("z-50")) {
+          node.remove();
+        }
+      });
+    };
+
+    cleanup();
+    const id = window.requestAnimationFrame(cleanup);
+    return () => window.cancelAnimationFrame(id);
+  }, [pathname]);
 
   const visible = NAV.filter((n) => {
     if (n.staffOnly && !auth.isStaff) return false;
