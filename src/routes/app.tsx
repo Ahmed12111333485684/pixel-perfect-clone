@@ -33,6 +33,7 @@ interface NavItem {
   icon: React.ComponentType<{ className?: string }>;
   staffOnly?: boolean;
   ownerOnly?: boolean;
+  adminOnly?: boolean;
 }
 
 const NAV: NavItem[] = [
