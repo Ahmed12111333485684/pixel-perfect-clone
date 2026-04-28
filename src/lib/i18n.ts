@@ -325,6 +325,11 @@ const ar = {
     timing: "التوقيت",
     submittedAt: "تاريخ الإرسال",
     submittedImages: "الصور المُرسلة",
+    statistics: "إحصائيات",
+    resetPassword: "إعادة تعيين كلمة المرور",
+    newPassword: "كلمة المرور الجديدة",
+    passwordTooShort: "يجب ألا تقل كلمة المرور عن 6 أحرف",
+    adminOnly: "هذه الصفحة للمشرفين فقط.",
   },
   auth: {
     title: "تسجيل الدخول إلى إستيتلي",
