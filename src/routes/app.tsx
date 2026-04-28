@@ -5,7 +5,7 @@ import { getStoredToken } from "@/lib/api";
 import {
   LayoutDashboard, Users, Building2, Sparkles, ContactRound,
   ScrollText, CreditCard, ShoppingBag, BadgeDollarSign, Inbox,
-  LogOut, ChevronRight,
+  LogOut, ChevronRight, ShieldCheck,
 } from "lucide-react";
 import { BrandLogo } from "@/components/BrandLogo";
 import { LanguageToggle } from "@/components/LanguageToggle";
