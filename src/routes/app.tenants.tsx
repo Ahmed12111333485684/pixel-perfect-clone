@@ -82,6 +82,7 @@ export function PeopleResource({ resource, queryKey, titleKey }: PeopleResourceC
       </div>
       <DataTable columns={cols} rows={filteredPeople} loading={list.isLoading} error={list.error} rowKey={(r) => r.id} onEdit={setEditing} onDelete={setDeleting} />
       <FormDialog
+        key={`${editing?.id ?? "new"}-${creating ? "create" : "edit"}`}
         open={creating || !!editing}
         onOpenChange={(v) => { if (!v) { setCreating(false); setEditing(null); } }}
         title={editing ? t("common.edit") : t("common.add")}

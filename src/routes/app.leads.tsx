@@ -455,6 +455,7 @@ function LeadsPage() {
       </FormDialog>
 
       <FormDialog
+        key={`${editing?.id ?? "none"}-${!!editing}`}
         open={!!editing}
         onOpenChange={(v) => !v && setEditing(null)}
         title={t("common.edit")}

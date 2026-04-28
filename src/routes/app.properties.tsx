@@ -1,6 +1,6 @@
 import { createFileRoute, Link, Outlet } from "@tanstack/react-router";
 import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { api, resolveApiAssetUrl, type PropertyDto, type PropertyImage, type Owner, type Amenity, type PropertyStatus } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
@@ -360,8 +360,14 @@ function StatusDialog({ property, onOpenChange, onSubmit, submitting }: {
 }) {
   const { t } = useTranslation();
   const [val, setVal] = useState<PropertyStatus>(property?.status ?? "Pending");
+
+  useEffect(() => {
+    setVal(property?.status ?? "Pending");
+  }, [property?.id, property?.status]);
+
   return (
     <FormDialog
+      key={`${property?.id ?? "none"}-${!!property}`}
       open={!!property}
       onOpenChange={onOpenChange}
       title={t("common.status")}

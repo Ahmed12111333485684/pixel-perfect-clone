@@ -185,6 +185,7 @@ function UserDialog({ open, onOpenChange, user, owners, onSubmit, submitting }: 
   const { t } = useTranslation();
   const [role, setRole] = useState<Role>(user?.role ?? "Admin");
   const [ownerId, setOwnerId] = useState<number | undefined>(undefined);
+  const key = `${user?.id ?? "new"}-${open}`;
 
   useEffect(() => {
     if (!open) return;
@@ -196,6 +197,7 @@ function UserDialog({ open, onOpenChange, user, owners, onSubmit, submitting }: 
 
   return (
     <FormDialog
+      key={key}
       open={open}
       onOpenChange={(v) => { if (!v) onOpenChange(false); }}
       title={ownerClientMode ? "Add owner portal account" : user ? t("common.edit") : t("common.add")}

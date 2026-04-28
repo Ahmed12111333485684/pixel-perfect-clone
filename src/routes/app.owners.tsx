@@ -175,8 +175,10 @@ function OwnerDialog({ open, onOpenChange, owner, onSubmit, submitting }: {
   submitting?: boolean;
 }) {
   const { t } = useTranslation();
+  const key = `${owner?.id ?? "new"}-${open}`;
   return (
     <FormDialog
+      key={key}
       open={open}
       onOpenChange={onOpenChange}
       title={owner ? t("common.edit") : t("common.add")}

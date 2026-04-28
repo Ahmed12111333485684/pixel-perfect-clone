@@ -74,6 +74,7 @@ function AmenitiesPage() {
         onDelete={setDeleting}
       />
       <FormDialog
+        key={`${editing?.id ?? "new"}-${creating ? "create" : "edit"}`}
         open={creating || !!editing}
         onOpenChange={(v) => { if (!v) { setCreating(false); setEditing(null); } }}
         title={editing ? t("common.edit") : t("common.add")}

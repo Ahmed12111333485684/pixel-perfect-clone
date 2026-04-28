@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useRef, type KeyboardEvent, type RefObject } from "react";
 import { useTranslation } from "react-i18next";
 import { api, type Payment, type PaymentStatusT, type Contract } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
@@ -120,7 +120,58 @@ function PaymentDialog({ open, onOpenChange, payment, contracts, onSubmit, submi
   const { t } = useTranslation();
   const [contractId, setContractId] = useState(String(payment?.contractId ?? ""));
   const [status, setStatus] = useState<PaymentStatusT>(payment?.status ?? "Pending");
+  const isEditing = !!payment;
   const key = `${payment?.id ?? "new"}-${open}`;
+  const parseDateParts = (value?: string) => {
+    const safe = value?.slice(0, 10) ?? "";
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(safe)) return { year: "", month: "", day: "" };
+    return { year: safe.slice(0, 4), month: safe.slice(5, 7), day: safe.slice(8, 10) };
+  };
+
+  const startDue = parseDateParts(payment?.dueDate);
+  const startPaid = parseDateParts(payment?.paidDate ?? undefined);
+
+  const [dueYear, setDueYear] = useState(startDue.year);
+  const [dueMonth, setDueMonth] = useState(startDue.month);
+  const [dueDay, setDueDay] = useState(startDue.day);
+  const [paidYear, setPaidYear] = useState(startPaid.year);
+  const [paidMonth, setPaidMonth] = useState(startPaid.month);
+  const [paidDay, setPaidDay] = useState(startPaid.day);
+
+  const dueYearRef = useRef<HTMLInputElement>(null);
+  const dueMonthRef = useRef<HTMLInputElement>(null);
+  const dueDayRef = useRef<HTMLInputElement>(null);
+  const paidYearRef = useRef<HTMLInputElement>(null);
+  const paidMonthRef = useRef<HTMLInputElement>(null);
+  const paidDayRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const d = parseDateParts(payment?.dueDate);
+    const p = parseDateParts(payment?.paidDate ?? undefined);
+    setContractId(String(payment?.contractId ?? ""));
+    setStatus(payment?.status ?? "Pending");
+    setDueYear(d.year); setDueMonth(d.month); setDueDay(d.day);
+    setPaidYear(p.year); setPaidMonth(p.month); setPaidDay(p.day);
+  }, [payment?.id, payment?.contractId, payment?.status, payment?.dueDate, payment?.paidDate, open]);
+
+  const sanitizeDigits = (v: string, len: number) => v.replace(/\D/g, "").slice(0, len);
+  const clampMonth = (v: string) => {
+    if (!v) return v;
+    const n = Number(v);
+    if (Number.isNaN(n)) return "";
+    return String(Math.min(12, Math.max(1, n))).padStart(2, "0");
+  };
+  const clampDay = (v: string) => {
+    if (!v) return v;
+    const n = Number(v);
+    if (Number.isNaN(n)) return "";
+    return String(Math.min(31, Math.max(1, n))).padStart(2, "0");
+  };
+  const onSegKey = (e: KeyboardEvent<HTMLInputElement>, val: string, prev?: RefObject<HTMLInputElement | null>) => { if (e.key === "Backspace" && val.length === 0 && prev?.current) prev.current.focus(); };
+
+  const pad2 = (s: string) => (s ? s.padStart(2, "0") : "");
+  const dueDate = `${dueYear}-${pad2(dueMonth)}-${pad2(dueDay)}`;
+  const paidDate = paidYear || paidMonth || paidDay ? `${paidYear}-${pad2(paidMonth)}-${pad2(paidDay)}` : "";
   return (
     <FormDialog
       key={key}
@@ -142,12 +193,20 @@ function PaymentDialog({ open, onOpenChange, payment, contracts, onSubmit, submi
     >
       <div className="space-y-2">
         <Label>{t("nav.contracts")}</Label>
-        <Select value={contractId} onValueChange={setContractId}>
-          <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
-          <SelectContent>
-            {contracts.map((c) => <SelectItem key={c.id} value={String(c.id)}>#{c.id} — {c.deedNumber}</SelectItem>)}
-          </SelectContent>
-        </Select>
+        {isEditing ? (
+          <Input
+            value={`#${payment.contractId} — ${contracts.find((c) => c.id === payment.contractId)?.deedNumber ?? ""}`}
+            readOnly
+            disabled
+          />
+        ) : (
+          <Select value={contractId} onValueChange={setContractId}>
+            <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
+            <SelectContent>
+              {contracts.map((c) => <SelectItem key={c.id} value={String(c.id)}>#{c.id} — {c.deedNumber}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        )}
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2"><Label htmlFor="amount">{t("common.amount")}</Label><Input id="amount" name="amount" type="number" step="0.01" defaultValue={payment?.amount ?? ""} required /></div>
@@ -160,8 +219,28 @@ function PaymentDialog({ open, onOpenChange, payment, contracts, onSubmit, submi
             </SelectContent>
           </Select>
         </div>
-        <div className="space-y-2"><Label htmlFor="dueDate">{t("common.dueDate")}</Label><Input id="dueDate" name="dueDate" type="date" defaultValue={payment?.dueDate?.slice(0, 10) ?? ""} required /></div>
-        <div className="space-y-2"><Label htmlFor="paidDate">{t("common.paidDate")}</Label><Input id="paidDate" name="paidDate" type="date" defaultValue={payment?.paidDate?.slice(0, 10) ?? ""} /></div>
+        <div className="space-y-2">
+          <Label htmlFor="dueDate">{t("common.dueDate")}</Label>
+          <input type="hidden" id="dueDate" name="dueDate" value={dueDate} />
+          <div className="grid grid-cols-[1fr_auto_1fr_auto_1fr] items-center gap-2">
+            <Input ref={dueYearRef} aria-label="Due year" inputMode="numeric" placeholder="YYYY" value={dueYear} onChange={(e) => { const next = sanitizeDigits(e.target.value, 4); setDueYear(next); if (next.length === 4) dueMonthRef.current?.focus(); }} maxLength={4} required />
+            <span className="text-muted-foreground">/</span>
+            <Input ref={dueMonthRef} aria-label="Due month" inputMode="numeric" placeholder="MM" value={dueMonth} onChange={(e) => { const next = sanitizeDigits(e.target.value, 2); setDueMonth(next); if (next.length === 2) dueDayRef.current?.focus(); }} onBlur={() => setDueMonth((m) => clampMonth(m))} onKeyDown={(e) => onSegKey(e, dueMonth, dueYearRef)} maxLength={2} required />
+            <span className="text-muted-foreground">/</span>
+            <Input ref={dueDayRef} aria-label="Due day" inputMode="numeric" placeholder="DD" value={dueDay} onChange={(e) => { const next = sanitizeDigits(e.target.value, 2); setDueDay(next); }} onBlur={() => setDueDay((d) => clampDay(d))} onKeyDown={(e) => onSegKey(e, dueDay, dueMonthRef)} maxLength={2} required />
+          </div>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="paidDate">{t("common.paidDate")}</Label>
+          <input type="hidden" id="paidDate" name="paidDate" value={paidDate} />
+          <div className="grid grid-cols-[1fr_auto_1fr_auto_1fr] items-center gap-2">
+            <Input ref={paidYearRef} aria-label="Paid year" inputMode="numeric" placeholder="YYYY" value={paidYear} onChange={(e) => { const next = sanitizeDigits(e.target.value, 4); setPaidYear(next); if (next.length === 4) paidMonthRef.current?.focus(); }} maxLength={4} />
+            <span className="text-muted-foreground">/</span>
+            <Input ref={paidMonthRef} aria-label="Paid month" inputMode="numeric" placeholder="MM" value={paidMonth} onChange={(e) => { const next = sanitizeDigits(e.target.value, 2); setPaidMonth(next); if (next.length === 2) paidDayRef.current?.focus(); }} onBlur={() => setPaidMonth((m) => clampMonth(m))} onKeyDown={(e) => onSegKey(e, paidMonth, paidYearRef)} maxLength={2} />
+            <span className="text-muted-foreground">/</span>
+            <Input ref={paidDayRef} aria-label="Paid day" inputMode="numeric" placeholder="DD" value={paidDay} onChange={(e) => { const next = sanitizeDigits(e.target.value, 2); setPaidDay(next); }} onBlur={() => setPaidDay((d) => clampDay(d))} onKeyDown={(e) => onSegKey(e, paidDay, paidMonthRef)} maxLength={2} />
+          </div>
+        </div>
       </div>
     </FormDialog>
   );

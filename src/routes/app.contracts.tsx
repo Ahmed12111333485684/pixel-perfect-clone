@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useRef, type KeyboardEvent, type RefObject } from "react";
 import { useTranslation } from "react-i18next";
 import { api, type Contract, type ContractStatus, type PropertyDto, type Tenant } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
@@ -172,6 +172,85 @@ function ContractDialog({ open, onOpenChange, contract, properties, tenants, onA
   const [status, setStatus] = useState<ContractStatus>(contract?.status ?? "Pending");
   const key = `${contract?.id ?? "new"}-${open}`;
 
+  const parseDateParts = (value?: string) => {
+    const safe = value?.slice(0, 10) ?? "";
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(safe)) {
+      return { year: "", month: "", day: "" };
+    }
+    return {
+      year: safe.slice(0, 4),
+      month: safe.slice(5, 7),
+      day: safe.slice(8, 10),
+    };
+  };
+
+  const initialStart = parseDateParts(contract?.startDate);
+  const initialEnd = parseDateParts(contract?.endDate);
+
+  const [startYear, setStartYear] = useState(initialStart.year);
+  const [startMonth, setStartMonth] = useState(initialStart.month);
+  const [startDay, setStartDay] = useState(initialStart.day);
+  const [endYear, setEndYear] = useState(initialEnd.year);
+  const [endMonth, setEndMonth] = useState(initialEnd.month);
+  const [endDay, setEndDay] = useState(initialEnd.day);
+
+  const startYearRef = useRef<HTMLInputElement>(null);
+  const startMonthRef = useRef<HTMLInputElement>(null);
+  const startDayRef = useRef<HTMLInputElement>(null);
+  const endYearRef = useRef<HTMLInputElement>(null);
+  const endMonthRef = useRef<HTMLInputElement>(null);
+  const endDayRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const start = parseDateParts(contract?.startDate);
+    const end = parseDateParts(contract?.endDate);
+    setPropertyId(String(contract?.propertyId ?? ""));
+    setTenantId(String(contract?.tenantId ?? ""));
+    setStatus(contract?.status ?? "Pending");
+    setStartYear(start.year);
+    setStartMonth(start.month);
+    setStartDay(start.day);
+    setEndYear(end.year);
+    setEndMonth(end.month);
+    setEndDay(end.day);
+  }, [contract?.id, contract?.propertyId, contract?.tenantId, contract?.status, contract?.startDate, contract?.endDate, open]);
+
+  const sanitizeDigits = (value: string, maxLength: number) => value.replace(/\D/g, "").slice(0, maxLength);
+
+  const clampMonth = (value: string) => {
+    if (!value) return value;
+    const n = Number(value);
+    if (Number.isNaN(n)) return "";
+    return String(Math.min(12, Math.max(1, n))).padStart(2, "0");
+  };
+
+  const clampDay = (value: string) => {
+    if (!value) return value;
+    const n = Number(value);
+    if (Number.isNaN(n)) return "";
+    return String(Math.min(31, Math.max(1, n))).padStart(2, "0");
+  };
+
+  const onSegmentKeyDown = (
+    e: KeyboardEvent<HTMLInputElement>,
+    value: string,
+    previousRef?: RefObject<HTMLInputElement | null>,
+  ) => {
+    if (e.key === "Backspace" && value.length === 0 && previousRef?.current) {
+      previousRef.current.focus();
+    }
+  };
+
+  const padded = (s: string) => (s ? s.padStart(2, "0") : "");
+  const startDate = `${startYear}-${padded(startMonth)}-${padded(startDay)}`;
+  const endDate = `${endYear}-${padded(endMonth)}-${padded(endDay)}`;
+
+  const isValidDateInput = (value: string) => {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+    const parsed = new Date(`${value}T00:00:00`);
+    return !Number.isNaN(parsed.getTime());
+  };
+
   return (
     <FormDialog
       key={key}
@@ -183,12 +262,32 @@ function ContractDialog({ open, onOpenChange, contract, properties, tenants, onA
       onSubmit={(e) => {
         e.preventDefault();
         const fd = new FormData(e.currentTarget);
+        const startDate = String(fd.get("startDate") ?? "").trim();
+        const endDate = String(fd.get("endDate") ?? "").trim();
+
+        if (!propertyId || Number(propertyId) <= 0) {
+          toast.error(t("common.requiredField"));
+          return;
+        }
+        if (!tenantId || Number(tenantId) <= 0) {
+          toast.error(t("common.requiredField"));
+          return;
+        }
+        if (!isValidDateInput(startDate) || !isValidDateInput(endDate)) {
+          toast.error("Date must be in YYYY-MM-DD format");
+          return;
+        }
+        if (startDate > endDate) {
+          toast.error("Start date must be on or before end date");
+          return;
+        }
+
         onSubmit({
           propertyId: Number(propertyId),
           tenantId: Number(tenantId),
           deedNumber: String(fd.get("deedNumber") ?? ""),
-          startDate: String(fd.get("startDate") ?? ""),
-          endDate: String(fd.get("endDate") ?? ""),
+          startDate,
+          endDate,
           monthlyRent: Number(fd.get("monthlyRent") ?? 0),
           status,
         });
@@ -230,8 +329,119 @@ function ContractDialog({ open, onOpenChange, contract, properties, tenants, onA
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2"><Label htmlFor="deedNumber">{t("common.deedNumber")}</Label><Input id="deedNumber" name="deedNumber" defaultValue={contract?.deedNumber ?? ""} required /></div>
         <div className="space-y-2"><Label htmlFor="monthlyRent">{t("common.monthlyRent")}</Label><Input id="monthlyRent" name="monthlyRent" type="number" step="0.01" defaultValue={contract?.monthlyRent ?? ""} required /></div>
-        <div className="space-y-2"><Label htmlFor="startDate">{t("common.startDate")}</Label><Input id="startDate" name="startDate" type="date" defaultValue={contract?.startDate?.slice(0, 10) ?? ""} required /></div>
-        <div className="space-y-2"><Label htmlFor="endDate">{t("common.endDate")}</Label><Input id="endDate" name="endDate" type="date" defaultValue={contract?.endDate?.slice(0, 10) ?? ""} required /></div>
+        <div className="space-y-2">
+          <Label htmlFor="startDate">{t("common.startDate")}</Label>
+          <input type="hidden" id="startDate" name="startDate" value={startDate} />
+          <div className="grid grid-cols-[1fr_auto_1fr_auto_1fr] items-center gap-2">
+            <Input
+              ref={startYearRef}
+              id="startYear"
+              aria-label="Start year"
+              inputMode="numeric"
+              placeholder="YYYY"
+              value={startYear}
+              onChange={(e) => {
+                const next = sanitizeDigits(e.target.value, 4);
+                setStartYear(next);
+                if (next.length === 4) startMonthRef.current?.focus();
+              }}
+              maxLength={4}
+              required
+            />
+            <span className="text-muted-foreground">/</span>
+            <Input
+              ref={startMonthRef}
+              id="startMonth"
+              aria-label="Start month"
+              inputMode="numeric"
+              placeholder="MM"
+              value={startMonth}
+              onChange={(e) => {
+                const next = sanitizeDigits(e.target.value, 2);
+                setStartMonth(next);
+                if (next.length === 2) startDayRef.current?.focus();
+              }}
+              onBlur={() => setStartMonth((m) => clampMonth(m))}
+              onKeyDown={(e) => onSegmentKeyDown(e, startMonth, startYearRef)}
+              maxLength={2}
+              required
+            />
+            <span className="text-muted-foreground">/</span>
+            <Input
+              ref={startDayRef}
+              id="startDay"
+              aria-label="Start day"
+              inputMode="numeric"
+              placeholder="DD"
+              value={startDay}
+              onChange={(e) => {
+                const next = sanitizeDigits(e.target.value, 2);
+                setStartDay(next);
+                if (next.length === 2) endYearRef.current?.focus();
+              }}
+              onBlur={() => setStartDay((d) => clampDay(d))}
+              onKeyDown={(e) => onSegmentKeyDown(e, startDay, startMonthRef)}
+              maxLength={2}
+              required
+            />
+          </div>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="endDate">{t("common.endDate")}</Label>
+          <input type="hidden" id="endDate" name="endDate" value={endDate} />
+          <div className="grid grid-cols-[1fr_auto_1fr_auto_1fr] items-center gap-2">
+            <Input
+              ref={endYearRef}
+              id="endYear"
+              aria-label="End year"
+              inputMode="numeric"
+              placeholder="YYYY"
+              value={endYear}
+              onChange={(e) => {
+                const next = sanitizeDigits(e.target.value, 4);
+                setEndYear(next);
+                if (next.length === 4) endMonthRef.current?.focus();
+              }}
+              maxLength={4}
+              required
+            />
+            <span className="text-muted-foreground">/</span>
+            <Input
+              ref={endMonthRef}
+              id="endMonth"
+              aria-label="End month"
+              inputMode="numeric"
+              placeholder="MM"
+              value={endMonth}
+              onChange={(e) => {
+                const next = sanitizeDigits(e.target.value, 2);
+                setEndMonth(next);
+                if (next.length === 2) endDayRef.current?.focus();
+              }}
+              onBlur={() => setEndMonth((m) => clampMonth(m))}
+              onKeyDown={(e) => onSegmentKeyDown(e, endMonth, endYearRef)}
+              maxLength={2}
+              required
+            />
+            <span className="text-muted-foreground">/</span>
+            <Input
+              ref={endDayRef}
+              id="endDay"
+              aria-label="End day"
+              inputMode="numeric"
+              placeholder="DD"
+              value={endDay}
+              onChange={(e) => {
+                const next = sanitizeDigits(e.target.value, 2);
+                setEndDay(next);
+              }}
+              onBlur={() => setEndDay((d) => clampDay(d))}
+              onKeyDown={(e) => onSegmentKeyDown(e, endDay, endMonthRef)}
+              maxLength={2}
+              required
+            />
+          </div>
+        </div>
       </div>
       <div className="space-y-2">
         <Label>{t("common.status")}</Label>

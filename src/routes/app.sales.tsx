@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect, useRef, type KeyboardEvent, type RefObject } from "react";
 import { useTranslation } from "react-i18next";
 import { api, type Sale, type PropertyDto, type Buyer } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
@@ -66,6 +66,35 @@ function SalesPage() {
 
   const [pid, setPid] = useState("");
   const [bid, setBid] = useState("");
+  const parseDateParts = (value?: string) => {
+    const safe = value?.slice(0, 10) ?? "";
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(safe)) return { year: "", month: "", day: "" };
+    return { year: safe.slice(0, 4), month: safe.slice(5, 7), day: safe.slice(8, 10) };
+  };
+  const initialSold = parseDateParts(undefined);
+  const [soldYear, setSoldYear] = useState(initialSold.year);
+  const [soldMonth, setSoldMonth] = useState(initialSold.month);
+  const [soldDay, setSoldDay] = useState(initialSold.day);
+  const soldYearRef = useRef<HTMLInputElement>(null);
+  const soldMonthRef = useRef<HTMLInputElement>(null);
+  const soldDayRef = useRef<HTMLInputElement>(null);
+  useEffect(() => { const p = parseDateParts(undefined); setSoldYear(p.year); setSoldMonth(p.month); setSoldDay(p.day); }, [creating]);
+  const sanitizeDigits = (v: string, len: number) => v.replace(/\D/g, "").slice(0, len);
+  const clampMonth = (v: string) => {
+    if (!v) return v;
+    const n = Number(v);
+    if (Number.isNaN(n)) return "";
+    return String(Math.min(12, Math.max(1, n))).padStart(2, "0");
+  };
+  const clampDay = (v: string) => {
+    if (!v) return v;
+    const n = Number(v);
+    if (Number.isNaN(n)) return "";
+    return String(Math.min(31, Math.max(1, n))).padStart(2, "0");
+  };
+  const onSegKey = (e: KeyboardEvent<HTMLInputElement>, val: string, prev?: RefObject<HTMLInputElement | null>) => { if (e.key === "Backspace" && val.length === 0 && prev?.current) prev.current.focus(); };
+  const pad2 = (s: string) => (s ? s.padStart(2, "0") : "");
+  const soldAt = `${soldYear}-${pad2(soldMonth)}-${pad2(soldDay)}`;
 
   return (
     <div>
@@ -132,7 +161,17 @@ function SalesPage() {
           </div>
           <div className="space-y-2"><Label htmlFor="salePrice">{t("common.salePrice")}</Label><Input id="salePrice" name="salePrice" type="number" step="0.01" required /></div>
           <div className="space-y-2"><Label htmlFor="deedNumber">{t("common.deedNumber")}</Label><Input id="deedNumber" name="deedNumber" required /></div>
-          <div className="space-y-2 sm:col-span-2"><Label htmlFor="soldAt">{t("common.soldAt")}</Label><Input id="soldAt" name="soldAt" type="date" required /></div>
+          <div className="space-y-2 sm:col-span-2">
+            <Label htmlFor="soldAt">{t("common.soldAt")}</Label>
+            <input type="hidden" id="soldAt" name="soldAt" value={soldAt} />
+            <div className="grid grid-cols-[1fr_auto_1fr_auto_1fr] items-center gap-2">
+              <Input ref={soldYearRef} aria-label="Sold year" inputMode="numeric" placeholder="YYYY" value={soldYear} onChange={(e) => { const next = sanitizeDigits(e.target.value, 4); setSoldYear(next); if (next.length === 4) soldMonthRef.current?.focus(); }} maxLength={4} required />
+              <span className="text-muted-foreground">/</span>
+              <Input ref={soldMonthRef} aria-label="Sold month" inputMode="numeric" placeholder="MM" value={soldMonth} onChange={(e) => { const next = sanitizeDigits(e.target.value, 2); setSoldMonth(next); if (next.length === 2) soldDayRef.current?.focus(); }} onBlur={() => setSoldMonth((m) => clampMonth(m))} onKeyDown={(e) => onSegKey(e, soldMonth, soldYearRef)} maxLength={2} required />
+              <span className="text-muted-foreground">/</span>
+              <Input ref={soldDayRef} aria-label="Sold day" inputMode="numeric" placeholder="DD" value={soldDay} onChange={(e) => { const next = sanitizeDigits(e.target.value, 2); setSoldDay(next); }} onBlur={() => setSoldDay((d) => clampDay(d))} onKeyDown={(e) => onSegKey(e, soldDay, soldMonthRef)} maxLength={2} required />
+            </div>
+          </div>
         </div>
       </FormDialog>
     </div>

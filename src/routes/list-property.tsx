@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useRef, useState, type FormEvent } from "react";
+import { useRef, useState, useEffect, type FormEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { api, ApiError, type Lead, type LeadIntent } from "@/lib/api";
 import { Button } from "@/components/ui/button";
@@ -37,6 +37,16 @@ function LeadIntakePage() {
   const [intent, setIntent] = useState<LeadIntent>("Sell");
   const [type, setType] = useState<string>("Apartment");
   const formRef = useRef<HTMLFormElement>(null);
+  const parseDateParts = (value?: string) => {
+    const safe = value?.slice(0, 10) ?? "";
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(safe)) return { year: "", month: "", day: "" };
+    return { year: safe.slice(0, 4), month: safe.slice(5, 7), day: safe.slice(8, 10) };
+  };
+  const [prefYear, setPrefYear] = useState("");
+  const [prefMonth, setPrefMonth] = useState("");
+  const [prefDay, setPrefDay] = useState("");
+  const [prefTime, setPrefTime] = useState("");
+  useEffect(() => { /* keep blank by default */ }, []);
 
   const reset = () => {
     setSubmitted(null);
@@ -156,7 +166,17 @@ function LeadIntakePage() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="preferredContactAt">{t("lead.preferredContactAt")} <span className="text-xs text-muted-foreground">({t("common.optional")})</span></Label>
-              <Input id="preferredContactAt" name="preferredContactAt" type="datetime-local" />
+                <input type="hidden" id="preferredContactAt" name="preferredContactAt" value={(prefYear && prefMonth && prefDay) ? `${prefYear}-${prefMonth}-${prefDay}T${prefTime}` : ""} />
+                <div className="flex items-center gap-2">
+                  <div className="grid grid-cols-[1fr_auto_1fr_auto_1fr] items-center gap-2">
+                    <Input inputMode="numeric" placeholder="YYYY" value={prefYear} onChange={(e) => setPrefYear(e.target.value.replace(/\D/g, "").slice(0, 4))} maxLength={4} />
+                    <span className="text-muted-foreground">/</span>
+                    <Input inputMode="numeric" placeholder="MM" value={prefMonth} onChange={(e) => setPrefMonth(e.target.value.replace(/\D/g, "").slice(0, 2))} maxLength={2} />
+                    <span className="text-muted-foreground">/</span>
+                    <Input inputMode="numeric" placeholder="DD" value={prefDay} onChange={(e) => setPrefDay(e.target.value.replace(/\D/g, "").slice(0, 2))} maxLength={2} />
+                  </div>
+                  <Input type="time" value={prefTime} onChange={(e) => setPrefTime(e.target.value)} />
+                </div>
             </div>
             <div className="space-y-2">
               <Label htmlFor="notes">{t("lead.notes")}</Label>
