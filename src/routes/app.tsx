@@ -58,6 +58,7 @@ function AppLayout() {
   const visible = NAV.filter((n) => {
     if (n.staffOnly && !auth.isStaff) return false;
     if (n.ownerOnly && auth.user?.role !== "OwnerClient") return false;
+    if (n.adminOnly && !auth.hasRole("Admin")) return false;
     return true;
   });
 
