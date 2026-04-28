@@ -115,7 +115,7 @@ export async function api<T = unknown>(path: string, opts: ApiOptions = {}): Pro
 }
 
 // ============ Domain types ============
-export type Role = "Admin" | "AgencyOwner" | "OwnerClient";
+export type Role = "Admin" | "OwnerClient";
 
 export interface UserDto {
   id: number;

@@ -1,8 +1,8 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { api, getStoredToken, type UserDto, type Role } from "@/lib/api";
+import { api, getStoredToken, type UserDto, type Role, type Owner } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { PageHeader, StatusBadge } from "@/components/PageHeader";
 import { DataTable, type Column } from "@/components/DataTable";
@@ -15,7 +15,7 @@ import { Plus, KeyRound } from "lucide-react";
 import { toast } from "sonner";
 import { formatDate } from "@/lib/format";
 
-const ROLES: Role[] = ["Admin", "AgencyOwner", "OwnerClient"];
+const ROLES: Role[] = ["Admin", "OwnerClient"];
 
 export const Route = createFileRoute("/app/users")({
   beforeLoad: () => {
@@ -36,20 +36,37 @@ function UsersPage() {
     enabled: auth.hasRole("Admin"),
   });
 
+  const owners = useQuery({
+    queryKey: ["owners", "user-account-picker"],
+    queryFn: () => api<Owner[]>("/api/owners"),
+    enabled: auth.hasRole("Admin"),
+  });
+
   const [creating, setCreating] = useState(false);
   const [editing, setEditing] = useState<UserDto | null>(null);
   const [deleting, setDeleting] = useState<UserDto | null>(null);
   const [resetting, setResetting] = useState<UserDto | null>(null);
 
   const upsert = useMutation({
-    mutationFn: async (vals: { id?: number; username: string; password?: string; role: Role }) => {
+    mutationFn: async (vals: { id?: number; username: string; password?: string; role: Role; ownerId?: number }) => {
       if (vals.id) {
         const body: Record<string, unknown> = { username: vals.username, role: vals.role };
         if (vals.password) body.password = vals.password;
         await api(`/api/users/${vals.id}`, { method: "PUT", body });
-      } else {
-        await api("/api/users", { method: "POST", body: vals });
+        return;
       }
+
+      if (vals.role === "OwnerClient") {
+        if (!vals.ownerId) throw new Error("Select an owner for this portal account");
+        if (!vals.password) throw new Error("Password is required");
+        await api(`/api/owners/${vals.ownerId}/account`, {
+          method: "POST",
+          body: { username: vals.username, password: vals.password },
+        });
+        return;
+      }
+
+      await api("/api/users", { method: "POST", body: { username: vals.username, password: vals.password, role: vals.role } });
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["users"] });
@@ -93,7 +110,7 @@ function UsersPage() {
     {
       key: "role",
       header: t("common.role"),
-      cell: (r) => <StatusBadge tone={r.role === "Admin" ? "destructive" : r.role === "AgencyOwner" ? "info" : "neutral"}>{r.role}</StatusBadge>,
+      cell: (r) => <StatusBadge tone={r.role === "Admin" ? "destructive" : "neutral"}>{r.role}</StatusBadge>,
     },
     { key: "created", header: t("common.createdAt"), cell: (r) => formatDate(r.createdAt) },
     {
@@ -133,6 +150,7 @@ function UsersPage() {
         open={creating || !!editing}
         onOpenChange={(v) => { if (!v) { setCreating(false); setEditing(null); } }}
         user={editing}
+        owners={owners.data ?? []}
         submitting={upsert.isPending}
         onSubmit={(vals) => upsert.mutate({ ...vals, id: editing?.id })}
       />
@@ -156,21 +174,31 @@ function UsersPage() {
   );
 }
 
-function UserDialog({ open, onOpenChange, user, onSubmit, submitting }: {
+function UserDialog({ open, onOpenChange, user, owners, onSubmit, submitting }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   user: UserDto | null;
-  onSubmit: (vals: { username: string; password?: string; role: Role }) => void;
+  owners: Owner[];
+  onSubmit: (vals: { username: string; password?: string; role: Role; ownerId?: number }) => void;
   submitting?: boolean;
 }) {
   const { t } = useTranslation();
-  const [role, setRole] = useState<Role>(user?.role ?? "OwnerClient");
+  const [role, setRole] = useState<Role>(user?.role ?? "Admin");
+  const [ownerId, setOwnerId] = useState<number | undefined>(undefined);
+
+  useEffect(() => {
+    if (!open) return;
+    setRole(user?.role ?? "Admin");
+    setOwnerId(undefined);
+  }, [open, user]);
+
+  const ownerClientMode = !user && role === "OwnerClient";
 
   return (
     <FormDialog
       open={open}
-      onOpenChange={(v) => { if (!v) onOpenChange(false); else if (user) setRole(user.role); }}
-      title={user ? t("common.edit") : t("common.add")}
+      onOpenChange={(v) => { if (!v) onOpenChange(false); }}
+      title={ownerClientMode ? "Add owner portal account" : user ? t("common.edit") : t("common.add")}
       submitting={submitting}
       onSubmit={(e) => {
         e.preventDefault();
@@ -180,6 +208,7 @@ function UserDialog({ open, onOpenChange, user, onSubmit, submitting }: {
           username: String(fd.get("username") ?? ""),
           role,
           ...(password ? { password } : {}),
+          ...(ownerClientMode ? { ownerId } : {}),
         });
       }}
     >
@@ -193,6 +222,23 @@ function UserDialog({ open, onOpenChange, user, onSubmit, submitting }: {
         </Label>
         <Input id="password" name="password" type="password" required={!user} />
       </div>
+      {ownerClientMode && (
+        <div className="space-y-2">
+          <Label htmlFor="ownerId">{t("common.ownerId")}</Label>
+          <Select value={ownerId?.toString() ?? ""} onValueChange={(v) => setOwnerId(Number(v))}>
+            <SelectTrigger id="ownerId">
+              <SelectValue placeholder="Select owner" />
+            </SelectTrigger>
+            <SelectContent>
+              {owners.map((owner) => (
+                <SelectItem key={owner.id} value={owner.id.toString()}>
+                  {owner.fullName}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
       <div className="space-y-2">
         <Label>{t("common.role")}</Label>
         <Select value={role} onValueChange={(v) => setRole(v as Role)}>

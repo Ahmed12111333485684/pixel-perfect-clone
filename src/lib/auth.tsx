@@ -56,7 +56,7 @@ export interface AuthState {
   logout: () => void;
   hasRole: (role: Role) => boolean;
   hasAnyRole: (roles: Role[]) => boolean;
-  isStaff: boolean; // Admin or AgencyOwner
+  isStaff: boolean; // Admin only
 }
 
 const AuthCtx = createContext<AuthState | null>(null);
@@ -132,7 +132,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       logout,
       hasRole: (r) => role === r,
       hasAnyRole: (rs) => !!role && rs.includes(role),
-      isStaff: role === "Admin" || role === "AgencyOwner",
+      isStaff: role === "Admin",
     };
   }, [token, user]);
 
