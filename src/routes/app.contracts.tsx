@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { api, type Contract, type ContractStatus, type PropertyDto, type Tenant } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
@@ -59,10 +59,20 @@ function ContractsPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const propertyLabelById = useMemo(
+    () => new Map((properties.data ?? []).map((p) => [p.id, p.name])),
+    [properties.data],
+  );
+
+  const tenantLabelById = useMemo(
+    () => new Map((tenants.data ?? []).map((t) => [t.id, t.fullName])),
+    [tenants.data],
+  );
+
   const cols: Column<Contract>[] = [
     { key: "deed", header: t("common.deedNumber"), cell: (r) => <span className="font-mono text-xs">{r.deedNumber}</span> },
-    { key: "prop", header: t("nav.properties"), cell: (r) => `#${r.propertyId}` },
-    { key: "tenant", header: t("nav.tenants"), cell: (r) => `#${r.tenantId}` },
+    { key: "prop", header: t("nav.properties"), cell: (r) => propertyLabelById.get(r.propertyId) ?? `#${r.propertyId}` },
+    { key: "tenant", header: t("nav.tenants"), cell: (r) => tenantLabelById.get(r.tenantId) ?? `#${r.tenantId}` },
     { key: "rent", header: t("common.monthlyRent"), cell: (r) => formatMoney(r.monthlyRent) },
     { key: "start", header: t("common.startDate"), cell: (r) => formatDate(r.startDate) },
     { key: "end", header: t("common.endDate"), cell: (r) => formatDate(r.endDate) },

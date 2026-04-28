@@ -308,10 +308,11 @@ function Dashboard() {
         <KpiCard
           label={t("dashboard.occupancyRate")}
           value={`${stats.occupancy.toFixed(1)}%`}
-          subtitle={`${stats.activeContracts} / ${stats.approved}`}
+          subtitle={!auth.isStaff ? `${stats.activeContracts} /${stats.approved} ${t("nav.properties").toLowerCase()}` : `${stats.activeContracts} / ${stats.approved}`}
           icon={<Percent className="h-5 w-5" />}
           tone="success"
           loading={loading}
+          help={!auth.isStaff ? t("dashboard.occupancyHelp") : undefined}
         />
         <KpiCard
           label={t("dashboard.conversionRate")}
@@ -584,14 +585,14 @@ function Dashboard() {
 // ============== Sub-components ==============
 
 function KpiCard({
-  label, value, delta, subtitle, icon, accent, tone, loading,
+  label, value, delta, subtitle, icon, accent, tone, loading, help,
 }: {
   label: string; value: string; delta?: number; subtitle?: string;
-  icon: React.ReactNode; accent?: "gold"; tone?: "success" | "info" | "destructive"; loading?: boolean;
+  icon: React.ReactNode; accent?: "gold"; tone?: "success" | "info" | "destructive"; loading?: boolean; help?: string;
 }) {
   const positive = (delta ?? 0) >= 0;
   return (
-    <div className={`relative overflow-hidden rounded-2xl border border-border bg-card p-5 shadow-card ${accent === "gold" ? "ring-1 ring-gold/30" : ""}`}>
+    <div className={`relative overflow-hidden rounded-2xl border border-border bg-card p-5 shadow-card ${accent === "gold" ? "ring-1 ring-gold/30" : ""}`} title={help}>
       <div className="flex items-start justify-between">
         <span className={`grid h-10 w-10 place-items-center rounded-xl ${
           accent === "gold" ? "bg-gold-gradient text-gold-foreground" :

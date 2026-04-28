@@ -83,7 +83,19 @@ function PropertiesPage() {
         }
       }
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["properties"] }); qc.invalidateQueries({ queryKey: ["property-images-preview"] }); toast.success(t("common.success")); setCreating(false); setEditing(null); },
+    onSuccess: (_, vars) => {
+      qc.invalidateQueries({ queryKey: ["properties"] });
+      qc.invalidateQueries({ queryKey: ["property-images-preview"] });
+      
+      if (!auth.isStaff && !vars.id) {
+        toast.success(t("property.submittedForReview"));
+      } else {
+        toast.success(t("common.success"));
+      }
+      
+      setCreating(false);
+      setEditing(null);
+    },
     onError: (e: Error) => toast.error(e.message),
   });
 

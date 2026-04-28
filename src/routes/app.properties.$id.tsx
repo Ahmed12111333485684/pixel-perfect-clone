@@ -97,8 +97,12 @@ function PropertyDetail() {
   });
 
   const updateStatus = useMutation({
-    mutationFn: (status: PropertyStatus) =>
-      api(`/api/properties/${propId}/status`, { method: "PUT", body: { status } }),
+    mutationFn: (status: PropertyStatus) => {
+      if (status === "Sold") {
+        throw new Error(t("error.soldStatusRequiresSale"));
+      }
+      return api(`/api/properties/${propId}/status`, { method: "PUT", body: { status } });
+    },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["property", propId] }); qc.invalidateQueries({ queryKey: ["properties"] }); toast.success(t("common.updated")); },
     onError: (e: Error) => toast.error(e.message),
   });

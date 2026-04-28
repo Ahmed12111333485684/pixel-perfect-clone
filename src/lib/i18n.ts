@@ -163,6 +163,9 @@ const en = {
   propertyStatus: { Pending: "Pending", Approved: "Approved", Rejected: "Rejected", Sold: "Sold" },
   contractStatus: { Active: "Active", Expired: "Expired", Terminated: "Terminated", Pending: "Pending" },
   paymentStatus: { Pending: "Pending", Paid: "Paid", Overdue: "Overdue" },
+  property: {
+    submittedForReview: "Your property has been submitted for review.",
+  },
   dashboard: {
     title: "Analytics Dashboard",
     subtitle: "Real-time insights across your portfolio",
@@ -173,6 +176,7 @@ const en = {
     totalRevenue: "Total revenue",
     monthlyRevenue: "Monthly revenue",
     occupancyRate: "Occupancy rate",
+    occupancyHelp: "Active rental contracts divided by approved properties. Your property will appear once approved.",
     conversionRate: "Lead conversion",
     overduePayments: "Overdue payments",
     pendingApprovals: "Pending approvals",
@@ -370,6 +374,9 @@ const ar = {
   propertyStatus: { Pending: "قيد المراجعة", Approved: "معتمد", Rejected: "مرفوض", Sold: "مُباع" },
   contractStatus: { Active: "نشط", Expired: "منتهي", Terminated: "مُلغى", Pending: "قيد الانتظار" },
   paymentStatus: { Pending: "قيد الانتظار", Paid: "مدفوع", Overdue: "متأخر" },
+  property: {
+    submittedForReview: "تم إرسال عقارك للمراجعة.",
+  },
   dashboard: {
     title: "لوحة التحليلات",
     subtitle: "رؤى لحظية لمحفظتك العقارية",
@@ -380,6 +387,7 @@ const ar = {
     totalRevenue: "إجمالي الإيرادات",
     monthlyRevenue: "إيرادات الشهر",
     occupancyRate: "نسبة الإشغال",
+    occupancyHelp: "العقود الإيجارية النشطة مقسومة على العقارات المعتمدة. سيظهر عقارك بمجرد الموافقة عليه.",
     conversionRate: "تحويل العملاء",
     overduePayments: "مدفوعات متأخرة",
     pendingApprovals: "بانتظار الاعتماد",

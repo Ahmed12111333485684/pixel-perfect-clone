@@ -87,11 +87,13 @@ function SalesPage() {
             <Select value={pid} onValueChange={setPid}>
               <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
               <SelectContent>
-                {(properties.data ?? []).map((property) => (
-                  <SelectItem key={property.id} value={String(property.id)}>
-                    {propertyLabelById.get(property.id) ?? property.name}
-                  </SelectItem>
-                ))}
+                {(properties.data ?? [])
+                  .filter((p) => p.status !== "Sold")
+                  .map((property) => (
+                    <SelectItem key={property.id} value={String(property.id)}>
+                      {propertyLabelById.get(property.id) ?? property.name}
+                    </SelectItem>
+                  ))}
               </SelectContent>
             </Select>
           </div>

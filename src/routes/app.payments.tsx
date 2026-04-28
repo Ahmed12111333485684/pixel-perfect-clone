@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { api, type Payment, type PaymentStatusT, type Contract } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
@@ -44,8 +44,13 @@ function PaymentsPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const contractLabelById = useMemo(
+    () => new Map((contracts.data ?? []).map((c) => [c.id, `${c.deedNumber}`])),
+    [contracts.data],
+  );
+
   const cols: Column<Payment>[] = [
-    { key: "contract", header: t("nav.contracts"), cell: (r) => `#${r.contractId}` },
+    { key: "contract", header: t("nav.contracts"), cell: (r) => contractLabelById.get(r.contractId) ?? `#${r.contractId}` },
     { key: "amount", header: t("common.amount"), cell: (r) => <span className="font-medium">{formatMoney(r.amount)}</span> },
     { key: "due", header: t("common.dueDate"), cell: (r) => formatDate(r.dueDate) },
     { key: "paid", header: t("common.paidDate"), cell: (r) => formatDate(r.paidDate) },
