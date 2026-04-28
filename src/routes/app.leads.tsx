@@ -154,7 +154,7 @@ function LeadsPage() {
   });
 
   const update = useMutation({
-    mutationFn: (vals: { id: number; status?: LeadStatus; notes?: string }) =>
+    mutationFn: (vals: { id: number; status?: LeadStatus; notes?: string; listedPrice?: number }) =>
       api(`/api/leads/${vals.id}`, { method: "PUT", body: vals }),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["leads"] }); toast.success(t("common.updated")); setEditing(null); setSelected(null); },
     onError: (e: Error) => toast.error(e.message),
@@ -320,6 +320,12 @@ function LeadsPage() {
                   <span className="text-xs font-medium text-muted-foreground">{t("common.intent")}:</span>
                   <div>{t(`intent.${selected.intent}`)}</div>
                 </div>
+                <div>
+                  <span className="text-xs font-medium text-muted-foreground">
+                    {selected.intent === "Rent" || selected.intent === "LetOut" ? t("common.monthlyRent") : t("common.salePrice")}:
+                  </span>
+                  <div className="font-medium">{selected.listedPrice ? new Intl.NumberFormat(undefined, { style: "currency", currency: "USD" }).format(selected.listedPrice) : t("common.notProvided")}</div>
+                </div>
                 {selected.propertyId && (
                   <div>
                     <span className="text-xs font-medium text-muted-foreground">{t("common.propertyId")}:</span>
@@ -467,6 +473,7 @@ function LeadsPage() {
           update.mutate({
             id: editing.id,
             status: String(fd.get("status") ?? editing.status) as LeadStatus,
+            listedPrice: Number(fd.get("listedPrice") ?? editing.listedPrice ?? 0),
             notes: String(fd.get("notes") ?? "") || undefined,
           });
         }}
@@ -486,6 +493,12 @@ function LeadsPage() {
             <div className="space-y-2">
               <Label htmlFor="notes">{t("common.notes")}</Label>
               <Textarea id="notes" name="notes" rows={4} defaultValue={editing.notes ?? ""} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="listedPrice">
+                {editing.intent === "Rent" || editing.intent === "LetOut" ? t("common.monthlyRent") : t("common.salePrice")}
+              </Label>
+              <Input id="listedPrice" name="listedPrice" type="number" step="0.01" min="0" defaultValue={editing.listedPrice ?? ""} required />
             </div>
           </>
         )}

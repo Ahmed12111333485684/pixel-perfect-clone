@@ -63,6 +63,9 @@ function Landing() {
             <Button asChild size="lg" className="bg-gold-gradient text-gold-foreground shadow-gold hover:opacity-95">
               <Link to="/list-property">{t("landing.listProperty")}</Link>
             </Button>
+            <Button asChild size="lg" variant="outline" className="border-white/30 bg-white/10 text-white backdrop-blur hover:bg-white/20 hover:text-white">
+              <Link to="/available-properties">{t("publicProperties.browse")}</Link>
+            </Button>
             <Button
               asChild
               size="lg"

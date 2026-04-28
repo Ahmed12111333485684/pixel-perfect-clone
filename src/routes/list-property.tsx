@@ -155,6 +155,13 @@ function LeadIntakePage() {
                 </Select>
               </div>
             </div>
+            <div className="space-y-2">
+              <Label htmlFor="listedPrice">
+                {intent === "Rent" || intent === "LetOut" ? t("common.monthlyRent") : t("common.salePrice")}
+                <span className="text-destructive"> *</span>
+              </Label>
+              <Input id="listedPrice" name="listedPrice" type="number" step="0.01" min="0" required />
+            </div>
             <Field id="ownerNationalId" label={t("lead.ownerNationalId")} required />
           </Section>
 

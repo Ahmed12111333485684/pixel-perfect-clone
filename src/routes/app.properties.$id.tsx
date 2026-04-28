@@ -29,6 +29,8 @@ const FIELD_LABEL_KEYS: Record<string, string> = {
   assignedToUsername: "common.assignedTo",
   notes: "common.notes",
   intent: "common.intent",
+  salePrice: "common.salePrice",
+  rentPrice: "common.monthlyRent",
   fullName: "common.fullName",
   phone: "common.phone",
   email: "common.email",

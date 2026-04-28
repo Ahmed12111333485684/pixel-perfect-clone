@@ -160,6 +160,8 @@ export interface PropertyDto {
   name: string;
   address: string;
   type: string;
+  salePrice?: number | null;
+  rentPrice?: number | null;
   status: PropertyStatus;
   createdAt: string;
   amenities?: Amenity[];
@@ -212,6 +214,7 @@ export interface Lead {
   email: string;
   notes?: string;
   intent: LeadIntent;
+  listedPrice: number;
   status: LeadStatus;
   preferredContactAt?: string | null;
   lastContactedAt?: string | null;
@@ -219,4 +222,26 @@ export interface Lead {
   assignedToUsername?: string | null;
   images?: LeadImage[];
   createdAt: string;
+}
+
+export interface PublicProperty {
+  id: number;
+  name: string;
+  address: string;
+  type: string;
+  salePrice?: number | null;
+  rentPrice?: number | null;
+  status: PropertyStatus;
+  createdAt: string;
+  primaryImageUrl?: string | null;
+  images?: PublicPropertyImage[];
+  amenities?: Amenity[];
+}
+
+export interface PublicPropertyImage {
+  id: number;
+  originalFileName: string;
+  url: string;
+  isPrimary: boolean;
+  sortOrder: number;
 }

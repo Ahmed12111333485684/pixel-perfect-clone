@@ -66,13 +66,13 @@ function PropertiesPage() {
   const [search, setSearch] = useState("");
 
   const upsert = useMutation({
-    mutationFn: async (vals: { id?: number; ownerId: number; name: string; address: string; type: string; amenityIds: number[]; files?: File[] }) => {
+    mutationFn: async (vals: { id?: number; ownerId: number; name: string; address: string; type: string; salePrice?: number | null; rentPrice?: number | null; amenityIds: number[]; files?: File[] }) => {
       let propertyId: number;
       if (vals.id) {
         propertyId = vals.id;
-        await api(`/api/properties/${vals.id}`, { method: "PUT", body: { ownerId: vals.ownerId, name: vals.name, address: vals.address, type: vals.type, amenityIds: vals.amenityIds } });
+        await api(`/api/properties/${vals.id}`, { method: "PUT", body: { ownerId: vals.ownerId, name: vals.name, address: vals.address, type: vals.type, salePrice: vals.salePrice, rentPrice: vals.rentPrice, amenityIds: vals.amenityIds } });
       } else {
-        const response = await api<{ id: number }>("/api/properties", { method: "POST", body: { ownerId: vals.ownerId, name: vals.name, address: vals.address, type: vals.type, amenityIds: vals.amenityIds } });
+        const response = await api<{ id: number }>("/api/properties", { method: "POST", body: { ownerId: vals.ownerId, name: vals.name, address: vals.address, type: vals.type, salePrice: vals.salePrice, rentPrice: vals.rentPrice, amenityIds: vals.amenityIds } });
         propertyId = response.id;
       }
       // Upload files if any
@@ -238,7 +238,7 @@ function PropertyDialog({
 }: {
   open: boolean; onOpenChange: (v: boolean) => void; property: PropertyDto | null;
   owners: Owner[]; amenities: Amenity[]; defaultOwnerId?: number; canPickOwner: boolean;
-  onSubmit: (v: { ownerId: number; name: string; address: string; type: string; amenityIds: number[]; files?: File[] }) => void;
+  onSubmit: (v: { ownerId: number; name: string; address: string; type: string; salePrice?: number | null; rentPrice?: number | null; amenityIds: number[]; files?: File[] }) => void;
   submitting?: boolean;
 }) {
   const { t } = useTranslation();
@@ -276,6 +276,8 @@ function PropertyDialog({
           name: String(fd.get("name") ?? ""),
           address: String(fd.get("address") ?? ""),
           type,
+          salePrice: fd.get("salePrice") === "" ? null : Number(fd.get("salePrice") ?? 0),
+          rentPrice: fd.get("rentPrice") === "" ? null : Number(fd.get("rentPrice") ?? 0),
           amenityIds: Array.from(picked),
           files: selectedFiles.length > 0 ? selectedFiles : undefined,
         });
@@ -305,6 +307,16 @@ function PropertyDialog({
               {PROPERTY_TYPES.map((p) => <SelectItem key={p} value={p}>{p}</SelectItem>)}
             </SelectContent>
           </Select>
+        </div>
+      </div>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div className="space-y-2">
+          <Label htmlFor="salePrice">{t("common.salePrice")}</Label>
+          <Input id="salePrice" name="salePrice" type="number" step="0.01" min="0" defaultValue={property?.salePrice ?? ""} />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="rentPrice">{t("common.monthlyRent")}</Label>
+          <Input id="rentPrice" name="rentPrice" type="number" step="0.01" min="0" defaultValue={property?.rentPrice ?? ""} />
         </div>
       </div>
       <div className="space-y-2">

@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as ListPropertyRouteImport } from './routes/list-property'
+import { Route as AvailablePropertiesRouteImport } from './routes/available-properties'
 import { Route as AppRouteImport } from './routes/app'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppIndexRouteImport } from './routes/app.index'
@@ -35,6 +36,11 @@ const LoginRoute = LoginRouteImport.update({
 const ListPropertyRoute = ListPropertyRouteImport.update({
   id: '/list-property',
   path: '/list-property',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AvailablePropertiesRoute = AvailablePropertiesRouteImport.update({
+  id: '/available-properties',
+  path: '/available-properties',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppRoute = AppRouteImport.update({
@@ -116,6 +122,7 @@ const AppLeadsIdRoute = AppLeadsIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/app': typeof AppRouteWithChildren
+  '/available-properties': typeof AvailablePropertiesRoute
   '/list-property': typeof ListPropertyRoute
   '/login': typeof LoginRoute
   '/app/amenities': typeof AppAmenitiesRoute
@@ -134,6 +141,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/available-properties': typeof AvailablePropertiesRoute
   '/list-property': typeof ListPropertyRoute
   '/login': typeof LoginRoute
   '/app/amenities': typeof AppAmenitiesRoute
@@ -154,6 +162,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/app': typeof AppRouteWithChildren
+  '/available-properties': typeof AvailablePropertiesRoute
   '/list-property': typeof ListPropertyRoute
   '/login': typeof LoginRoute
   '/app/amenities': typeof AppAmenitiesRoute
@@ -175,6 +184,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/app'
+    | '/available-properties'
     | '/list-property'
     | '/login'
     | '/app/amenities'
@@ -193,6 +203,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/available-properties'
     | '/list-property'
     | '/login'
     | '/app/amenities'
@@ -212,6 +223,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/app'
+    | '/available-properties'
     | '/list-property'
     | '/login'
     | '/app/amenities'
@@ -232,6 +244,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AppRoute: typeof AppRouteWithChildren
+  AvailablePropertiesRoute: typeof AvailablePropertiesRoute
   ListPropertyRoute: typeof ListPropertyRoute
   LoginRoute: typeof LoginRoute
 }
@@ -250,6 +263,13 @@ declare module '@tanstack/react-router' {
       path: '/list-property'
       fullPath: '/list-property'
       preLoaderRoute: typeof ListPropertyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/available-properties': {
+      id: '/available-properties'
+      path: '/available-properties'
+      fullPath: '/available-properties'
+      preLoaderRoute: typeof AvailablePropertiesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/app': {
@@ -417,6 +437,7 @@ const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AppRoute: AppRouteWithChildren,
+  AvailablePropertiesRoute: AvailablePropertiesRoute,
   ListPropertyRoute: ListPropertyRoute,
   LoginRoute: LoginRoute,
 }
