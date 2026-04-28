@@ -205,6 +205,42 @@ function AccountDialog({ owner, onOpenChange, onSubmit, submitting }: {
   );
 }
 
+function StatsDialog({ owner, onOpenChange }: { owner: Owner | null; onOpenChange: (v: boolean) => void }) {
+  const { t } = useTranslation();
+  const stats = useQuery({
+    queryKey: ["owner-stats", owner?.id],
+    queryFn: () => api<OwnerStats>(`/api/owners/${owner!.id}/stats`),
+    enabled: !!owner,
+  });
+  const entries = stats.data
+    ? Object.entries(stats.data).filter(([k, v]) => k !== "ownerId" && typeof v === "number")
+    : [];
+  return (
+    <FormDialog
+      open={!!owner}
+      onOpenChange={onOpenChange}
+      title={`${t("common.statistics")} — ${owner?.fullName ?? ""}`}
+      submitLabel={t("common.close")}
+      onSubmit={(e) => { e.preventDefault(); onOpenChange(false); }}
+    >
+      {stats.isLoading ? (
+        <div className="text-sm text-muted-foreground">{t("common.loading")}</div>
+      ) : entries.length === 0 ? (
+        <div className="text-sm text-muted-foreground">{t("common.empty")}</div>
+      ) : (
+        <div className="grid grid-cols-2 gap-3">
+          {entries.map(([k, v]) => (
+            <div key={k} className="rounded-lg border border-border bg-muted/30 p-3">
+              <div className="text-xs uppercase tracking-wide text-muted-foreground">{k.replace(/([A-Z])/g, " $1").trim()}</div>
+              <div className="mt-1 text-2xl font-semibold">{v as number}</div>
+            </div>
+          ))}
+        </div>
+      )}
+    </FormDialog>
+  );
+}
+
 export function FormField({ id, label, type = "text", defaultValue, required = true }: {
   id: string; label: string; type?: string; defaultValue?: string | number; required?: boolean;
 }) {
