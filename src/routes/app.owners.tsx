@@ -29,6 +29,7 @@ function OwnersPage() {
   const [creating, setCreating] = useState(false);
   const [deleting, setDeleting] = useState<Owner | null>(null);
   const [accountFor, setAccountFor] = useState<Owner | null>(null);
+  const [statsFor, setStatsFor] = useState<Owner | null>(null);
 
   const upsert = useMutation({
     mutationFn: async (vals: Partial<Owner> & { id?: number }) => {
