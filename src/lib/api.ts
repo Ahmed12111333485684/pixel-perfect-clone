@@ -117,6 +117,13 @@ export async function api<T = unknown>(path: string, opts: ApiOptions = {}): Pro
 // ============ Domain types ============
 export type Role = "Admin" | "AgencyOwner" | "OwnerClient";
 
+export interface UserDto {
+  id: number;
+  username: string;
+  role: Role;
+  createdAt: string;
+}
+
 export interface AuthResponse {
   token: string;
   username: string;
