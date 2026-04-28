@@ -96,11 +96,16 @@ function OwnersPage() {
           ...cols,
           ...(auth.isStaff
             ? [{
-                key: "acct", header: "", className: "w-12",
+                key: "actions2", header: "", className: "w-24",
                 cell: (r: Owner) => (
-                  <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); setAccountFor(r); }}>
-                    <KeyRound className="h-4 w-4" />
-                  </Button>
+                  <div className="flex items-center gap-1">
+                    <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); setStatsFor(r); }} title="Stats">
+                      <BarChart3 className="h-4 w-4" />
+                    </Button>
+                    <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); setAccountFor(r); }} title="Account">
+                      <KeyRound className="h-4 w-4" />
+                    </Button>
+                  </div>
                 ),
               }]
             : []),
