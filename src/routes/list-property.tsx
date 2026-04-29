@@ -115,6 +115,7 @@ function LeadIntakePage() {
             </div>
           </div>
         </div>
+        <PublicFooter />
       </div>
     );
   }
@@ -202,6 +203,7 @@ function LeadIntakePage() {
           </Button>
         </form>
       </div>
+      <PublicFooter />
     </div>
   );
 }
