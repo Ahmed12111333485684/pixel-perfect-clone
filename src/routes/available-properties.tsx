@@ -108,20 +108,20 @@ function PropertyCard({ property }: { property: PublicProperty }) {
                 <button
                   type="button"
                   aria-label={t("publicProperties.previousImage")}
-                  onClick={goPrev}
-                  className="absolute start-3 top-1/2 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full bg-black/45 text-white backdrop-blur transition hover:bg-black/60"
+                  onClick={(e) => { e.stopPropagation(); goPrev(); }}
+                  className="absolute start-3 top-1/2 z-10 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full bg-black/45 text-white backdrop-blur transition hover:bg-black/60 rtl:rotate-180"
                 >
                   <ChevronLeft className="h-5 w-5" />
                 </button>
                 <button
                   type="button"
                   aria-label={t("publicProperties.nextImage")}
-                  onClick={goNext}
-                  className="absolute end-3 top-1/2 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full bg-black/45 text-white backdrop-blur transition hover:bg-black/60"
+                  onClick={(e) => { e.stopPropagation(); goNext(); }}
+                  className="absolute end-3 top-1/2 z-10 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full bg-black/45 text-white backdrop-blur transition hover:bg-black/60 rtl:rotate-180"
                 >
                   <ChevronRight className="h-5 w-5" />
                 </button>
-                <div className="absolute inset-x-0 bottom-3 flex justify-center gap-1.5">
+                <div className="absolute inset-x-0 bottom-3 z-10 flex justify-center gap-1.5">
                   {images.map((image, index) => (
                     <button
                       key={`${image.id}-${index}`}
