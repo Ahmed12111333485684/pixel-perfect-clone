@@ -1,9 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
-import { Building2, ImagePlus, ScrollText, Sparkles } from "lucide-react";
+import { Building2, ImagePlus, ScrollText, Sparkles, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { BrandLogo } from "@/components/BrandLogo";
 import { LanguageToggle } from "@/components/LanguageToggle";
+import { PublicFooter } from "@/components/PublicFooter";
 import heroImg from "@/assets/hero-property.jpg";
 
 export const Route = createFileRoute("/")({
