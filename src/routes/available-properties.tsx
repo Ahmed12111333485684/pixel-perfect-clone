@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { api, type PublicProperty } from "@/lib/api";
+import { api, resolveApiAssetUrl, type PublicProperty } from "@/lib/api";
 import { BrandLogo } from "@/components/BrandLogo";
 import { LanguageToggle } from "@/components/LanguageToggle";
 import { Button } from "@/components/ui/button";
@@ -81,6 +81,7 @@ function PropertyCard({ property }: { property: PublicProperty }) {
   const [activeIndex, setActiveIndex] = useState(0);
   const activeImage = images[activeIndex];
   const hasMultiple = images.length > 1;
+  const resolvedImageUrl = activeImage ? resolveApiAssetUrl(activeImage.url) : "";
 
   const goNext = () => setActiveIndex((index) => (index + 1) % images.length);
   const goPrev = () => setActiveIndex((index) => (index - 1 + images.length) % images.length);
@@ -90,7 +91,7 @@ function PropertyCard({ property }: { property: PublicProperty }) {
       <div className="relative aspect-[16/10] overflow-hidden rounded-xl border border-border bg-muted">
         {activeImage ? (
           <>
-            <img src={activeImage.url} alt={activeImage.originalFileName || property.name} className="h-full w-full object-cover" />
+            <img src={resolvedImageUrl} alt={activeImage.originalFileName || property.name} className="h-full w-full object-cover" />
             {hasMultiple && (
               <>
                 <button
@@ -112,7 +113,7 @@ function PropertyCard({ property }: { property: PublicProperty }) {
                 <div className="absolute inset-x-0 bottom-3 flex justify-center gap-1.5">
                   {images.map((image, index) => (
                     <button
-                      key={image.id}
+                      key={`${image.id}-${index}`}
                       type="button"
                       aria-label={t("publicProperties.goToImage", { index: index + 1 })}
                       onClick={() => setActiveIndex(index)}
