@@ -127,7 +127,7 @@ function PropertyCard({ property }: { property: PublicProperty }) {
                       key={`${image.id}-${index}`}
                       type="button"
                       aria-label={t("publicProperties.goToImage", { index: index + 1 })}
-                      onClick={() => setActiveIndex(index)}
+                      onClick={(e) => { e.stopPropagation(); setActiveIndex(index); }}
                       className={`h-2.5 w-2.5 rounded-full transition ${index === activeIndex ? "bg-white" : "bg-white/45 hover:bg-white/70"}`}
                     />
                   ))}
