@@ -1,9 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
-import { Building2, ImagePlus, ScrollText, Sparkles } from "lucide-react";
+import { Building2, ImagePlus, ScrollText, Sparkles, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { BrandLogo } from "@/components/BrandLogo";
 import { LanguageToggle } from "@/components/LanguageToggle";
+import { PublicFooter } from "@/components/PublicFooter";
 import heroImg from "@/assets/hero-property.jpg";
 
 export const Route = createFileRoute("/")({
@@ -74,6 +75,17 @@ function Landing() {
             >
               <Link to="/login">{t("landing.backofficeSignIn")}</Link>
             </Button>
+            <Button
+              asChild
+              size="lg"
+              variant="outline"
+              className="border-white/30 bg-white/10 text-white backdrop-blur hover:bg-white/20 hover:text-white"
+            >
+              <a href="#contact">
+                <Mail className="h-4 w-4" />
+                {t("footer.contactCta")}
+              </a>
+            </Button>
           </div>
         </div>
       </section>
@@ -101,12 +113,7 @@ function Landing() {
         </div>
       </section>
 
-      <footer className="border-t border-border bg-card/50">
-        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-6 py-8 text-sm text-muted-foreground sm:flex-row">
-          <BrandLogo />
-          <p>© {new Date().getFullYear()} {t("brand.name")}.</p>
-        </div>
-      </footer>
+      <PublicFooter />
     </div>
   );
 }

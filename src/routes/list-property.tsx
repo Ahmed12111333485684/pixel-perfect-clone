@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/select";
 import { BrandLogo } from "@/components/BrandLogo";
 import { LanguageToggle } from "@/components/LanguageToggle";
+import { PublicFooter } from "@/components/PublicFooter";
 import { CheckCircle2, ImagePlus, Loader2, X } from "lucide-react";
 import { toast } from "sonner";
 
@@ -114,6 +115,7 @@ function LeadIntakePage() {
             </div>
           </div>
         </div>
+        <PublicFooter />
       </div>
     );
   }
@@ -201,6 +203,7 @@ function LeadIntakePage() {
           </Button>
         </form>
       </div>
+      <PublicFooter />
     </div>
   );
 }

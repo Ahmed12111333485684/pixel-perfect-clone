@@ -153,6 +153,16 @@ const en = {
     goToImage: "Go to image {{index}}",
     moreAmenities: "+{{count}} more",
     empty: "No available properties found.",
+    zoomImage: "Zoom image",
+  },
+  footer: {
+    tagline: "Property management for owners and agencies — refined, end-to-end.",
+    contact: "Contact us",
+    explore: "Explore",
+    address: "Riyadh, Saudi Arabia",
+    rights: "All rights reserved.",
+    madeWith: "Crafted with care.",
+    contactCta: "Contact us",
   },
   lead: {
     pageTitle: "List your property",
@@ -377,6 +387,16 @@ const ar = {
     goToImage: "الانتقال إلى الصورة {{index}}",
     moreAmenities: "+{{count}} أخرى",
     empty: "لا توجد عقارات متاحة حالياً.",
+    zoomImage: "تكبير الصورة",
+  },
+  footer: {
+    tagline: "إدارة عقارية للملاك والوكالات — متكاملة وأنيقة.",
+    contact: "تواصل معنا",
+    explore: "استكشف",
+    address: "الرياض، المملكة العربية السعودية",
+    rights: "جميع الحقوق محفوظة.",
+    madeWith: "صُنع بعناية.",
+    contactCta: "تواصل معنا",
   },
   lead: {
     pageTitle: "اعرض عقارك",

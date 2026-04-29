@@ -8,6 +8,7 @@ import { LanguageToggle } from "@/components/LanguageToggle";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { PageHeader } from "@/components/PageHeader";
+import { PublicFooter } from "@/components/PublicFooter";
 import { formatDate, formatMoney } from "@/lib/format";
 import { Building2, MapPin, Sparkles, Home, BadgeDollarSign, ImagePlus, ChevronLeft, ChevronRight, X, ZoomIn } from "lucide-react";
 
@@ -69,6 +70,7 @@ function AvailablePropertiesPage() {
           </div>
         )}
       </section>
+      <PublicFooter />
     </div>
   );
 }
