@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { api, resolveApiAssetUrl, type PublicProperty } from "@/lib/api";
 import { BrandLogo } from "@/components/BrandLogo";
