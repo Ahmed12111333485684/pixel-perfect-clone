@@ -337,17 +337,17 @@ function PropertyDialog({
           ) : amenities.map((a) => {
             const checked = picked.has(a.id);
             return (
-              <label key={a.id} className="flex items-center gap-2 text-sm">
-                <Checkbox
-                  checked={checked}
-                  onCheckedChange={(v) => {
-                    const next = new Set(picked);
-                    if (v) next.add(a.id); else next.delete(a.id);
-                    setPicked(next);
-                  }}
-                />
-                {a.name}
-              </label>
+                <label key={a.id} className="flex items-center gap-2 text-sm">
+                  <Checkbox
+                    checked={checked}
+                    onCheckedChange={(v) => {
+                      const next = new Set(picked);
+                      if (v) next.add(a.id); else next.delete(a.id);
+                      setPicked(next);
+                    }}
+                  />
+                  {a.name}
+                </label>
             );
           })}
         </div>
