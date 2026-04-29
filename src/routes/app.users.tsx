@@ -112,6 +112,18 @@ function UsersPage() {
       header: t("common.role"),
       cell: (r) => <StatusBadge tone={r.role === "Admin" ? "destructive" : "neutral"}>{r.role}</StatusBadge>,
     },
+    {
+      key: "owner",
+      header: t("common.owner"),
+      cell: (r) => r.ownerFullName ? (
+        <div className="flex flex-col">
+          <span className="font-medium">{r.ownerFullName}</span>
+          <span className="text-xs text-muted-foreground">#{r.ownerId}</span>
+        </div>
+      ) : (
+        <span className="text-muted-foreground">—</span>
+      ),
+    },
     { key: "created", header: t("common.createdAt"), cell: (r) => formatDate(r.createdAt) },
     {
       key: "reset",

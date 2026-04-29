@@ -121,6 +121,8 @@ export interface UserDto {
   id: number;
   username: string;
   role: Role;
+  ownerId?: number | null;
+  ownerFullName?: string | null;
   createdAt: string;
 }
 
