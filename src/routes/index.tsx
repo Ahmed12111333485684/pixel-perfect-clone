@@ -75,6 +75,17 @@ function Landing() {
             >
               <Link to="/login">{t("landing.backofficeSignIn")}</Link>
             </Button>
+            <Button
+              asChild
+              size="lg"
+              variant="outline"
+              className="border-white/30 bg-white/10 text-white backdrop-blur hover:bg-white/20 hover:text-white"
+            >
+              <a href="#contact">
+                <Mail className="h-4 w-4" />
+                {t("footer.contactCta")}
+              </a>
+            </Button>
           </div>
         </div>
       </section>
