@@ -182,7 +182,101 @@ function PropertyCard({ property }: { property: PublicProperty }) {
           <Badge variant="outline">{t("publicProperties.moreAmenities", { count: property.amenities!.length - 4 })}</Badge>
         )}
       </div>
+
+      {lightboxOpen && activeImage && (
+        <ImageLightbox
+          images={images.map((i) => ({ url: resolveApiAssetUrl(i.url), alt: i.originalFileName || property.name }))}
+          index={activeIndex}
+          onIndexChange={setActiveIndex}
+          onClose={() => setLightboxOpen(false)}
+        />
+      )}
     </article>
+  );
+}
+
+function ImageLightbox({
+  images,
+  index,
+  onIndexChange,
+  onClose,
+}: {
+  images: { url: string; alt: string }[];
+  index: number;
+  onIndexChange: (i: number) => void;
+  onClose: () => void;
+}) {
+  const { t } = useTranslation();
+  const hasMultiple = images.length > 1;
+  const current = images[index];
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+      if (e.key === "ArrowRight") onIndexChange((index + 1) % images.length);
+      if (e.key === "ArrowLeft") onIndexChange((index - 1 + images.length) % images.length);
+    };
+    window.addEventListener("keydown", onKey);
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prev;
+    };
+  }, [index, images.length, onClose, onIndexChange]);
+
+  if (!current) return null;
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4"
+      onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+    >
+      <button
+        type="button"
+        onClick={(e) => { e.stopPropagation(); onClose(); }}
+        className="absolute end-4 top-4 grid h-10 w-10 place-items-center rounded-full bg-white/10 text-white transition hover:bg-white/20"
+        aria-label={t("common.close", { defaultValue: "Close" })}
+      >
+        <X className="h-5 w-5" />
+      </button>
+
+      {hasMultiple && (
+        <>
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); onIndexChange((index - 1 + images.length) % images.length); }}
+            className="absolute start-4 top-1/2 grid h-12 w-12 -translate-y-1/2 place-items-center rounded-full bg-white/10 text-white transition hover:bg-white/20 rtl:rotate-180"
+            aria-label={t("common.previous", { defaultValue: "Previous" })}
+          >
+            <ChevronLeft className="h-6 w-6" />
+          </button>
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); onIndexChange((index + 1) % images.length); }}
+            className="absolute end-4 top-1/2 grid h-12 w-12 -translate-y-1/2 place-items-center rounded-full bg-white/10 text-white transition hover:bg-white/20 rtl:rotate-180"
+            aria-label={t("common.next", { defaultValue: "Next" })}
+          >
+            <ChevronRight className="h-6 w-6" />
+          </button>
+        </>
+      )}
+
+      <figure className="flex max-h-full max-w-6xl flex-col items-center" onClick={(e) => e.stopPropagation()}>
+        <img
+          src={current.url}
+          alt={current.alt}
+          className="max-h-[85vh] max-w-full rounded-lg object-contain shadow-2xl"
+        />
+        {hasMultiple && (
+          <figcaption className="mt-3 text-sm text-white/70">
+            {index + 1} / {images.length}
+          </figcaption>
+        )}
+      </figure>
+    </div>
   );
 }
 
