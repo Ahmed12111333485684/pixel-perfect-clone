@@ -200,6 +200,7 @@ function PropertiesPage() {
       />
 
       <PropertyDialog
+        key={`${editing?.id ?? "new"}-${(creating || !!editing) ? "open" : "closed"}`}
         open={creating || !!editing}
         onOpenChange={(v) => { if (!v) { setCreating(false); setEditing(null); } }}
         property={editing}
@@ -247,8 +248,14 @@ function PropertyDialog({
   const [picked, setPicked] = useState<Set<number>>(new Set(property?.amenities?.map((a) => a.id) ?? []));
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
 
-  // Reset state when reopening with a different property
-  const key = `${property?.id ?? "new"}-${open}`;
+  useEffect(() => {
+    if (!open) return;
+
+    setOwnerId(String(property?.ownerId ?? defaultOwnerId ?? ""));
+    setType(property?.type ?? "Apartment");
+    setPicked(new Set(property?.amenities?.map((amenity) => amenity.id) ?? []));
+    setSelectedFiles([]);
+  }, [open, property?.id, property?.ownerId, property?.type, property?.amenities, defaultOwnerId]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
@@ -258,7 +265,6 @@ function PropertyDialog({
 
   return (
     <FormDialog
-      key={key}
       open={open}
       onOpenChange={(v) => {
         onOpenChange(v);
