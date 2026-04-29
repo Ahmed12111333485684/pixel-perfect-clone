@@ -48,7 +48,7 @@ function Landing() {
           style={{ backgroundImage: `url(${heroImg})` }}
           aria-hidden
         />
-        <div className="absolute inset-0 -z-10 bg-gradient-to-b from-primary/80 via-primary/60 to-background" aria-hidden />
+        <div className="absolute inset-0 -z-10 bg-gradient-to-b from-primary/85 via-primary/70 to-primary/40" aria-hidden />
         <div className="mx-auto flex max-w-7xl flex-col items-start gap-8 px-6 pb-24 pt-40 text-white md:pt-56">
           <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-medium backdrop-blur">
             <Sparkles className="h-3.5 w-3.5 text-gold" />
@@ -64,14 +64,14 @@ function Landing() {
             <Button asChild size="lg" className="bg-gold-gradient text-gold-foreground shadow-gold hover:opacity-95">
               <Link to="/list-property">{t("landing.listProperty")}</Link>
             </Button>
-            <Button asChild size="lg" variant="outline" className="border-white/30 bg-white/10 text-white backdrop-blur hover:bg-white/20 hover:text-white">
+            <Button asChild size="lg" variant="outline" className="border-white/40 bg-white/15 text-white shadow-lg shadow-black/10 backdrop-blur hover:bg-white/25 hover:text-white">
               <Link to="/available-properties">{t("publicProperties.browse")}</Link>
             </Button>
             <Button
               asChild
               size="lg"
               variant="outline"
-              className="border-white/30 bg-white/10 text-white backdrop-blur hover:bg-white/20 hover:text-white"
+              className="border-white/40 bg-white/15 text-white shadow-lg shadow-black/10 backdrop-blur hover:bg-white/25 hover:text-white"
             >
               <Link to="/login">{t("landing.backofficeSignIn")}</Link>
             </Button>
@@ -79,7 +79,7 @@ function Landing() {
               asChild
               size="lg"
               variant="outline"
-              className="border-white/30 bg-white/10 text-white backdrop-blur hover:bg-white/20 hover:text-white"
+              className="border-white/40 bg-white/15 text-white shadow-lg shadow-black/10 backdrop-blur hover:bg-white/25 hover:text-white"
             >
               <a href="#contact">
                 <Mail className="h-4 w-4" />
