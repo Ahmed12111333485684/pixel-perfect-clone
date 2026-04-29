@@ -110,7 +110,7 @@ function UsersPage() {
     {
       key: "role",
       header: t("common.role"),
-      cell: (r) => <StatusBadge tone={r.role === "Admin" ? "destructive" : "neutral"}>{r.role}</StatusBadge>,
+      cell: (r) => <StatusBadge tone={r.role === "Admin" ? "destructive" : "neutral"}>{t(`role.${r.role}`)}</StatusBadge>,
     },
     {
       key: "owner",

@@ -187,6 +187,10 @@ const en = {
   propertyStatus: { Pending: "Pending", Approved: "Approved", Rejected: "Rejected", Sold: "Sold" },
   contractStatus: { Active: "Active", Expired: "Expired", Terminated: "Terminated", Pending: "Pending" },
   paymentStatus: { Pending: "Pending", Paid: "Paid", Overdue: "Overdue" },
+  role: {
+    Admin: "Admin",
+    OwnerClient: "Owner",
+  },
   property: {
     submittedForReview: "Your property has been submitted for review.",
   },
@@ -422,6 +426,10 @@ const ar = {
   propertyStatus: { Pending: "قيد المراجعة", Approved: "معتمد", Rejected: "مرفوض", Sold: "مُباع" },
   contractStatus: { Active: "نشط", Expired: "منتهي", Terminated: "مُلغى", Pending: "قيد الانتظار" },
   paymentStatus: { Pending: "قيد الانتظار", Paid: "مدفوع", Overdue: "متأخر" },
+  role: {
+    Admin: "مشرف",
+    OwnerClient: "مالك",
+  },
   property: {
     submittedForReview: "تم إرسال عقارك للمراجعة.",
   },
