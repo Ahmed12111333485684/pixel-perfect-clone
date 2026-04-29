@@ -66,7 +66,7 @@ function PropertiesPage() {
   const [search, setSearch] = useState("");
 
   const upsert = useMutation({
-    mutationFn: async (vals: { id?: number; ownerId: number; name: string; address: string; type: string; salePrice?: number | null; rentPrice?: number | null; amenityIds: number[]; files?: File[] }) => {
+    mutationFn: async (vals: { id?: number; ownerId: number; name: string; address: string; type: string; salePrice?: number | null; rentPrice?: number | null; amenityIds: number[]; files?: File[]; status?: PropertyStatus }) => {
       let propertyId: number;
       if (vals.id) {
         propertyId = vals.id;
@@ -81,6 +81,15 @@ function PropertiesPage() {
           const fd = new FormData();
           fd.append("file", file);
           await api(`/api/properties/${propertyId}/images`, { method: "POST", formData: fd });
+        }
+      }
+      // If a status was provided (admin flow), call the status endpoint
+      if (vals.status !== undefined && vals.status !== null) {
+        try {
+          await api(`/api/properties/${propertyId}/status`, { method: "PUT", body: { status: vals.status } });
+        } catch (e) {
+          // Rethrow so caller sees error and toast shows it
+          throw e;
         }
       }
     },
@@ -239,12 +248,14 @@ function PropertyDialog({
 }: {
   open: boolean; onOpenChange: (v: boolean) => void; property: PropertyDto | null;
   owners: Owner[]; amenities: Amenity[]; defaultOwnerId?: number; canPickOwner: boolean;
-  onSubmit: (v: { ownerId: number; name: string; address: string; type: string; salePrice?: number | null; rentPrice?: number | null; amenityIds: number[]; files?: File[] }) => void;
+  onSubmit: (v: { ownerId: number; name: string; address: string; type: string; salePrice?: number | null; rentPrice?: number | null; amenityIds: number[]; files?: File[]; status?: PropertyStatus }) => void;
   submitting?: boolean;
 }) {
   const { t } = useTranslation();
+  const auth = useAuth();
   const [ownerId, setOwnerId] = useState<string>(String(property?.ownerId ?? defaultOwnerId ?? ""));
   const [type, setType] = useState<string>(property?.type ?? "Apartment");
+  const [status, setStatus] = useState<PropertyStatus>(property?.status ?? "Pending");
   const [picked, setPicked] = useState<Set<number>>(new Set(property?.amenities?.map((a) => a.id) ?? []));
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
 
@@ -253,6 +264,7 @@ function PropertyDialog({
 
     setOwnerId(String(property?.ownerId ?? defaultOwnerId ?? ""));
     setType(property?.type ?? "Apartment");
+    setStatus(property?.status ?? "Pending");
     setPicked(new Set(property?.amenities?.map((amenity) => amenity.id) ?? []));
     setSelectedFiles([]);
   }, [open, property?.id, property?.ownerId, property?.type, property?.amenities, defaultOwnerId]);
@@ -285,6 +297,7 @@ function PropertyDialog({
           salePrice: fd.get("salePrice") === "" ? null : Number(fd.get("salePrice") ?? 0),
           rentPrice: fd.get("rentPrice") === "" ? null : Number(fd.get("rentPrice") ?? 0),
           amenityIds: Array.from(picked),
+          status: auth.isStaff ? status : undefined,
           files: selectedFiles.length > 0 ? selectedFiles : undefined,
         });
       }}
@@ -296,6 +309,17 @@ function PropertyDialog({
             <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
             <SelectContent>
               {owners.map((o) => <SelectItem key={o.id} value={String(o.id)}>{o.fullName}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+      {auth.isStaff && (
+        <div className="space-y-2">
+          <Label>{t("common.status")}</Label>
+          <Select value={status} onValueChange={(v) => setStatus(v as PropertyStatus)}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {STATUSES.map((s) => <SelectItem key={s} value={s}>{t(`propertyStatus.${s}`)}</SelectItem>)}
             </SelectContent>
           </Select>
         </div>

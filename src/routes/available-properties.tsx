@@ -77,7 +77,8 @@ function AvailablePropertiesPage() {
 
 function PropertyCard({ property }: { property: PublicProperty }) {
   const { t } = useTranslation();
-  const images = (property.images?.length ? property.images : property.primaryImageUrl ? [{ id: 0, originalFileName: property.name, url: property.primaryImageUrl, isPrimary: true, sortOrder: 0 }] : [])
+  // Do not use `primaryImageUrl` fallback — only show images returned in `property.images`.
+  const images = (property.images?.length ? property.images : [])
     .slice()
     .sort((a, b) => (a.sortOrder - b.sortOrder) || (a.id - b.id));
   const [activeIndex, setActiveIndex] = useState(0);
