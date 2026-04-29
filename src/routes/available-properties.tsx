@@ -79,6 +79,7 @@ function PropertyCard({ property }: { property: PublicProperty }) {
     .slice()
     .sort((a, b) => (a.sortOrder - b.sortOrder) || (a.id - b.id));
   const [activeIndex, setActiveIndex] = useState(0);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
   const activeImage = images[activeIndex];
   const hasMultiple = images.length > 1;
   const resolvedImageUrl = activeImage ? resolveApiAssetUrl(activeImage.url) : "";
@@ -91,7 +92,17 @@ function PropertyCard({ property }: { property: PublicProperty }) {
       <div className="relative aspect-[16/10] overflow-hidden rounded-xl border border-border bg-muted">
         {activeImage ? (
           <>
-            <img src={resolvedImageUrl} alt={activeImage.originalFileName || property.name} className="h-full w-full object-cover" />
+            <button
+              type="button"
+              onClick={() => setLightboxOpen(true)}
+              aria-label={t("publicProperties.zoomImage", { defaultValue: "Zoom image" })}
+              className="group absolute inset-0 h-full w-full"
+            >
+              <img src={resolvedImageUrl} alt={activeImage.originalFileName || property.name} className="h-full w-full object-cover transition group-hover:scale-105" />
+              <span className="pointer-events-none absolute end-3 top-3 grid h-9 w-9 place-items-center rounded-full bg-black/45 text-white opacity-0 backdrop-blur transition group-hover:opacity-100">
+                <ZoomIn className="h-4 w-4" />
+              </span>
+            </button>
             {hasMultiple && (
               <>
                 <button
