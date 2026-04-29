@@ -95,7 +95,7 @@ function LeadLightbox({
           <button
             type="button"
             onClick={(e) => { e.stopPropagation(); onChange((index - 1 + images.length) % images.length); }}
-            className="absolute start-4 top-1/2 grid h-12 w-12 -translate-y-1/2 place-items-center rounded-full bg-white/10 text-white transition hover:bg-white/20"
+            className="absolute start-4 top-1/2 grid h-12 w-12 -translate-y-1/2 place-items-center rounded-full bg-white/10 text-white transition hover:bg-white/20 rtl:rotate-180"
             aria-label="Previous"
           >
             <ChevronLeft className="h-6 w-6" />
@@ -103,7 +103,7 @@ function LeadLightbox({
           <button
             type="button"
             onClick={(e) => { e.stopPropagation(); onChange((index + 1) % images.length); }}
-            className="absolute end-4 top-1/2 grid h-12 w-12 -translate-y-1/2 place-items-center rounded-full bg-white/10 text-white transition hover:bg-white/20"
+            className="absolute end-4 top-1/2 grid h-12 w-12 -translate-y-1/2 place-items-center rounded-full bg-white/10 text-white transition hover:bg-white/20 rtl:rotate-180"
             aria-label="Next"
           >
             <ChevronRight className="h-6 w-6" />
