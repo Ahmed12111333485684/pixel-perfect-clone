@@ -70,6 +70,7 @@ function AvailablePropertiesPage() {
           </div>
         )}
       </section>
+      <PublicFooter />
     </div>
   );
 }
