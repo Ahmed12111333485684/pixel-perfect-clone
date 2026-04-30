@@ -9,13 +9,16 @@ import { DataTable, type Column } from "@/components/DataTable";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { FormDialog, ConfirmDialog } from "@/components/FormDialog";
 import { Plus, KeyRound } from "lucide-react";
 import { toast } from "sonner";
 import { formatDate } from "@/lib/format";
+import { APP_NAV_ITEMS } from "@/lib/navigation";
 
-const ROLES: Role[] = ["Admin", "OwnerClient"];
+const ROLES: Role[] = ["Admin", "Employee", "OwnerClient"];
+const EMPLOYEE_SCREEN_OPTIONS = APP_NAV_ITEMS.filter((item) => !item.adminOnly);
 
 export const Route = createFileRoute("/app/users")({
   beforeLoad: () => {
@@ -48,17 +51,18 @@ function UsersPage() {
   const [resetting, setResetting] = useState<UserDto | null>(null);
 
   const upsert = useMutation({
-    mutationFn: async (vals: { id?: number; username: string; password?: string; role: Role; ownerId?: number }) => {
+    mutationFn: async (vals: { id?: number; username: string; password?: string; role: Role; ownerId?: number; screenPermissions?: string[] }) => {
       if (vals.id) {
         const body: Record<string, unknown> = { username: vals.username, role: vals.role };
         if (vals.password) body.password = vals.password;
+        if (vals.role === "Employee") body.screenPermissions = vals.screenPermissions ?? [];
         await api(`/api/users/${vals.id}`, { method: "PUT", body });
         return;
       }
 
       if (vals.role === "OwnerClient") {
-        if (!vals.ownerId) throw new Error("Select an owner for this portal account");
-        if (!vals.password) throw new Error("Password is required");
+        if (!vals.ownerId) throw new Error(t("common.ownerAccountNeedsOwner"));
+        if (!vals.password) throw new Error(t("common.ownerAccountNeedsPassword"));
         await api(`/api/owners/${vals.ownerId}/account`, {
           method: "POST",
           body: { username: vals.username, password: vals.password },
@@ -66,7 +70,7 @@ function UsersPage() {
         return;
       }
 
-      await api("/api/users", { method: "POST", body: { username: vals.username, password: vals.password, role: vals.role } });
+      await api("/api/users", { method: "POST", body: { username: vals.username, password: vals.password, role: vals.role, ...(vals.role === "Employee" ? { screenPermissions: vals.screenPermissions ?? [] } : {}) } });
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["users"] });
@@ -110,7 +114,7 @@ function UsersPage() {
     {
       key: "role",
       header: t("common.role"),
-      cell: (r) => <StatusBadge tone={r.role === "Admin" ? "destructive" : "neutral"}>{t(`role.${r.role}`)}</StatusBadge>,
+      cell: (r) => <StatusBadge tone={r.role === "Admin" ? "destructive" : r.role === "Employee" ? "info" : "neutral"}>{t(`role.${r.role}`)}</StatusBadge>,
     },
     {
       key: "owner",
@@ -191,38 +195,57 @@ function UserDialog({ open, onOpenChange, user, owners, onSubmit, submitting }: 
   onOpenChange: (v: boolean) => void;
   user: UserDto | null;
   owners: Owner[];
-  onSubmit: (vals: { username: string; password?: string; role: Role; ownerId?: number }) => void;
+  onSubmit: (vals: { username: string; password?: string; role: Role; ownerId?: number; screenPermissions?: string[] }) => void;
   submitting?: boolean;
 }) {
   const { t } = useTranslation();
   const [role, setRole] = useState<Role>(user?.role ?? "Admin");
   const [ownerId, setOwnerId] = useState<number | undefined>(undefined);
+  const [screenPermissions, setScreenPermissions] = useState<string[]>(user?.screenPermissions ?? []);
   const key = `${user?.id ?? "new"}-${open}`;
 
   useEffect(() => {
     if (!open) return;
     setRole(user?.role ?? "Admin");
     setOwnerId(undefined);
+    setScreenPermissions(user?.screenPermissions ?? []);
   }, [open, user]);
 
   const ownerClientMode = !user && role === "OwnerClient";
+  const employeeMode = role === "Employee";
+
+  const toggleScreenPermission = (screen: string, checked: boolean) => {
+    setScreenPermissions((current) => {
+      if (checked) {
+        return current.includes(screen) ? current : [...current, screen];
+      }
+
+      return current.filter((value) => value !== screen);
+    });
+  };
 
   return (
     <FormDialog
       key={key}
       open={open}
       onOpenChange={(v) => { if (!v) onOpenChange(false); }}
-      title={ownerClientMode ? "Add owner portal account" : user ? t("common.edit") : t("common.add")}
+      title={ownerClientMode ? t("common.addOwnerPortalAccount") : user ? t("common.edit") : t("common.add")}
       submitting={submitting}
+      size="lg"
       onSubmit={(e) => {
         e.preventDefault();
         const fd = new FormData(e.currentTarget);
         const password = String(fd.get("password") ?? "").trim();
+        if (employeeMode && screenPermissions.length === 0) {
+          toast.error(t("common.selectAtLeastOneScreen"));
+          return;
+        }
         onSubmit({
           username: String(fd.get("username") ?? ""),
           role,
           ...(password ? { password } : {}),
           ...(ownerClientMode ? { ownerId } : {}),
+          ...(employeeMode ? { screenPermissions } : {}),
         });
       }}
     >
@@ -241,7 +264,7 @@ function UserDialog({ open, onOpenChange, user, owners, onSubmit, submitting }: 
           <Label htmlFor="ownerId">{t("common.ownerId")}</Label>
           <Select value={ownerId?.toString() ?? ""} onValueChange={(v) => setOwnerId(Number(v))}>
             <SelectTrigger id="ownerId">
-              <SelectValue placeholder="Select owner" />
+              <SelectValue placeholder={t("common.selectOwner")} />
             </SelectTrigger>
             <SelectContent>
               {owners.map((owner) => (
@@ -253,12 +276,41 @@ function UserDialog({ open, onOpenChange, user, owners, onSubmit, submitting }: 
           </Select>
         </div>
       )}
+      {employeeMode && (
+        <div className="space-y-3 rounded-lg border border-border bg-muted/30 p-4">
+          <div>
+            <Label className="text-sm font-medium">{t("common.screenAccess")}</Label>
+            <p className="mt-1 text-xs text-muted-foreground">{t("common.screenAccessHelp")}</p>
+          </div>
+          <div className="grid gap-2 sm:grid-cols-2">
+            {EMPLOYEE_SCREEN_OPTIONS.map((item) => (
+              <label key={item.to} className="flex items-start gap-3 rounded-md border border-border bg-background px-3 py-2 text-sm">
+                <Checkbox
+                  checked={screenPermissions.includes(item.to)}
+                  onCheckedChange={(checked) => toggleScreenPermission(item.to, checked === true)}
+                  className="mt-0.5"
+                />
+                <span className="flex-1">
+                  <span className="block font-medium">{t(item.label)}</span>
+                  <span className="block text-xs text-muted-foreground">{item.to}</span>
+                </span>
+              </label>
+            ))}
+          </div>
+        </div>
+      )}
       <div className="space-y-2">
         <Label>{t("common.role")}</Label>
-        <Select value={role} onValueChange={(v) => setRole(v as Role)}>
+        <Select value={role} onValueChange={(v) => {
+          const nextRole = v as Role;
+          setRole(nextRole);
+          if (nextRole === "Employee" && screenPermissions.length === 0) {
+            setScreenPermissions(["/app"]);
+          }
+        }}>
           <SelectTrigger><SelectValue /></SelectTrigger>
           <SelectContent>
-            {ROLES.map((r) => <SelectItem key={r} value={r}>{r}</SelectItem>)}
+            {ROLES.map((r) => <SelectItem key={r} value={r}>{t(`role.${r}`)}</SelectItem>)}
           </SelectContent>
         </Select>
       </div>

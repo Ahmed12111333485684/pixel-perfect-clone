@@ -5,6 +5,7 @@ interface JwtPayload {
   sub?: string;
   unique_name?: string;
   role?: string | string[];
+  screen_permissions?: string;
   owner_id?: string | number;
   exp?: number;
   [k: string]: unknown;
@@ -25,6 +26,7 @@ function decodeJwt(token: string): JwtPayload | null {
 interface AuthUser {
   username: string;
   role: Role;
+  screenPermissions: string[];
   ownerId?: number;
   exp?: number;
 }
@@ -61,7 +63,25 @@ export interface AuthState {
 
 const AuthCtx = createContext<AuthState | null>(null);
 
-function userFromToken(token: string, fallbackUsername?: string, fallbackRole?: Role): AuthUser | null {
+function parseScreenPermissions(raw: unknown, fallback: string[] = []): string[] {
+  if (typeof raw === "string") {
+    try {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) {
+        return parsed
+          .filter((value): value is string => typeof value === "string")
+          .map((value) => value.trim())
+          .filter(Boolean);
+      }
+    } catch {
+      return fallback;
+    }
+  }
+
+  return fallback;
+}
+
+function userFromToken(token: string, fallbackUsername?: string, fallbackRole?: Role, fallbackScreenPermissions: string[] = []): AuthUser | null {
   const payload = decodeJwt(token);
   if (!payload) return null;
   const role = (Array.isArray(payload.role) ? payload.role[0] : payload.role) as Role | undefined;
@@ -74,7 +94,13 @@ function userFromToken(token: string, fallbackUsername?: string, fallbackRole?: 
       : tokenUsername || responseUsername || "user";
   const ownerIdRaw = payload.owner_id;
   const ownerId = ownerIdRaw !== undefined ? Number(ownerIdRaw) : undefined;
-  return { username, role: finalRole, ownerId: Number.isNaN(ownerId) ? undefined : ownerId, exp: payload.exp };
+  return {
+    username,
+    role: finalRole,
+    screenPermissions: parseScreenPermissions(payload.screen_permissions, fallbackScreenPermissions),
+    ownerId: Number.isNaN(ownerId) ? undefined : ownerId,
+    exp: payload.exp,
+  };
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -105,9 +131,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       anonymous: true,
     });
     setStoredToken(res.token);
-    const u = userFromToken(res.token, res.username, res.role) ?? {
+    const u = userFromToken(res.token, res.username, res.role, res.screenPermissions) ?? {
       username: res.username,
       role: res.role,
+      screenPermissions: res.screenPermissions,
     };
     setToken(res.token);
     setUser(u);

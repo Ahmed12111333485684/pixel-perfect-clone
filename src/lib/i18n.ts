@@ -124,6 +124,14 @@ const en = {
     newPassword: "New password",
     passwordTooShort: "Password must be at least 6 characters",
     adminOnly: "This page is for admins only.",
+    noScreenAccess: "You do not have access to this screen.",
+    screenAccess: "Screen access",
+    screenAccessHelp: "Choose the exact screens this employee can open from the sidebar.",
+    selectAtLeastOneScreen: "Select at least one screen for this employee.",
+    addOwnerPortalAccount: "Add owner portal account",
+    selectOwner: "Select owner",
+    ownerAccountNeedsOwner: "Select an owner for this portal account.",
+    ownerAccountNeedsPassword: "Password is required.",
   },
   auth: {
     title: "Sign in to Estatly",
@@ -189,6 +197,7 @@ const en = {
   paymentStatus: { Pending: "Pending", Paid: "Paid", Overdue: "Overdue" },
   role: {
     Admin: "Admin",
+    Employee: "Employee",
     OwnerClient: "Owner",
   },
   property: {
@@ -363,6 +372,14 @@ const ar = {
     newPassword: "كلمة المرور الجديدة",
     passwordTooShort: "يجب ألا تقل كلمة المرور عن 6 أحرف",
     adminOnly: "هذه الصفحة للمشرفين فقط.",
+    noScreenAccess: "ليس لديك صلاحية الوصول إلى هذه الشاشة.",
+    screenAccess: "صلاحية الشاشات",
+    screenAccessHelp: "اختر الشاشات التي يمكن لهذا الموظف فتحها من القائمة الجانبية.",
+    selectAtLeastOneScreen: "اختر شاشة واحدة على الأقل لهذا الموظف.",
+    addOwnerPortalAccount: "إضافة حساب بوابة المالك",
+    selectOwner: "اختر المالك",
+    ownerAccountNeedsOwner: "اختر مالكًا لهذا الحساب.",
+    ownerAccountNeedsPassword: "كلمة المرور مطلوبة.",
   },
   auth: {
     title: "تسجيل الدخول إلى إستيتلي",
@@ -428,6 +445,7 @@ const ar = {
   paymentStatus: { Pending: "قيد الانتظار", Paid: "مدفوع", Overdue: "متأخر" },
   role: {
     Admin: "مشرف",
+    Employee: "موظف",
     OwnerClient: "مالك",
   },
   property: {

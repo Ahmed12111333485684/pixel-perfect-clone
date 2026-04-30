@@ -3,11 +3,7 @@ import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/lib/auth";
 import { getStoredToken } from "@/lib/api";
-import {
-  LayoutDashboard, Users, Building2, Sparkles, ContactRound,
-  ScrollText, CreditCard, ShoppingBag, BadgeDollarSign, Inbox,
-  LogOut, ChevronRight, ShieldCheck,
-} from "lucide-react";
+import { Building2, ChevronRight, LogOut } from "lucide-react";
 import { BrandLogo } from "@/components/BrandLogo";
 import { LanguageToggle } from "@/components/LanguageToggle";
 import { Button } from "@/components/ui/button";
@@ -15,6 +11,7 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
   DropdownMenuSeparator, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { getVisibleNavItems, isCurrentPathAccessible } from "@/lib/navigation";
 
 export const Route = createFileRoute("/app")({
   beforeLoad: () => {
@@ -27,29 +24,6 @@ export const Route = createFileRoute("/app")({
   },
   component: AppLayout,
 });
-
-interface NavItem {
-  to: string;
-  label: string;
-  icon: React.ComponentType<{ className?: string }>;
-  staffOnly?: boolean;
-  ownerOnly?: boolean;
-  adminOnly?: boolean;
-}
-
-const NAV: NavItem[] = [
-  { to: "/app", label: "nav.dashboard", icon: LayoutDashboard },
-  { to: "/app/owners", label: "nav.owners", icon: Users, staffOnly: true },
-  { to: "/app/properties", label: "nav.properties", icon: Building2 },
-  { to: "/app/amenities", label: "nav.amenities", icon: Sparkles, staffOnly: true },
-  { to: "/app/tenants", label: "nav.tenants", icon: ContactRound, staffOnly: true },
-  { to: "/app/contracts", label: "nav.contracts", icon: ScrollText },
-  { to: "/app/payments", label: "nav.payments", icon: CreditCard },
-  { to: "/app/buyers", label: "nav.buyers", icon: ShoppingBag, staffOnly: true },
-  { to: "/app/sales", label: "nav.sales", icon: BadgeDollarSign },
-  { to: "/app/leads", label: "nav.leads", icon: Inbox, staffOnly: true },
-  { to: "/app/users", label: "nav.users", icon: ShieldCheck, adminOnly: true },
-];
 
 function AppLayout() {
   const auth = useAuth();
@@ -78,12 +52,8 @@ function AppLayout() {
     return () => window.cancelAnimationFrame(id);
   }, [pathname]);
 
-  const visible = NAV.filter((n) => {
-    if (n.staffOnly && !auth.isStaff) return false;
-    if (n.ownerOnly && auth.user?.role !== "OwnerClient") return false;
-    if (n.adminOnly && !auth.hasRole("Admin")) return false;
-    return true;
-  });
+  const visible = getVisibleNavItems(auth.user?.role, auth.user?.screenPermissions ?? []);
+  const canViewCurrentScreen = isCurrentPathAccessible(pathname, auth.user?.role, auth.user?.screenPermissions ?? []);
 
   return (
     <div className="flex min-h-screen bg-muted/30">
@@ -122,7 +92,7 @@ function AppLayout() {
         </nav>
         <div className="border-t border-sidebar-border p-3 text-xs text-sidebar-foreground/60">
           <span className="rounded-md bg-sidebar-accent/50 px-2 py-1 font-medium">
-            {auth.user?.role}
+            {auth.user?.role ? t(`role.${auth.user.role}`) : ""}
           </span>
         </div>
       </aside>
@@ -145,7 +115,7 @@ function AppLayout() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-48">
-              <div className="px-2 py-1.5 text-xs text-muted-foreground">{auth.user?.role}</div>
+              <div className="px-2 py-1.5 text-xs text-muted-foreground">{auth.user?.role ? t(`role.${auth.user.role}`) : ""}</div>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => { auth.logout(); window.location.href = "/login"; }}>
                 <LogOut className="me-2 h-4 w-4" />
@@ -175,7 +145,13 @@ function AppLayout() {
         </nav>
 
         <main className="flex-1 p-6">
-          <Outlet />
+          {canViewCurrentScreen ? (
+            <Outlet />
+          ) : (
+            <div className="rounded-xl border border-border bg-card p-8 text-center text-muted-foreground">
+              {t("common.noScreenAccess")}
+            </div>
+          )}
         </main>
       </div>
     </div>
