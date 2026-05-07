@@ -182,7 +182,16 @@ export interface PropertyImage {
   createdAt: string;
 }
 
-export interface Tenant { id: number; fullName: string; phone: string; email: string; nationalId: string; createdAt: string; }
+export interface Tenant {
+  id: number;
+  propertyId?: number | null;
+  propertyName?: string | null;
+  fullName: string;
+  phone: string;
+  email: string;
+  nationalId: string;
+  createdAt: string;
+}
 export type ContractStatus = "Active" | "Expired" | "Terminated" | "Pending";
 export interface Contract {
   id: number; propertyId: number; tenantId: number; deedNumber: string;
@@ -248,4 +257,35 @@ export interface PublicPropertyImage {
   url: string;
   isPrimary: boolean;
   sortOrder: number;
+}
+
+export interface RequestListItem {
+  id: number;
+  requestDate?: string | null;
+  status?: string | null;
+  employee?: string | null;
+  fullName: string;
+  mobileNumber: string;
+  requestType: string;
+  location?: string | null;
+  createdAt: string;
+}
+
+export interface RequestDetails {
+  id: number;
+  requestDate?: string | null;
+  status?: string | null;
+  employee?: string | null;
+  via?: string | null;
+  fullName: string;
+  nationality?: string | null;
+  profession?: string | null;
+  bedroomCount?: number | null;
+  mobileNumber: string;
+  requestType: string;
+  maxBudget?: number | null;
+  paymentType?: string | null;
+  location?: string | null;
+  notes?: string | null;
+  createdAt: string;
 }

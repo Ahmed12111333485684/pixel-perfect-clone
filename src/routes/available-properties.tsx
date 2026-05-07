@@ -40,6 +40,9 @@ function AvailablePropertiesPage() {
               <Link to="/">{t("publicProperties.home")}</Link>
             </Button>
             <Button asChild size="sm" className="bg-gold-gradient text-gold-foreground hover:opacity-95">
+              <Link to="/property-request">{t("landing.findProperty") || "Find Your Property"}</Link>
+            </Button>
+            <Button asChild size="sm" className="bg-gold-gradient text-gold-foreground hover:opacity-95">
               <Link to="/list-property">{t("publicProperties.listYourProperty")}</Link>
             </Button>
           </div>

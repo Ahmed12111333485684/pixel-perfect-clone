@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as PropertyRequestRouteImport } from './routes/property-request'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as ListPropertyRouteImport } from './routes/list-property'
 import { Route as AvailablePropertiesRouteImport } from './routes/available-properties'
@@ -18,6 +19,7 @@ import { Route as AppIndexRouteImport } from './routes/app.index'
 import { Route as AppUsersRouteImport } from './routes/app.users'
 import { Route as AppTenantsRouteImport } from './routes/app.tenants'
 import { Route as AppSalesRouteImport } from './routes/app.sales'
+import { Route as AppRequestsRouteImport } from './routes/app.requests'
 import { Route as AppPropertiesRouteImport } from './routes/app.properties'
 import { Route as AppPaymentsRouteImport } from './routes/app.payments'
 import { Route as AppOwnersRouteImport } from './routes/app.owners'
@@ -28,6 +30,11 @@ import { Route as AppAmenitiesRouteImport } from './routes/app.amenities'
 import { Route as AppPropertiesIdRouteImport } from './routes/app.properties.$id'
 import { Route as AppLeadsIdRouteImport } from './routes/app.leads.$id'
 
+const PropertyRequestRoute = PropertyRequestRouteImport.update({
+  id: '/property-request',
+  path: '/property-request',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
@@ -71,6 +78,11 @@ const AppTenantsRoute = AppTenantsRouteImport.update({
 const AppSalesRoute = AppSalesRouteImport.update({
   id: '/sales',
   path: '/sales',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppRequestsRoute = AppRequestsRouteImport.update({
+  id: '/requests',
+  path: '/requests',
   getParentRoute: () => AppRoute,
 } as any)
 const AppPropertiesRoute = AppPropertiesRouteImport.update({
@@ -125,6 +137,7 @@ export interface FileRoutesByFullPath {
   '/available-properties': typeof AvailablePropertiesRoute
   '/list-property': typeof ListPropertyRoute
   '/login': typeof LoginRoute
+  '/property-request': typeof PropertyRequestRoute
   '/app/amenities': typeof AppAmenitiesRoute
   '/app/buyers': typeof AppBuyersRoute
   '/app/contracts': typeof AppContractsRoute
@@ -132,6 +145,7 @@ export interface FileRoutesByFullPath {
   '/app/owners': typeof AppOwnersRoute
   '/app/payments': typeof AppPaymentsRoute
   '/app/properties': typeof AppPropertiesRouteWithChildren
+  '/app/requests': typeof AppRequestsRoute
   '/app/sales': typeof AppSalesRoute
   '/app/tenants': typeof AppTenantsRoute
   '/app/users': typeof AppUsersRoute
@@ -144,6 +158,7 @@ export interface FileRoutesByTo {
   '/available-properties': typeof AvailablePropertiesRoute
   '/list-property': typeof ListPropertyRoute
   '/login': typeof LoginRoute
+  '/property-request': typeof PropertyRequestRoute
   '/app/amenities': typeof AppAmenitiesRoute
   '/app/buyers': typeof AppBuyersRoute
   '/app/contracts': typeof AppContractsRoute
@@ -151,6 +166,7 @@ export interface FileRoutesByTo {
   '/app/owners': typeof AppOwnersRoute
   '/app/payments': typeof AppPaymentsRoute
   '/app/properties': typeof AppPropertiesRouteWithChildren
+  '/app/requests': typeof AppRequestsRoute
   '/app/sales': typeof AppSalesRoute
   '/app/tenants': typeof AppTenantsRoute
   '/app/users': typeof AppUsersRoute
@@ -165,6 +181,7 @@ export interface FileRoutesById {
   '/available-properties': typeof AvailablePropertiesRoute
   '/list-property': typeof ListPropertyRoute
   '/login': typeof LoginRoute
+  '/property-request': typeof PropertyRequestRoute
   '/app/amenities': typeof AppAmenitiesRoute
   '/app/buyers': typeof AppBuyersRoute
   '/app/contracts': typeof AppContractsRoute
@@ -172,6 +189,7 @@ export interface FileRoutesById {
   '/app/owners': typeof AppOwnersRoute
   '/app/payments': typeof AppPaymentsRoute
   '/app/properties': typeof AppPropertiesRouteWithChildren
+  '/app/requests': typeof AppRequestsRoute
   '/app/sales': typeof AppSalesRoute
   '/app/tenants': typeof AppTenantsRoute
   '/app/users': typeof AppUsersRoute
@@ -187,6 +205,7 @@ export interface FileRouteTypes {
     | '/available-properties'
     | '/list-property'
     | '/login'
+    | '/property-request'
     | '/app/amenities'
     | '/app/buyers'
     | '/app/contracts'
@@ -194,6 +213,7 @@ export interface FileRouteTypes {
     | '/app/owners'
     | '/app/payments'
     | '/app/properties'
+    | '/app/requests'
     | '/app/sales'
     | '/app/tenants'
     | '/app/users'
@@ -206,6 +226,7 @@ export interface FileRouteTypes {
     | '/available-properties'
     | '/list-property'
     | '/login'
+    | '/property-request'
     | '/app/amenities'
     | '/app/buyers'
     | '/app/contracts'
@@ -213,6 +234,7 @@ export interface FileRouteTypes {
     | '/app/owners'
     | '/app/payments'
     | '/app/properties'
+    | '/app/requests'
     | '/app/sales'
     | '/app/tenants'
     | '/app/users'
@@ -226,6 +248,7 @@ export interface FileRouteTypes {
     | '/available-properties'
     | '/list-property'
     | '/login'
+    | '/property-request'
     | '/app/amenities'
     | '/app/buyers'
     | '/app/contracts'
@@ -233,6 +256,7 @@ export interface FileRouteTypes {
     | '/app/owners'
     | '/app/payments'
     | '/app/properties'
+    | '/app/requests'
     | '/app/sales'
     | '/app/tenants'
     | '/app/users'
@@ -247,10 +271,18 @@ export interface RootRouteChildren {
   AvailablePropertiesRoute: typeof AvailablePropertiesRoute
   ListPropertyRoute: typeof ListPropertyRoute
   LoginRoute: typeof LoginRoute
+  PropertyRequestRoute: typeof PropertyRequestRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/property-request': {
+      id: '/property-request'
+      path: '/property-request'
+      fullPath: '/property-request'
+      preLoaderRoute: typeof PropertyRequestRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/login': {
       id: '/login'
       path: '/login'
@@ -312,6 +344,13 @@ declare module '@tanstack/react-router' {
       path: '/sales'
       fullPath: '/app/sales'
       preLoaderRoute: typeof AppSalesRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/requests': {
+      id: '/app/requests'
+      path: '/requests'
+      fullPath: '/app/requests'
+      preLoaderRoute: typeof AppRequestsRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/properties': {
@@ -412,6 +451,7 @@ interface AppRouteChildren {
   AppOwnersRoute: typeof AppOwnersRoute
   AppPaymentsRoute: typeof AppPaymentsRoute
   AppPropertiesRoute: typeof AppPropertiesRouteWithChildren
+  AppRequestsRoute: typeof AppRequestsRoute
   AppSalesRoute: typeof AppSalesRoute
   AppTenantsRoute: typeof AppTenantsRoute
   AppUsersRoute: typeof AppUsersRoute
@@ -426,6 +466,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppOwnersRoute: AppOwnersRoute,
   AppPaymentsRoute: AppPaymentsRoute,
   AppPropertiesRoute: AppPropertiesRouteWithChildren,
+  AppRequestsRoute: AppRequestsRoute,
   AppSalesRoute: AppSalesRoute,
   AppTenantsRoute: AppTenantsRoute,
   AppUsersRoute: AppUsersRoute,
@@ -440,6 +481,7 @@ const rootRouteChildren: RootRouteChildren = {
   AvailablePropertiesRoute: AvailablePropertiesRoute,
   ListPropertyRoute: ListPropertyRoute,
   LoginRoute: LoginRoute,
+  PropertyRequestRoute: PropertyRequestRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

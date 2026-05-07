@@ -1,4 +1,4 @@
-import { BadgeDollarSign, Building2, ContactRound, CreditCard, Inbox, LayoutDashboard, ScrollText, ShieldCheck, ShoppingBag, Sparkles, Users } from "lucide-react";
+import { BadgeDollarSign, Building2, ContactRound, CreditCard, Inbox, LayoutDashboard, MessageSquare, ScrollText, ShieldCheck, ShoppingBag, Sparkles, Users } from "lucide-react";
 import type { ComponentType } from "react";
 
 import type { Role } from "./api";
@@ -23,6 +23,7 @@ export const APP_NAV_ITEMS: AppNavItem[] = [
   { to: "/app/buyers", label: "nav.buyers", icon: ShoppingBag, staffOnly: true },
   { to: "/app/sales", label: "nav.sales", icon: BadgeDollarSign },
   { to: "/app/leads", label: "nav.leads", icon: Inbox, staffOnly: true },
+  { to: "/app/requests", label: "nav.requests", icon: MessageSquare },
   { to: "/app/users", label: "nav.users", icon: ShieldCheck, adminOnly: true },
 ];
 

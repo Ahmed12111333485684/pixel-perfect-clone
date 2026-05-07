@@ -159,7 +159,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       logout,
       hasRole: (r) => role === r,
       hasAnyRole: (rs) => !!role && rs.includes(role),
-      isStaff: role === "Admin",
+      isStaff: role === "Admin" || role === "Employee",
     };
   }, [token, user]);
 
