@@ -289,3 +289,73 @@ export interface RequestDetails {
   notes?: string | null;
   createdAt: string;
 }
+
+export interface CommercialListing {
+  id: number;
+  rowFlag?: string | null;
+  serialNumber?: string | null;
+  contactDate?: string | null;
+  propertyStatus?: string | null;
+  brokerageContract?: string | null;
+  licenseNumber?: string | null;
+  contractExpiry?: string | null;
+  adNumber?: string | null;
+  employee?: string | null;
+  broker?: string | null;
+  ownerName?: string | null;
+  mobile1?: string | null;
+  mobile2?: string | null;
+  availableUnits?: string | null;
+  deedNumber?: string | null;
+  propertyType?: string | null;
+  roomsCount?: string | null;
+  buildingAge?: string | null;
+  hasElevator?: string | null;
+  otherDetails?: string | null;
+  rentAmount?: string | null;
+  paymentType?: string | null;
+  location?: string | null;
+  coordinates?: string | null;
+  hasKey?: string | null;
+  publishedTahmid?: string | null;
+  publishedBoard?: string | null;
+  publishedDesigns?: string | null;
+  publishedHaraj?: string | null;
+  publishedDeal?: string | null;
+  publishedAqar?: string | null;
+  publishedBayut?: string | null;
+  publishedDhaki?: string | null;
+  publishedWhatsapp?: string | null;
+  publishedTwitter?: string | null;
+  publishedWhatsappGroup?: string | null;
+  publishedWhatsappChannel?: string | null;
+  publishedSnapchat?: string | null;
+  publishedX?: string | null;
+  publishedInstagram?: string | null;
+  publishedTiktok?: string | null;
+  notes?: string | null;
+  createdAt: string;
+  updatedAt?: string | null;
+}
+
+export interface ResidentialSeeker {
+  id: number;
+  serialNumber?: string | null;
+  requestDate?: string | null;
+  status?: string | null;
+  employee?: string | null;
+  receiver?: string | null;
+  sourceChannel?: string | null;
+  mobile?: string | null;
+  fullName?: string | null;
+  nationality?: string | null;
+  profession?: string | null;
+  familyCount?: string | null;
+  requestDescription?: string | null;
+  maxBudget?: string | null;
+  paymentType?: string | null;
+  preferredLocation?: string | null;
+  notes?: string | null;
+  createdAt: string;
+  updatedAt?: string | null;
+}
