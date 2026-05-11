@@ -27,7 +27,7 @@ export const Route = createFileRoute("/list-property")({
   component: LeadIntakePage,
 });
 
-const INTENTS: LeadIntent[] = ["Buy", "Rent", "Sell", "LetOut"];
+const INTENTS: LeadIntent[] = ["Sell", "LetOut"];
 const PROPERTY_TYPES = ["Apartment", "Villa", "Office", "Land", "Shop", "Warehouse"];
 
 function LeadIntakePage() {

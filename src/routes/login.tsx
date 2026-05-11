@@ -34,8 +34,8 @@ function LoginPage() {
     setError(null);
     setLoading(true);
     try {
-      await auth.login(username, password);
-      navigate({ to: "/app" });
+      const user = await auth.login(username, password);
+      navigate({ to: user.role === "Partner" ? "/partner/my-properties" : "/app" });
     } catch (err) {
       if (err instanceof ApiError) setError(err.message || t("auth.invalid"));
       else setError(t("auth.invalid"));

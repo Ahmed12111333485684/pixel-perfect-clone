@@ -16,6 +16,8 @@ import { Route as AvailablePropertiesRouteImport } from './routes/available-prop
 import { Route as AppRouteImport } from './routes/app'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppIndexRouteImport } from './routes/app.index'
+import { Route as PartnerSubmitPropertyRouteImport } from './routes/partner.submit-property'
+import { Route as PartnerMyPropertiesRouteImport } from './routes/partner.my-properties'
 import { Route as AppUsersRouteImport } from './routes/app.users'
 import { Route as AppTenantsRouteImport } from './routes/app.tenants'
 import { Route as AppSalesRouteImport } from './routes/app.sales'
@@ -23,6 +25,7 @@ import { Route as AppResidentialSeekersRouteImport } from './routes/app.resident
 import { Route as AppRequestsRouteImport } from './routes/app.requests'
 import { Route as AppPropertiesRouteImport } from './routes/app.properties'
 import { Route as AppPaymentsRouteImport } from './routes/app.payments'
+import { Route as AppPartnersRouteImport } from './routes/app.partners'
 import { Route as AppOwnersRouteImport } from './routes/app.owners'
 import { Route as AppLeadsRouteImport } from './routes/app.leads'
 import { Route as AppContractsRouteImport } from './routes/app.contracts'
@@ -67,6 +70,16 @@ const AppIndexRoute = AppIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AppRoute,
 } as any)
+const PartnerSubmitPropertyRoute = PartnerSubmitPropertyRouteImport.update({
+  id: '/partner/submit-property',
+  path: '/partner/submit-property',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PartnerMyPropertiesRoute = PartnerMyPropertiesRouteImport.update({
+  id: '/partner/my-properties',
+  path: '/partner/my-properties',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AppUsersRoute = AppUsersRouteImport.update({
   id: '/users',
   path: '/users',
@@ -100,6 +113,11 @@ const AppPropertiesRoute = AppPropertiesRouteImport.update({
 const AppPaymentsRoute = AppPaymentsRouteImport.update({
   id: '/payments',
   path: '/payments',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppPartnersRoute = AppPartnersRouteImport.update({
+  id: '/partners',
+  path: '/partners',
   getParentRoute: () => AppRoute,
 } as any)
 const AppOwnersRoute = AppOwnersRouteImport.update({
@@ -156,6 +174,7 @@ export interface FileRoutesByFullPath {
   '/app/contracts': typeof AppContractsRoute
   '/app/leads': typeof AppLeadsRouteWithChildren
   '/app/owners': typeof AppOwnersRoute
+  '/app/partners': typeof AppPartnersRoute
   '/app/payments': typeof AppPaymentsRoute
   '/app/properties': typeof AppPropertiesRouteWithChildren
   '/app/requests': typeof AppRequestsRoute
@@ -163,6 +182,8 @@ export interface FileRoutesByFullPath {
   '/app/sales': typeof AppSalesRoute
   '/app/tenants': typeof AppTenantsRoute
   '/app/users': typeof AppUsersRoute
+  '/partner/my-properties': typeof PartnerMyPropertiesRoute
+  '/partner/submit-property': typeof PartnerSubmitPropertyRoute
   '/app/': typeof AppIndexRoute
   '/app/leads/$id': typeof AppLeadsIdRoute
   '/app/properties/$id': typeof AppPropertiesIdRoute
@@ -179,6 +200,7 @@ export interface FileRoutesByTo {
   '/app/contracts': typeof AppContractsRoute
   '/app/leads': typeof AppLeadsRouteWithChildren
   '/app/owners': typeof AppOwnersRoute
+  '/app/partners': typeof AppPartnersRoute
   '/app/payments': typeof AppPaymentsRoute
   '/app/properties': typeof AppPropertiesRouteWithChildren
   '/app/requests': typeof AppRequestsRoute
@@ -186,6 +208,8 @@ export interface FileRoutesByTo {
   '/app/sales': typeof AppSalesRoute
   '/app/tenants': typeof AppTenantsRoute
   '/app/users': typeof AppUsersRoute
+  '/partner/my-properties': typeof PartnerMyPropertiesRoute
+  '/partner/submit-property': typeof PartnerSubmitPropertyRoute
   '/app': typeof AppIndexRoute
   '/app/leads/$id': typeof AppLeadsIdRoute
   '/app/properties/$id': typeof AppPropertiesIdRoute
@@ -204,6 +228,7 @@ export interface FileRoutesById {
   '/app/contracts': typeof AppContractsRoute
   '/app/leads': typeof AppLeadsRouteWithChildren
   '/app/owners': typeof AppOwnersRoute
+  '/app/partners': typeof AppPartnersRoute
   '/app/payments': typeof AppPaymentsRoute
   '/app/properties': typeof AppPropertiesRouteWithChildren
   '/app/requests': typeof AppRequestsRoute
@@ -211,6 +236,8 @@ export interface FileRoutesById {
   '/app/sales': typeof AppSalesRoute
   '/app/tenants': typeof AppTenantsRoute
   '/app/users': typeof AppUsersRoute
+  '/partner/my-properties': typeof PartnerMyPropertiesRoute
+  '/partner/submit-property': typeof PartnerSubmitPropertyRoute
   '/app/': typeof AppIndexRoute
   '/app/leads/$id': typeof AppLeadsIdRoute
   '/app/properties/$id': typeof AppPropertiesIdRoute
@@ -230,6 +257,7 @@ export interface FileRouteTypes {
     | '/app/contracts'
     | '/app/leads'
     | '/app/owners'
+    | '/app/partners'
     | '/app/payments'
     | '/app/properties'
     | '/app/requests'
@@ -237,6 +265,8 @@ export interface FileRouteTypes {
     | '/app/sales'
     | '/app/tenants'
     | '/app/users'
+    | '/partner/my-properties'
+    | '/partner/submit-property'
     | '/app/'
     | '/app/leads/$id'
     | '/app/properties/$id'
@@ -253,6 +283,7 @@ export interface FileRouteTypes {
     | '/app/contracts'
     | '/app/leads'
     | '/app/owners'
+    | '/app/partners'
     | '/app/payments'
     | '/app/properties'
     | '/app/requests'
@@ -260,6 +291,8 @@ export interface FileRouteTypes {
     | '/app/sales'
     | '/app/tenants'
     | '/app/users'
+    | '/partner/my-properties'
+    | '/partner/submit-property'
     | '/app'
     | '/app/leads/$id'
     | '/app/properties/$id'
@@ -277,6 +310,7 @@ export interface FileRouteTypes {
     | '/app/contracts'
     | '/app/leads'
     | '/app/owners'
+    | '/app/partners'
     | '/app/payments'
     | '/app/properties'
     | '/app/requests'
@@ -284,6 +318,8 @@ export interface FileRouteTypes {
     | '/app/sales'
     | '/app/tenants'
     | '/app/users'
+    | '/partner/my-properties'
+    | '/partner/submit-property'
     | '/app/'
     | '/app/leads/$id'
     | '/app/properties/$id'
@@ -296,6 +332,8 @@ export interface RootRouteChildren {
   ListPropertyRoute: typeof ListPropertyRoute
   LoginRoute: typeof LoginRoute
   PropertyRequestRoute: typeof PropertyRequestRoute
+  PartnerMyPropertiesRoute: typeof PartnerMyPropertiesRoute
+  PartnerSubmitPropertyRoute: typeof PartnerSubmitPropertyRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -349,6 +387,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppIndexRouteImport
       parentRoute: typeof AppRoute
     }
+    '/partner/submit-property': {
+      id: '/partner/submit-property'
+      path: '/partner/submit-property'
+      fullPath: '/partner/submit-property'
+      preLoaderRoute: typeof PartnerSubmitPropertyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/partner/my-properties': {
+      id: '/partner/my-properties'
+      path: '/partner/my-properties'
+      fullPath: '/partner/my-properties'
+      preLoaderRoute: typeof PartnerMyPropertiesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/app/users': {
       id: '/app/users'
       path: '/users'
@@ -396,6 +448,13 @@ declare module '@tanstack/react-router' {
       path: '/payments'
       fullPath: '/app/payments'
       preLoaderRoute: typeof AppPaymentsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/partners': {
+      id: '/app/partners'
+      path: '/partners'
+      fullPath: '/app/partners'
+      preLoaderRoute: typeof AppPartnersRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/owners': {
@@ -488,6 +547,7 @@ interface AppRouteChildren {
   AppContractsRoute: typeof AppContractsRoute
   AppLeadsRoute: typeof AppLeadsRouteWithChildren
   AppOwnersRoute: typeof AppOwnersRoute
+  AppPartnersRoute: typeof AppPartnersRoute
   AppPaymentsRoute: typeof AppPaymentsRoute
   AppPropertiesRoute: typeof AppPropertiesRouteWithChildren
   AppRequestsRoute: typeof AppRequestsRoute
@@ -505,6 +565,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppContractsRoute: AppContractsRoute,
   AppLeadsRoute: AppLeadsRouteWithChildren,
   AppOwnersRoute: AppOwnersRoute,
+  AppPartnersRoute: AppPartnersRoute,
   AppPaymentsRoute: AppPaymentsRoute,
   AppPropertiesRoute: AppPropertiesRouteWithChildren,
   AppRequestsRoute: AppRequestsRoute,
@@ -524,6 +585,8 @@ const rootRouteChildren: RootRouteChildren = {
   ListPropertyRoute: ListPropertyRoute,
   LoginRoute: LoginRoute,
   PropertyRequestRoute: PropertyRequestRoute,
+  PartnerMyPropertiesRoute: PartnerMyPropertiesRoute,
+  PartnerSubmitPropertyRoute: PartnerSubmitPropertyRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

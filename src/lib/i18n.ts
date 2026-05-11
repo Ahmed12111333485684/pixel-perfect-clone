@@ -6,6 +6,7 @@ const en = {
   nav: {
     dashboard: "Dashboard",
     owners: "Owners",
+    partners: "Partners",
     properties: "Properties",
     amenities: "Amenities",
     tenants: "Tenants",
@@ -24,6 +25,7 @@ const en = {
     myPayments: "My Payments",
     mySales: "My Sales",
     submitLead: "List a Property",
+    submitProperty: "Submit property",
     signIn: "Sign in",
     signOut: "Sign out",
   },
@@ -308,6 +310,7 @@ const en = {
     Admin: "Admin",
     Employee: "Employee",
     OwnerClient: "Owner",
+    Partner: "Partner",
   },
   property: {
     submittedForReview: "Your property has been submitted for review.",
@@ -363,6 +366,7 @@ const ar = {
   nav: {
     dashboard: "لوحة التحكم",
     owners: "الملاك",
+    partners: "الشركاء",
     properties: "العقارات",
     amenities: "المرافق",
     tenants: "المستأجرون",
@@ -381,6 +385,7 @@ const ar = {
     myPayments: "مدفوعاتي",
     mySales: "مبيعاتي",
     submitLead: "اعرض عقارك",
+    submitProperty: "إرسال عقار",
     signIn: "تسجيل الدخول",
     signOut: "تسجيل الخروج",
   },
@@ -662,6 +667,7 @@ const ar = {
     Admin: "مشرف",
     Employee: "موظف",
     OwnerClient: "مالك",
+    Partner: "شريك",
   },
   property: {
     submittedForReview: "تم إرسال عقارك للمراجعة.",

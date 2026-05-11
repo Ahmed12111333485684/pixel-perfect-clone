@@ -10,11 +10,13 @@ export interface AppNavItem {
   staffOnly?: boolean;
   ownerOnly?: boolean;
   adminOnly?: boolean;
+  partnerOnly?: boolean;
 }
 
 export const APP_NAV_ITEMS: AppNavItem[] = [
   { to: "/app", label: "nav.dashboard", icon: LayoutDashboard },
   { to: "/app/owners", label: "nav.owners", icon: Users, staffOnly: true },
+  { to: "/app/partners", label: "nav.partners", icon: Users2, adminOnly: true },
   { to: "/app/properties", label: "nav.properties", icon: Building2 },
   { to: "/app/amenities", label: "nav.amenities", icon: Sparkles, staffOnly: true },
   { to: "/app/tenants", label: "nav.tenants", icon: ContactRound, staffOnly: true },
@@ -27,6 +29,8 @@ export const APP_NAV_ITEMS: AppNavItem[] = [
   { to: "/app/commercial-listings", label: "nav.commercialListings", icon: Building2, staffOnly: true },
   { to: "/app/residential-seekers", label: "nav.residentialSeekers", icon: Users2, staffOnly: true },
   { to: "/app/users", label: "nav.users", icon: ShieldCheck, adminOnly: true },
+  { to: "/partner/my-properties", label: "nav.myProperties", icon: Building2, partnerOnly: true },
+  { to: "/partner/submit-property", label: "nav.submitProperty", icon: Inbox, partnerOnly: true },
 ];
 
 function normalizePath(pathname: string) {
@@ -41,11 +45,14 @@ export function getNavItemForPathname(pathname: string): AppNavItem | undefined 
 }
 
 export function isNavItemVisible(item: AppNavItem, role?: Role | null, screenPermissions: string[] = []): boolean {
+  if (item.partnerOnly) return role === "Partner";
   if (role === "Admin") return true;
 
   if (role === "Employee") {
     return !item.adminOnly && screenPermissions.includes(item.to);
   }
+
+  if (role === "Partner") return false;
 
   if (item.adminOnly) return false;
   if (item.staffOnly) return false;

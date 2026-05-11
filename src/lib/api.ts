@@ -115,7 +115,7 @@ export async function api<T = unknown>(path: string, opts: ApiOptions = {}): Pro
 }
 
 // ============ Domain types ============
-export type Role = "Admin" | "Employee" | "OwnerClient";
+export type Role = "Admin" | "Employee" | "OwnerClient" | "Partner";
 
 export interface UserDto {
   id: number;
@@ -141,6 +141,38 @@ export interface Owner {
   email: string;
   nationalId: string;
   createdAt: string;
+}
+
+export interface Partner {
+  id: string;
+  fullName: string;
+  phone?: string | null;
+  email?: string | null;
+  nationalId?: string | null;
+  notes?: string | null;
+  userId?: number | null;
+  createdAt: string;
+}
+
+export interface CreatePartnerDto {
+  fullName: string;
+  phone?: string;
+  email?: string;
+  nationalId?: string;
+  notes?: string;
+}
+
+export interface UpdatePartnerDto {
+  fullName: string;
+  phone?: string;
+  email?: string;
+  nationalId?: string;
+  notes?: string;
+}
+
+export interface CreatePartnerAccountDto {
+  username: string;
+  password: string;
 }
 
 export interface OwnerStats {
@@ -215,6 +247,14 @@ export interface LeadImage {
   sizeBytes: number; sortOrder: number; isPrimary: boolean;
   fileUrl?: string; createdAt: string;
 }
+export interface SubmitPartnerLeadDto {
+  propertyName: string;
+  address: string;
+  type: string;
+  intent: LeadIntent;
+  listedPrice: number;
+  notes?: string;
+}
 export interface Lead {
   id: number;
   propertyId?: number | null;
@@ -233,6 +273,11 @@ export interface Lead {
   lastContactedAt?: string | null;
   assignedToUserId?: number | null;
   assignedToUsername?: string | null;
+  partnerId?: string | null;
+  partnerName?: string | null;
+  commissionAmount?: number | null;
+  commissionStatus?: string | null;
+  commissionNotes?: string | null;
   images?: LeadImage[];
   createdAt: string;
 }
@@ -358,4 +403,37 @@ export interface ResidentialSeeker {
   notes?: string | null;
   createdAt: string;
   updatedAt?: string | null;
+}
+
+// ============ Partner helpers ============
+export function fetchPartners() {
+  return api<Partner[]>("/api/partners");
+}
+
+export function fetchPartner(id: string) {
+  return api<Partner>(`/api/partners/${id}`);
+}
+
+export function createPartner(input: CreatePartnerDto) {
+  return api("/api/partners", { method: "POST", body: input });
+}
+
+export function updatePartner(id: string, input: UpdatePartnerDto) {
+  return api(`/api/partners/${id}`, { method: "PUT", body: input });
+}
+
+export function deletePartner(id: string) {
+  return api(`/api/partners/${id}`, { method: "DELETE" });
+}
+
+export function createPartnerAccount(id: string, input: CreatePartnerAccountDto) {
+  return api(`/api/partners/${id}/account`, { method: "POST", body: input });
+}
+
+export function submitPartnerLead(formData: FormData) {
+  return api<Lead>("/api/leads/submit-partner", { method: "POST", formData });
+}
+
+export function fetchPartnerLeads() {
+  return api<Lead[]>("/api/leads");
 }

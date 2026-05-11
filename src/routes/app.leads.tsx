@@ -155,7 +155,7 @@ function LeadsPage() {
   });
 
   const update = useMutation({
-    mutationFn: (vals: { id: number; status?: LeadStatus; notes?: string; listedPrice?: number }) =>
+    mutationFn: (vals: { id: number; status?: LeadStatus; notes?: string; listedPrice?: number; commissionAmount?: number | null; commissionStatus?: string | null; commissionNotes?: string | null }) =>
       api(`/api/leads/${vals.id}`, { method: "PUT", body: vals }),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["leads"] }); toast.success(t("common.updated")); setEditing(null); setSelected(null); },
     onError: (e: Error) => toast.error(e.message),
@@ -257,6 +257,11 @@ function LeadsPage() {
                     >
                       <div className="text-sm font-medium">{l.propertyName}</div>
                       <div className="mt-0.5 truncate text-xs text-muted-foreground">{l.fullName} · {t(`intent.${l.intent}`)}</div>
+                      {l.partnerId && (
+                        <div className="mt-1 truncate text-[11px] text-muted-foreground">
+                          Partner: {l.partnerName ?? "—"}
+                        </div>
+                      )}
                       {l.propertyId && (
                         <div className="mt-2 inline-flex items-center gap-1 rounded-full border border-border bg-muted/60 px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
                           <Home className="h-3 w-3" />
@@ -384,6 +389,12 @@ function LeadsPage() {
                   <span className="text-xs font-medium text-muted-foreground">{t("common.nationalId")}:</span>
                   <div className="font-mono text-xs">{selected.ownerNationalId || t("common.notProvided")}</div>
                 </div>
+                {selected.partnerId && (
+                  <div>
+                    <span className="text-xs font-medium text-muted-foreground">Partner:</span>
+                    <div>{selected.partnerName ?? t("common.notProvided")}</div>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -476,6 +487,14 @@ function LeadsPage() {
             status: String(fd.get("status") ?? editing.status) as LeadStatus,
             listedPrice: Number(fd.get("listedPrice") ?? editing.listedPrice ?? 0),
             notes: String(fd.get("notes") ?? "") || undefined,
+            commissionAmount: editing.partnerId ? (() => {
+              const value = String(fd.get("commissionAmount") ?? "").trim();
+              if (!value) return null;
+              const parsed = Number(value);
+              return Number.isNaN(parsed) ? null : parsed;
+            })() : undefined,
+            commissionStatus: editing.partnerId ? (String(fd.get("commissionStatus") ?? "").trim() || null) : undefined,
+            commissionNotes: editing.partnerId ? (String(fd.get("commissionNotes") ?? "").trim() || null) : undefined,
           });
         }}
       >
@@ -501,6 +520,22 @@ function LeadsPage() {
               </Label>
               <Input id="listedPrice" name="listedPrice" type="number" step="0.01" min="0" defaultValue={editing.listedPrice ?? ""} required />
             </div>
+            {editing.partnerId && (
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="commissionAmount">Commission amount</Label>
+                  <Input id="commissionAmount" name="commissionAmount" type="number" step="0.01" min="0" defaultValue={editing.commissionAmount ?? ""} />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="commissionStatus">Commission status</Label>
+                  <Input id="commissionStatus" name="commissionStatus" placeholder="Pending or Paid" defaultValue={editing.commissionStatus ?? ""} />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="commissionNotes">Commission notes</Label>
+                  <Textarea id="commissionNotes" name="commissionNotes" rows={3} defaultValue={editing.commissionNotes ?? ""} />
+                </div>
+              </>
+            )}
           </>
         )}
       </FormDialog>

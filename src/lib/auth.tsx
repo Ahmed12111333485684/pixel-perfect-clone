@@ -7,6 +7,7 @@ interface JwtPayload {
   role?: string | string[];
   screen_permissions?: string;
   owner_id?: string | number;
+  partner_id?: string;
   exp?: number;
   [k: string]: unknown;
 }
@@ -28,6 +29,7 @@ interface AuthUser {
   role: Role;
   screenPermissions: string[];
   ownerId?: number;
+  partnerId?: string;
   exp?: number;
 }
 
@@ -59,6 +61,7 @@ export interface AuthState {
   hasRole: (role: Role) => boolean;
   hasAnyRole: (roles: Role[]) => boolean;
   isStaff: boolean; // Admin only
+  isPartner: boolean;
 }
 
 const AuthCtx = createContext<AuthState | null>(null);
@@ -94,11 +97,14 @@ function userFromToken(token: string, fallbackUsername?: string, fallbackRole?: 
       : tokenUsername || responseUsername || "user";
   const ownerIdRaw = payload.owner_id;
   const ownerId = ownerIdRaw !== undefined ? Number(ownerIdRaw) : undefined;
+  const partnerIdRaw = payload.partner_id;
+  const partnerId = typeof partnerIdRaw === "string" ? partnerIdRaw : undefined;
   return {
     username,
     role: finalRole,
     screenPermissions: parseScreenPermissions(payload.screen_permissions, fallbackScreenPermissions),
     ownerId: Number.isNaN(ownerId) ? undefined : ownerId,
+    partnerId,
     exp: payload.exp,
   };
 }
@@ -160,6 +166,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       hasRole: (r) => role === r,
       hasAnyRole: (rs) => !!role && rs.includes(role),
       isStaff: role === "Admin" || role === "Employee",
+      isPartner: role === "Partner",
     };
   }, [token, user]);
 

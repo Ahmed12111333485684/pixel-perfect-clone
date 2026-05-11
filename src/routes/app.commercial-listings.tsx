@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { api, type CommercialListing } from "@/lib/api";
+import { api, fetchPartners, type CommercialListing, type Partner } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { PageHeader, StatusBadge } from "@/components/PageHeader";
 import { DataTable, type Column } from "@/components/DataTable";
@@ -164,6 +164,12 @@ function CommercialListingsPage() {
         sortDir: sortDir || undefined,
       },
     }),
+    enabled: hasAccess,
+  });
+
+  const partners = useQuery({
+    queryKey: ["partners", "lookup"],
+    queryFn: fetchPartners,
     enabled: hasAccess,
   });
 
@@ -415,6 +421,8 @@ function CommercialListingsPage() {
         open={creating}
         onOpenChange={setCreating}
         listing={null}
+        partners={partners.data ?? []}
+        partnersLoading={partners.isLoading}
         readOnly={!canManage}
         submitting={submitting}
         title={`${t("common.add")} ${t("nav.commercialListings")}`}
@@ -428,6 +436,8 @@ function CommercialListingsPage() {
           if (!value) setSelected(null);
         }}
         listing={selected}
+        partners={partners.data ?? []}
+        partnersLoading={partners.isLoading}
         readOnly={!canManage}
         submitting={submitting}
         title={canManage ? t("common.edit") : t("common.details")}
@@ -458,6 +468,8 @@ function CommercialListingDialog({
   open,
   onOpenChange,
   listing,
+  partners,
+  partnersLoading,
   readOnly,
   submitting,
   title,
@@ -467,6 +479,8 @@ function CommercialListingDialog({
   open: boolean;
   onOpenChange: (value: boolean) => void;
   listing: CommercialListing | null;
+  partners: Partner[];
+  partnersLoading: boolean;
   readOnly: boolean;
   submitting?: boolean;
   title: string;
@@ -475,10 +489,20 @@ function CommercialListingDialog({
 }) {
   const { t } = useTranslation();
   const [publishing, setPublishing] = useState<PublishingState>(() => buildPublishingState(listing));
+  const [broker, setBroker] = useState<string>(listing?.broker ?? "");
+
+  const partnerOptions = partners
+    .filter((partner) => partner.fullName.trim().length > 0)
+    .sort((a, b) => a.fullName.localeCompare(b.fullName));
+
+  const hasCurrentBrokerInPartners = broker
+    ? partnerOptions.some((partner) => partner.fullName === broker)
+    : true;
 
   useEffect(() => {
     if (open) {
       setPublishing(buildPublishingState(listing));
+      setBroker(listing?.broker ?? "");
     }
   }, [listing, open]);
 
@@ -503,7 +527,28 @@ function CommercialListingDialog({
           <TextField id="contractExpiry" label={t("commercialListings.contractExpiry")} defaultValue={listing?.contractExpiry} readOnly={readOnly} />
           <TextField id="adNumber" label={t("commercialListings.adNumber")} defaultValue={listing?.adNumber} readOnly={readOnly} />
           <TextField id="employee" label={t("common.employee")} defaultValue={listing?.employee} readOnly={readOnly} />
-          <TextField id="broker" label={t("commercialListings.broker")} defaultValue={listing?.broker} readOnly={readOnly} />
+          <div className="space-y-2">
+            <Label htmlFor="broker" className="text-xs font-medium">
+              {t("commercialListings.broker")}
+            </Label>
+            <Select value={broker || "none"} onValueChange={(value) => setBroker(value === "none" ? "" : value)} disabled={readOnly}>
+              <SelectTrigger id="broker" className="mt-1">
+                <SelectValue placeholder={partnersLoading ? "Loading partners..." : "Select partner"} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">{t("common.notProvided")}</SelectItem>
+                {partnerOptions.map((partner) => (
+                  <SelectItem key={partner.id} value={partner.fullName}>
+                    {partner.fullName}
+                  </SelectItem>
+                ))}
+                {broker && !hasCurrentBrokerInPartners && (
+                  <SelectItem value={broker}>{broker}</SelectItem>
+                )}
+              </SelectContent>
+            </Select>
+            <input type="hidden" name="broker" value={broker} />
+          </div>
         </div>
       </div>
 
