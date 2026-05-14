@@ -142,6 +142,7 @@ function PropertiesPage() {
     },
     { key: "name", header: t("common.name"), cell: (r) => <span className="font-medium">{r.name}</span> },
     { key: "address", header: t("common.address"), cell: (r) => <span className="text-muted-foreground">{r.address}</span> },
+  { key: "complianceNumber", header: t("commercialListings.complianceNumber"), cell: (r) => r.complianceNumber ?? "-" },
     { key: "type", header: t("common.type"), cell: (r) => r.type },
     {
       key: "status", header: t("common.status"),
@@ -248,7 +249,7 @@ function PropertyDialog({
 }: {
   open: boolean; onOpenChange: (v: boolean) => void; property: PropertyDto | null;
   owners: Owner[]; amenities: Amenity[]; defaultOwnerId?: number; canPickOwner: boolean;
-  onSubmit: (v: { ownerId: number; name: string; address: string; type: string; salePrice?: number | null; rentPrice?: number | null; amenityIds: number[]; files?: File[]; status?: PropertyStatus }) => void;
+  onSubmit: (v: { ownerId: number; name: string; address: string; type: string; salePrice?: number | null; rentPrice?: number | null; complianceNumber?: string | null; amenityIds: number[]; files?: File[]; status?: PropertyStatus }) => void;
   submitting?: boolean;
 }) {
   const { t } = useTranslation();
@@ -296,6 +297,7 @@ function PropertyDialog({
           type,
           salePrice: fd.get("salePrice") === "" ? null : Number(fd.get("salePrice") ?? 0),
           rentPrice: fd.get("rentPrice") === "" ? null : Number(fd.get("rentPrice") ?? 0),
+          complianceNumber: String(fd.get("complianceNumber") ?? "") || undefined,
           amenityIds: Array.from(picked),
           status: auth.isStaff ? status : undefined,
           files: selectedFiles.length > 0 ? selectedFiles : undefined,
@@ -348,6 +350,10 @@ function PropertyDialog({
           <Label htmlFor="rentPrice">{t("common.monthlyRent")}</Label>
           <Input id="rentPrice" name="rentPrice" type="number" step="0.01" min="0" defaultValue={property?.rentPrice ?? ""} />
         </div>
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="complianceNumber">{t("commercialListings.complianceNumber")}</Label>
+        <Input id="complianceNumber" name="complianceNumber" defaultValue={property?.complianceNumber ?? ""} />
       </div>
       <div className="space-y-2">
         <Label htmlFor="address">{t("common.address")}</Label>

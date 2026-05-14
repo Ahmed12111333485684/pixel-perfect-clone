@@ -2,7 +2,7 @@ import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { api, getStoredToken, type UserDto, type Role, type Owner } from "@/lib/api";
+import { api, getStoredToken, type UserDto, type Role } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { PageHeader, StatusBadge } from "@/components/PageHeader";
 import { DataTable, type Column } from "@/components/DataTable";
@@ -17,8 +17,8 @@ import { toast } from "sonner";
 import { formatDate } from "@/lib/format";
 import { APP_NAV_ITEMS } from "@/lib/navigation";
 
-const ROLES: Role[] = ["Admin", "Employee", "OwnerClient"];
-const EMPLOYEE_SCREEN_OPTIONS = APP_NAV_ITEMS.filter((item) => !item.adminOnly);
+const ROLES: Role[] = ["Admin", "Employee", "Partner"];
+const EMPLOYEE_SCREEN_OPTIONS = APP_NAV_ITEMS.filter((item) => !item.adminOnly && !item.partnerOnly);
 
 export const Route = createFileRoute("/app/users")({
   beforeLoad: () => {
@@ -39,19 +39,13 @@ function UsersPage() {
     enabled: auth.hasRole("Admin"),
   });
 
-  const owners = useQuery({
-    queryKey: ["owners", "user-account-picker"],
-    queryFn: () => api<Owner[]>("/api/owners"),
-    enabled: auth.hasRole("Admin"),
-  });
-
   const [creating, setCreating] = useState(false);
   const [editing, setEditing] = useState<UserDto | null>(null);
   const [deleting, setDeleting] = useState<UserDto | null>(null);
   const [resetting, setResetting] = useState<UserDto | null>(null);
 
   const upsert = useMutation({
-    mutationFn: async (vals: { id?: number; username: string; password?: string; role: Role; ownerId?: number; screenPermissions?: string[] }) => {
+    mutationFn: async (vals: { id?: number; username: string; password?: string; role: Role; screenPermissions?: string[] }) => {
       if (vals.id) {
         const body: Record<string, unknown> = { username: vals.username, role: vals.role };
         if (vals.password) body.password = vals.password;
@@ -60,14 +54,8 @@ function UsersPage() {
         return;
       }
 
-      if (vals.role === "OwnerClient") {
-        if (!vals.ownerId) throw new Error(t("common.ownerAccountNeedsOwner"));
-        if (!vals.password) throw new Error(t("common.ownerAccountNeedsPassword"));
-        await api(`/api/owners/${vals.ownerId}/account`, {
-          method: "POST",
-          body: { username: vals.username, password: vals.password },
-        });
-        return;
+      if (vals.role === "Partner") {
+        throw new Error(t("common.usePartnersPageForPartnerAccounts"));
       }
 
       await api("/api/users", { method: "POST", body: { username: vals.username, password: vals.password, role: vals.role, ...(vals.role === "Employee" ? { screenPermissions: vals.screenPermissions ?? [] } : {}) } });
@@ -166,7 +154,6 @@ function UsersPage() {
         open={creating || !!editing}
         onOpenChange={(v) => { if (!v) { setCreating(false); setEditing(null); } }}
         user={editing}
-        owners={owners.data ?? []}
         submitting={upsert.isPending}
         onSubmit={(vals) => upsert.mutate({ ...vals, id: editing?.id })}
       />
@@ -190,28 +177,24 @@ function UsersPage() {
   );
 }
 
-function UserDialog({ open, onOpenChange, user, owners, onSubmit, submitting }: {
+function UserDialog({ open, onOpenChange, user, onSubmit, submitting }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   user: UserDto | null;
-  owners: Owner[];
-  onSubmit: (vals: { username: string; password?: string; role: Role; ownerId?: number; screenPermissions?: string[] }) => void;
+  onSubmit: (vals: { username: string; password?: string; role: Role; screenPermissions?: string[] }) => void;
   submitting?: boolean;
 }) {
   const { t } = useTranslation();
   const [role, setRole] = useState<Role>(user?.role ?? "Admin");
-  const [ownerId, setOwnerId] = useState<number | undefined>(undefined);
   const [screenPermissions, setScreenPermissions] = useState<string[]>(user?.screenPermissions ?? []);
   const key = `${user?.id ?? "new"}-${open}`;
 
   useEffect(() => {
     if (!open) return;
     setRole(user?.role ?? "Admin");
-    setOwnerId(undefined);
     setScreenPermissions(user?.screenPermissions ?? []);
   }, [open, user]);
 
-  const ownerClientMode = !user && role === "OwnerClient";
   const employeeMode = role === "Employee";
 
   const toggleScreenPermission = (screen: string, checked: boolean) => {
@@ -229,7 +212,7 @@ function UserDialog({ open, onOpenChange, user, owners, onSubmit, submitting }: 
       key={key}
       open={open}
       onOpenChange={(v) => { if (!v) onOpenChange(false); }}
-      title={ownerClientMode ? t("common.addOwnerPortalAccount") : user ? t("common.edit") : t("common.add")}
+      title={user ? t("common.edit") : t("common.add")}
       submitting={submitting}
       size="lg"
       onSubmit={(e) => {
@@ -244,7 +227,6 @@ function UserDialog({ open, onOpenChange, user, owners, onSubmit, submitting }: 
           username: String(fd.get("username") ?? ""),
           role,
           ...(password ? { password } : {}),
-          ...(ownerClientMode ? { ownerId } : {}),
           ...(employeeMode ? { screenPermissions } : {}),
         });
       }}
@@ -259,23 +241,6 @@ function UserDialog({ open, onOpenChange, user, owners, onSubmit, submitting }: 
         </Label>
         <Input id="password" name="password" type="password" required={!user} />
       </div>
-      {ownerClientMode && (
-        <div className="space-y-2">
-          <Label htmlFor="ownerId">{t("common.ownerId")}</Label>
-          <Select value={ownerId?.toString() ?? ""} onValueChange={(v) => setOwnerId(Number(v))}>
-            <SelectTrigger id="ownerId">
-              <SelectValue placeholder={t("common.selectOwner")} />
-            </SelectTrigger>
-            <SelectContent>
-              {owners.map((owner) => (
-                <SelectItem key={owner.id} value={owner.id.toString()}>
-                  {owner.fullName}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      )}
       {employeeMode && (
         <div className="space-y-3 rounded-lg border border-border bg-muted/30 p-4">
           <div>

@@ -139,6 +139,12 @@ const en = {
     selectOwner: "Select owner",
     ownerAccountNeedsOwner: "Select an owner for this portal account.",
     ownerAccountNeedsPassword: "Password is required.",
+    usePartnersPageForPartnerAccounts: "Use the Partners page to create partner accounts.",
+    account: "Account",
+    stats: "Stats",
+    toggleSidebar: "Toggle sidebar",
+    createPartnerAccountDescription: "Create a portal account for this partner.",
+    createOwnerAccountDescription: "Create a portal account for this owner.",
     requestDate: "Request date",
     requestType: "Request type",
     employee: "Employee",
@@ -191,6 +197,10 @@ const en = {
     moreAmenities: "+{{count}} more",
     empty: "No available properties found.",
     zoomImage: "Zoom image",
+  },
+  partner: {
+    submitPropertySubtitle: "Submit a property through your partner portal",
+    myPropertiesSubtitle: "Your assigned records",
   },
   footer: {
     tagline: "Property management for owners and agencies — refined, end-to-end.",
@@ -248,6 +258,7 @@ const en = {
     mobile2: "Secondary Mobile",
     availableUnits: "Available Units",
     deedNumber: "Deed Number",
+    complianceNumber: "Compliance #",
     propertyType: "Property Type",
     roomsCount: "Rooms",
     buildingAge: "Building Age (yrs)",
@@ -309,7 +320,6 @@ const en = {
   role: {
     Admin: "Admin",
     Employee: "Employee",
-    OwnerClient: "Owner",
     Partner: "Partner",
   },
   property: {
@@ -550,6 +560,10 @@ const ar = {
     empty: "لا توجد عقارات متاحة حالياً.",
     zoomImage: "تكبير الصورة",
   },
+  partner: {
+    submitPropertySubtitle: "إرسال عقار عبر بوابة الشريك",
+    myPropertiesSubtitle: "السجلات المسندة إليك",
+  },
   footer: {
     tagline: "إدارة عقارية للملاك والوكالات — متكاملة وأنيقة.",
     contact: "تواصل معنا",
@@ -606,6 +620,7 @@ const ar = {
     mobile2: "الجوال الثاني",
     availableUnits: "الوحدات المتوفرة",
     deedNumber: "رقم الصك",
+    complianceNumber: "رقم المطابقة",
     propertyType: "نوع العقار",
     roomsCount: "عدد الغرف",
     buildingAge: "عمر المبنى (سنة)",
@@ -666,7 +681,6 @@ const ar = {
   paymentStatus: { Pending: "قيد الانتظار", Paid: "مدفوع", Overdue: "متأخر" },  requestStatus: { New: "جديد", "In Progress": "قيد المعالجة", Completed: "مكتمل", Cancelled: "ملغى" },  role: {
     Admin: "مشرف",
     Employee: "موظف",
-    OwnerClient: "مالك",
     Partner: "شريك",
   },
   property: {

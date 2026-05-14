@@ -115,7 +115,7 @@ export async function api<T = unknown>(path: string, opts: ApiOptions = {}): Pro
 }
 
 // ============ Domain types ============
-export type Role = "Admin" | "Employee" | "OwnerClient" | "Partner";
+export type Role = "Admin" | "Employee" | "Partner";
 
 export interface UserDto {
   id: number;
@@ -198,6 +198,7 @@ export interface PropertyDto {
   type: string;
   salePrice?: number | null;
   rentPrice?: number | null;
+  complianceNumber?: string | null;
   status: PropertyStatus;
   createdAt: string;
   amenities?: Amenity[];
@@ -379,6 +380,7 @@ export interface CommercialListing {
   publishedInstagram?: string | null;
   publishedTiktok?: string | null;
   notes?: string | null;
+  complianceNumber?: string | null;
   createdAt: string;
   updatedAt?: string | null;
 }

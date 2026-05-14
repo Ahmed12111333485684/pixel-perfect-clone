@@ -8,7 +8,6 @@ export interface AppNavItem {
   label: string;
   icon: ComponentType<{ className?: string }>;
   staffOnly?: boolean;
-  ownerOnly?: boolean;
   adminOnly?: boolean;
   partnerOnly?: boolean;
 }
@@ -26,8 +25,8 @@ export const APP_NAV_ITEMS: AppNavItem[] = [
   { to: "/app/sales", label: "nav.sales", icon: BadgeDollarSign },
   { to: "/app/leads", label: "nav.leads", icon: Inbox, staffOnly: true },
   { to: "/app/requests", label: "nav.requests", icon: MessageSquare },
-  { to: "/app/commercial-listings", label: "nav.commercialListings", icon: Building2, staffOnly: true },
-  { to: "/app/residential-seekers", label: "nav.residentialSeekers", icon: Users2, staffOnly: true },
+  { to: "/app/commercial-listings", label: "nav.commercialListings", icon: Building2 },
+  { to: "/app/residential-seekers", label: "nav.residentialSeekers", icon: Users2 },
   { to: "/app/users", label: "nav.users", icon: ShieldCheck, adminOnly: true },
   { to: "/partner/my-properties", label: "nav.myProperties", icon: Building2, partnerOnly: true },
   { to: "/partner/submit-property", label: "nav.submitProperty", icon: Inbox, partnerOnly: true },
@@ -52,11 +51,10 @@ export function isNavItemVisible(item: AppNavItem, role?: Role | null, screenPer
     return !item.adminOnly && screenPermissions.includes(item.to);
   }
 
-  if (role === "Partner") return false;
+  if (role === "Partner") return !item.adminOnly && !item.staffOnly;
 
   if (item.adminOnly) return false;
   if (item.staffOnly) return false;
-  if (item.ownerOnly) return role === "OwnerClient";
 
   return true;
 }

@@ -1,4 +1,5 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
+import { AppLayout } from "./app";
 import { useRef, useState, type FormEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { ApiError, submitPartnerLead, type Lead, type LeadIntent } from "@/lib/api";
@@ -18,7 +19,7 @@ export const Route = createFileRoute("/partner/submit-property")({
     const token = window.localStorage.getItem("estatly.token");
     if (!token) throw redirect({ to: "/login" });
   },
-  component: PartnerSubmitPropertyPage,
+  component: () => <AppLayout><PartnerSubmitPropertyPage /></AppLayout>,
 });
 
 const INTENTS: LeadIntent[] = ["Buy", "Rent", "Sell", "LetOut"];
@@ -95,7 +96,7 @@ function PartnerSubmitPropertyPage() {
 
   return (
     <div>
-      <PageHeader title={t("nav.submitProperty")} subtitle="Submit a property through your partner portal" />
+      <PageHeader title={t("nav.submitProperty")} subtitle={t("partner.submitPropertySubtitle")} />
       <form ref={formRef} onSubmit={onSubmit} className="space-y-6 rounded-2xl border border-border bg-card p-8 shadow-card">
         <Field id="propertyName" label={t("lead.propertyName")} required />
         <Field id="address" label={t("lead.propertyAddress")} required />

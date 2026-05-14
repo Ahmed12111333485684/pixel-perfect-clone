@@ -98,7 +98,7 @@ function PartnersPage() {
       header: "",
       className: "w-12",
       cell: (r) => (
-        <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); setAccountFor(r); }} title="Account">
+        <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); setAccountFor(r); }} title={t("common.account")}>
           <KeyRound className="h-4 w-4" />
         </Button>
       ),
@@ -220,11 +220,11 @@ function PartnerAccountDialog({ partner, onOpenChange, onSubmit, submitting }: {
 }) {
   const { t } = useTranslation();
   return (
-    <FormDialog
+      <FormDialog
       open={!!partner}
       onOpenChange={onOpenChange}
       title={`${t("common.add")} — ${partner?.fullName ?? ""}`}
-      description="Create a portal account for this partner."
+      description={t("common.createPartnerAccountDescription")}
       submitting={submitting}
       onSubmit={(e) => {
         e.preventDefault();

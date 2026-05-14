@@ -77,18 +77,37 @@ function parseScreenPermissions(raw: unknown, fallback: string[] = []): string[]
           .filter(Boolean);
       }
     } catch {
-      return fallback;
+      // fall through to treat raw as plain string below
     }
+  }
+
+  if (Array.isArray(raw)) {
+    return raw
+      .filter((value): value is string => typeof value === "string")
+      .map((value) => value.trim())
+      .filter(Boolean);
   }
 
   return fallback;
 }
 
+function normalizeRole(raw?: string | undefined | null): Role | undefined {
+  if (!raw) return undefined;
+  const r = raw.trim();
+  if (!r) return undefined;
+  const lower = r.toLowerCase();
+  if (lower === "admin") return "Admin";
+  if (lower === "employee") return "Employee";
+  if (lower === "partner") return "Partner";
+  return undefined;
+}
+
 function userFromToken(token: string, fallbackUsername?: string, fallbackRole?: Role, fallbackScreenPermissions: string[] = []): AuthUser | null {
   const payload = decodeJwt(token);
   if (!payload) return null;
-  const role = (Array.isArray(payload.role) ? payload.role[0] : payload.role) as Role | undefined;
-  const finalRole = (role ?? fallbackRole ?? "OwnerClient") as Role;
+  const rawRole = Array.isArray(payload.role) ? String(payload.role[0]) : (typeof payload.role === "string" ? payload.role : undefined);
+  const normalized = normalizeRole(rawRole) ?? normalizeRole(fallbackRole as string) ?? undefined;
+  const finalRole = normalized ?? (fallbackRole as Role | undefined) ?? "Partner";
   const tokenUsername = typeof payload.unique_name === "string" ? payload.unique_name.trim() : "";
   const responseUsername = fallbackUsername?.trim();
   const username =

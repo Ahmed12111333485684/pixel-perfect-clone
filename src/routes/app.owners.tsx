@@ -121,10 +121,10 @@ function OwnersPage() {
                 key: "actions2", header: "", className: "w-24",
                 cell: (r: Owner) => (
                   <div className="flex items-center gap-1">
-                    <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); setStatsFor(r); }} title="Stats">
+                    <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); setStatsFor(r); }} title={t("common.stats")}>
                       <BarChart3 className="h-4 w-4" />
                     </Button>
-                    <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); setAccountFor(r); }} title="Account">
+                    <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); setAccountFor(r); }} title={t("common.account")}>
                       <KeyRound className="h-4 w-4" />
                     </Button>
                   </div>
@@ -212,7 +212,7 @@ function AccountDialog({ owner, onOpenChange, onSubmit, submitting }: {
       open={!!owner}
       onOpenChange={onOpenChange}
       title={`${t("common.add")} — ${owner?.fullName ?? ""}`}
-      description="Create a portal account for this owner."
+      description={t("common.createOwnerAccountDescription")}
       submitting={submitting}
       onSubmit={(e) => {
         e.preventDefault();

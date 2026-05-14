@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { api, type ResidentialSeeker } from "@/lib/api";
+import { api, type ResidentialSeeker, fetchPartners } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { PageHeader, StatusBadge } from "@/components/PageHeader";
 import { DataTable, type Column } from "@/components/DataTable";
@@ -94,9 +94,9 @@ function ResidentialSeekersPage() {
   const [deletingRecord, setDeletingRecord] = useState(false);
 
   const hasAccess = auth.hasRole("Admin")
-    || auth.hasRole("OwnerClient")
+    || auth.isPartner
     || auth.user?.screenPermissions.includes("/app/residential-seekers");
-  const canManage = auth.isStaff && !auth.hasRole("OwnerClient");
+  const canManage = auth.isStaff || auth.isPartner;
 
   const seekers = useQuery({
     queryKey: ["residential-seekers", { q, status, page, pageSize, sortBy, sortDir }],
@@ -446,7 +446,16 @@ function ResidentialSeekerDialog({
           <TextField id="status" label={t("residentialSeekers.status")} defaultValue={seeker?.status} readOnly={readOnly} />
           <TextField id="employee" label={t("common.employee")} defaultValue={seeker?.employee} readOnly={readOnly} />
           <TextField id="receiver" label={t("residentialSeekers.receiver")} defaultValue={seeker?.receiver} readOnly={readOnly} />
-          <TextField id="sourceChannel" label={t("residentialSeekers.sourceChannel")} defaultValue={seeker?.sourceChannel} readOnly={readOnly} />
+          {readOnly ? (
+            <TextField id="sourceChannel" label={t("residentialSeekers.sourceChannel")} defaultValue={seeker?.sourceChannel} readOnly={readOnly} />
+          ) : (
+            <div className="space-y-2">
+              <Label htmlFor="sourceChannel" className="text-xs font-medium">
+                {t("residentialSeekers.sourceChannel")}
+              </Label>
+              <PartnersSelect defaultValue={seeker?.sourceChannel} />
+            </div>
+          )}
         </div>
       </div>
 
@@ -538,5 +547,24 @@ function TextareaField({
         className="mt-1"
       />
     </div>
+  );
+}
+
+function PartnersSelect({ defaultValue }: { defaultValue?: string | null }) {
+  const { data } = useQuery({ queryKey: ["partners"], queryFn: fetchPartners });
+  const partners = data ?? [];
+
+  return (
+    <select
+      id="sourceChannel"
+      name="sourceChannel"
+      defaultValue={defaultValue ?? ""}
+      className="mt-1 block w-full rounded-md border border-border bg-background px-3 py-2 text-sm focus:outline-none"
+    >
+      <option value="">—</option>
+      {partners.map((p) => (
+        <option key={p.id} value={p.fullName}>{p.fullName}</option>
+      ))}
+    </select>
   );
 }

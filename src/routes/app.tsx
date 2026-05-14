@@ -25,7 +25,7 @@ export const Route = createFileRoute("/app")({
   component: AppLayout,
 });
 
-function AppLayout() {
+export function AppLayout() {
   const auth = useAuth();
   const { t } = useTranslation();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
