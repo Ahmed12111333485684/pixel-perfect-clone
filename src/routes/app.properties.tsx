@@ -66,13 +66,13 @@ function PropertiesPage() {
   const [search, setSearch] = useState("");
 
   const upsert = useMutation({
-    mutationFn: async (vals: { id?: number; ownerId: number; name: string; address: string; type: string; salePrice?: number | null; rentPrice?: number | null; amenityIds: number[]; files?: File[]; status?: PropertyStatus }) => {
+    mutationFn: async (vals: { id?: number; ownerId: number; name: string; address: string; type: string; region?: string | null; city?: string | null; district?: string | null; listingType: "Rental" | "Sale"; salePrice?: number | null; rentPrice?: number | null; deedNumber?: string | null; amenityIds: number[]; files?: File[]; status?: PropertyStatus }) => {
       let propertyId: number;
       if (vals.id) {
         propertyId = vals.id;
-        await api(`/api/properties/${vals.id}`, { method: "PUT", body: { ownerId: vals.ownerId, name: vals.name, address: vals.address, type: vals.type, salePrice: vals.salePrice, rentPrice: vals.rentPrice, amenityIds: vals.amenityIds } });
+        await api(`/api/properties/${vals.id}`, { method: "PUT", body: { ownerId: vals.ownerId, name: vals.name, address: vals.address, type: vals.type, region: vals.region, city: vals.city, district: vals.district, listingType: vals.listingType, salePrice: vals.salePrice, rentPrice: vals.rentPrice, deedNumber: vals.deedNumber, amenityIds: vals.amenityIds } });
       } else {
-        const response = await api<{ id: number }>("/api/properties", { method: "POST", body: { ownerId: vals.ownerId, name: vals.name, address: vals.address, type: vals.type, salePrice: vals.salePrice, rentPrice: vals.rentPrice, amenityIds: vals.amenityIds } });
+        const response = await api<{ id: number }>("/api/properties", { method: "POST", body: { ownerId: vals.ownerId, name: vals.name, address: vals.address, type: vals.type, region: vals.region, city: vals.city, district: vals.district, listingType: vals.listingType, salePrice: vals.salePrice, rentPrice: vals.rentPrice, deedNumber: vals.deedNumber, amenityIds: vals.amenityIds } });
         propertyId = response.id;
       }
       // Upload files if any
@@ -142,7 +142,6 @@ function PropertiesPage() {
     },
     { key: "name", header: t("common.name"), cell: (r) => <span className="font-medium">{r.name}</span> },
     { key: "address", header: t("common.address"), cell: (r) => <span className="text-muted-foreground">{r.address}</span> },
-  { key: "complianceNumber", header: t("commercialListings.complianceNumber"), cell: (r) => r.complianceNumber ?? "-" },
     { key: "type", header: t("common.type"), cell: (r) => r.type },
     {
       key: "status", header: t("common.status"),
@@ -219,7 +218,7 @@ function PropertiesPage() {
         defaultOwnerId={!auth.isStaff ? auth.user?.ownerId : undefined}
         canPickOwner={auth.isStaff}
         submitting={upsert.isPending}
-        onSubmit={(vals) => upsert.mutate({ ...vals, id: editing?.id })}
+        onSubmit={(vals) => upsert.mutate({ ...vals, id: editing?.id, region: vals.region, city: vals.city, district: vals.district, listingType: vals.listingType, deedNumber: vals.deedNumber })}
       />
 
       <ConfirmDialog
@@ -249,7 +248,7 @@ function PropertyDialog({
 }: {
   open: boolean; onOpenChange: (v: boolean) => void; property: PropertyDto | null;
   owners: Owner[]; amenities: Amenity[]; defaultOwnerId?: number; canPickOwner: boolean;
-  onSubmit: (v: { ownerId: number; name: string; address: string; type: string; salePrice?: number | null; rentPrice?: number | null; complianceNumber?: string | null; amenityIds: number[]; files?: File[]; status?: PropertyStatus }) => void;
+  onSubmit: (v: { ownerId: number; name: string; address: string; type: string; region?: string | null; city?: string | null; district?: string | null; listingType: "Rental" | "Sale"; salePrice?: number | null; rentPrice?: number | null; deedNumber?: string | null; amenityIds: number[]; files?: File[]; status?: PropertyStatus }) => void;
   submitting?: boolean;
 }) {
   const { t } = useTranslation();
@@ -257,6 +256,11 @@ function PropertyDialog({
   const [ownerId, setOwnerId] = useState<string>(String(property?.ownerId ?? defaultOwnerId ?? ""));
   const [type, setType] = useState<string>(property?.type ?? "Apartment");
   const [status, setStatus] = useState<PropertyStatus>(property?.status ?? "Pending");
+  const [region, setRegion] = useState<string>(property?.region ?? "");
+  const [city, setCity] = useState<string>(property?.city ?? "");
+  const [district, setDistrict] = useState<string>(property?.district ?? "");
+  const [listingType, setListingType] = useState<"Rental" | "Sale">(property?.listingType ?? "Rental");
+  const [deedNumber, setDeedNumber] = useState<string>(property?.deedNumber ?? "");
   const [picked, setPicked] = useState<Set<number>>(new Set(property?.amenities?.map((a) => a.id) ?? []));
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
 
@@ -266,9 +270,14 @@ function PropertyDialog({
     setOwnerId(String(property?.ownerId ?? defaultOwnerId ?? ""));
     setType(property?.type ?? "Apartment");
     setStatus(property?.status ?? "Pending");
+    setRegion(property?.region ?? "");
+    setCity(property?.city ?? "");
+    setDistrict(property?.district ?? "");
+    setListingType(property?.listingType ?? "Rental");
+    setDeedNumber(property?.deedNumber ?? "");
     setPicked(new Set(property?.amenities?.map((amenity) => amenity.id) ?? []));
     setSelectedFiles([]);
-  }, [open, property?.id, property?.ownerId, property?.type, property?.amenities, defaultOwnerId]);
+  }, [open, property?.id, property?.ownerId, property?.type, property?.region, property?.city, property?.district, property?.listingType, property?.deedNumber, property?.amenities, defaultOwnerId]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
@@ -296,9 +305,7 @@ function PropertyDialog({
           address: String(fd.get("address") ?? ""),
           type,
           salePrice: fd.get("salePrice") === "" ? null : Number(fd.get("salePrice") ?? 0),
-          rentPrice: fd.get("rentPrice") === "" ? null : Number(fd.get("rentPrice") ?? 0),
-          complianceNumber: String(fd.get("complianceNumber") ?? "") || undefined,
-          amenityIds: Array.from(picked),
+          rentPrice: fd.get("rentPrice") === "" ? null : Number(fd.get("rentPrice") ?? 0),          deedNumber: deedNumber || null,          amenityIds: Array.from(picked),
           status: auth.isStaff ? status : undefined,
           files: selectedFiles.length > 0 ? selectedFiles : undefined,
         });
@@ -341,23 +348,52 @@ function PropertyDialog({
           </Select>
         </div>
       </div>
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div className="space-y-2">
-          <Label htmlFor="salePrice">{t("common.salePrice")}</Label>
-          <Input id="salePrice" name="salePrice" type="number" step="0.01" min="0" defaultValue={property?.salePrice ?? ""} />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="rentPrice">{t("common.monthlyRent")}</Label>
-          <Input id="rentPrice" name="rentPrice" type="number" step="0.01" min="0" defaultValue={property?.rentPrice ?? ""} />
-        </div>
-      </div>
-      <div className="space-y-2">
-        <Label htmlFor="complianceNumber">{t("commercialListings.complianceNumber")}</Label>
-        <Input id="complianceNumber" name="complianceNumber" defaultValue={property?.complianceNumber ?? ""} />
-      </div>
       <div className="space-y-2">
         <Label htmlFor="address">{t("common.address")}</Label>
         <Input id="address" name="address" defaultValue={property?.address ?? ""} required />
+      </div>
+      <div className="grid gap-4 sm:grid-cols-3">
+        <div className="space-y-2">
+          <Label htmlFor="region">{t("common.region")}</Label>
+          <Input id="region" name="region" value={region} onChange={(e) => setRegion(e.target.value)} />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="city">{t("common.city")}</Label>
+          <Input id="city" name="city" value={city} onChange={(e) => setCity(e.target.value)} />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="district">{t("common.district")}</Label>
+          <Input id="district" name="district" value={district} onChange={(e) => setDistrict(e.target.value)} />
+        </div>
+      </div>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div className="space-y-2">
+          <Label>{t("common.listingType")}</Label>
+          <Select value={listingType} onValueChange={(v) => setListingType(v as "Rental" | "Sale")}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="Rental">{t("common.forRent")}</SelectItem>
+              <SelectItem value="Sale">{t("common.forSale")}</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+      <div className="grid gap-4 sm:grid-cols-2">
+        {listingType === "Sale" ? (
+          <div className="space-y-2">
+            <Label htmlFor="salePrice">{t("common.salePrice")}</Label>
+            <Input id="salePrice" name="salePrice" type="number" step="0.01" min="0" defaultValue={property?.salePrice ?? ""} />
+          </div>
+        ) : (
+          <div className="space-y-2">
+            <Label htmlFor="rentPrice">{t("common.monthlyRent")}</Label>
+            <Input id="rentPrice" name="rentPrice" type="number" step="0.01" min="0" defaultValue={property?.rentPrice ?? ""} />
+          </div>
+        )}
+        <div className="space-y-2">
+          <Label htmlFor="deedNumber">{t("common.deedNumber")}</Label>
+          <Input id="deedNumber" name="deedNumber" value={deedNumber} onChange={(e) => setDeedNumber(e.target.value)} />
+        </div>
       </div>
       <div className="space-y-2">
         <Label>{t("nav.amenities")}</Label>

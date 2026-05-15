@@ -196,9 +196,13 @@ export interface PropertyDto {
   name: string;
   address: string;
   type: string;
+  region?: string | null;
+  city?: string | null;
+  district?: string | null;
+  listingType: "Rental" | "Sale";
   salePrice?: number | null;
   rentPrice?: number | null;
-  complianceNumber?: string | null;
+  deedNumber?: string | null;
   status: PropertyStatus;
   createdAt: string;
   amenities?: Amenity[];
