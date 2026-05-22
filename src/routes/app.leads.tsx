@@ -12,6 +12,7 @@ import { FormDialog, ConfirmDialog } from "@/components/FormDialog";
 import { CheckCircle2, ChevronLeft, ChevronRight, ExternalLink, FileImage, Home, Inbox, Mail, MapPin, Phone, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { leadStatusTone, formatDateTime } from "@/lib/format";
+import { localizePropertyType } from "@/lib/property-types";
 import { toast } from "sonner";
 
 const INTENTS: LeadIntent[] = ["Buy", "Rent", "Sell", "LetOut"];
@@ -319,7 +320,7 @@ function LeadsPage() {
                   <span className="text-xs font-medium text-muted-foreground">{t("common.type")}:</span>
                   <div className="flex items-center gap-2">
                     <Home className="h-3.5 w-3.5" />
-                    <span>{selected.propertyType || t("common.notProvided")}</span>
+                    <span>{localizePropertyType(t, selected.propertyType)}</span>
                   </div>
                 </div>
                 <div>

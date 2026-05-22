@@ -1,25 +1,28 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { api, type RequestListItem, type RequestDetails } from "@/lib/api";
+import { api, resolveApiAssetUrl, type RequestListItem, type RequestDetails, type RequestPropertySuggestion } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { PageHeader } from "@/components/PageHeader";
 import { DataTable, type Column } from "@/components/DataTable";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { FormDialog, ConfirmDialog } from "@/components/FormDialog";
-import { X, Plus } from "lucide-react";
+import { BadgeDollarSign, Building2, MapPin, Plus, Sparkles, X } from "lucide-react";
 import { toast } from "sonner";
 import { formatDate } from "@/lib/format";
+import { localizePropertyType } from "@/lib/property-types";
 
 export const Route = createFileRoute("/app/requests")({
-  component: RequestsPage,
+  component: () => <RequestsPage filterMode="buysell" />,
 });
 
-function RequestsPage() {
+export function RequestsPage({ filterMode }: { filterMode?: "buysell" | "rental" }) {
   const { t } = useTranslation();
   const auth = useAuth();
   const qc = useQueryClient();
@@ -81,7 +84,7 @@ function RequestsPage() {
   const detailQuery = useQuery({
     queryKey: ["request", selectedRequest?.id],
     queryFn: () => api<RequestDetails>(`/api/requests/${selectedRequest?.id}`),
-    enabled: !!selectedRequest?.id && !selectedRequest?.requestDate, // Only fetch if we don't have full details
+    enabled: !!selectedRequest?.id,
   });
 
   const requestDetail = selectedRequest
@@ -90,6 +93,13 @@ function RequestsPage() {
         ...(detailQuery.data && { ...detailQuery.data }),
       }
     : null;
+
+  const requestId = requestDetail?.id ?? selectedRequest?.id;
+  const suggestionsQuery = useQuery({
+    queryKey: ["request-property-suggestions", requestId],
+    queryFn: () => api<RequestPropertySuggestion[]>(`/api/requests/${requestId}/property-suggestions`),
+    enabled: !!requestId && !!requestDetail,
+  });
 
   const handleReset = () => {
     setQ("");
@@ -208,11 +218,24 @@ function RequestsPage() {
     );
   }
 
-  const totalPages = Math.ceil((requests.data?.total ?? 0) / pageSize);
+  // If filterMode is set we filter client-side (server doesn't support multi-type filter)
+  const allItems = requests.data?.items ?? [];
+  const filteredAll = filterMode
+    ? allItems.filter((it) => {
+        if (filterMode === "rental") return it.requestType === "Rental";
+        if (filterMode === "buysell") return it.requestType === "Purchase" || it.requestType === "Sell";
+        return true;
+      })
+    : allItems;
+
+  const totalPages = Math.ceil((filteredAll.length ?? 0) / pageSize) || 1;
+  const pagedItems = filteredAll.slice((page - 1) * pageSize, page * pageSize);
+
+  const title = filterMode === "rental" ? t("nav.rentalRequests") : filterMode === "buysell" ? t("nav.buysellRequests") : t("nav.requests");
 
   return (
     <div>
-      <PageHeader title={t("nav.requests")} />
+      <PageHeader title={title} />
 
       {/* Filters */}
       <div className="mb-6 space-y-4 rounded-xl border border-border bg-card p-4">
@@ -329,7 +352,7 @@ function RequestsPage() {
       {/* Table */}
       <DataTable
         columns={columns}
-        rows={requests.data?.items ?? []}
+        rows={pagedItems}
         loading={requests.isLoading}
         error={requests.error}
         rowKey={(r) => r.id}
@@ -342,7 +365,7 @@ function RequestsPage() {
           <div className="text-sm text-muted-foreground">
             {t("common.skip", { defaultValue: "Showing" })} {(page - 1) * pageSize + 1}
             {" - "}
-            {Math.min(page * pageSize, requests.data?.total ?? 0)} {t("common.of", { defaultValue: "of" })} {requests.data?.total}
+            {Math.min(page * pageSize, filteredAll.length ?? 0)} {t("common.of", { defaultValue: "of" })} {filteredAll.length}
           </div>
           <div className="flex gap-2">
             <Button
@@ -452,6 +475,116 @@ function RequestsPage() {
                 </div>
               </div>
             )}
+
+            <div className="border-t border-border pt-4">
+              <div className="mb-3 flex items-center justify-between gap-2">
+                <div>
+                  <p className="text-sm font-semibold">{t("common.suggestions", { defaultValue: "Suggested properties" })}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {t("common.autoMatched", { defaultValue: "Top matches for this request" })}
+                  </p>
+                </div>
+                <Badge variant="outline" className="gap-1">
+                  <Sparkles className="h-3.5 w-3.5" />
+                  {suggestionsQuery.data?.length ?? 0}
+                </Badge>
+              </div>
+
+              {suggestionsQuery.isLoading ? (
+                <div className="rounded-lg border border-dashed border-border px-4 py-6 text-center text-sm text-muted-foreground">
+                  {t("common.loading")}
+                </div>
+              ) : suggestionsQuery.error ? (
+                <div className="rounded-lg border border-dashed border-destructive/40 px-4 py-6 text-center text-sm text-destructive">
+                  {t("common.error")}
+                </div>
+              ) : (suggestionsQuery.data?.length ?? 0) === 0 ? (
+                <div className="rounded-lg border border-dashed border-border px-4 py-6 text-center text-sm text-muted-foreground">
+                  {t("common.noData", { defaultValue: "No property suggestions found." })}
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {suggestionsQuery.data?.map((property) => (
+                    <div key={property.id} className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
+                      <div className="flex gap-3 p-3">
+                        <div className="h-20 w-28 shrink-0 overflow-hidden rounded-lg border border-border bg-muted">
+                          {property.primaryImageUrl ? (
+                            <img
+                              src={resolveApiAssetUrl(property.primaryImageUrl)}
+                              alt={property.name}
+                              className="h-full w-full object-cover"
+                            />
+                          ) : (
+                            <div className="flex h-full items-center justify-center text-muted-foreground">
+                              <Building2 className="h-5 w-5" />
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="min-w-0 flex-1 space-y-2">
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5">
+                                  <Sparkles className="h-3 w-3" />
+                                  {t("common.match", { defaultValue: "Match" })} {property.score}
+                                </span>
+                              </div>
+                              <div className="mt-1 truncate font-medium">{property.name}</div>
+                              <div className="mt-1 flex items-start gap-1 text-xs text-muted-foreground">
+                                <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                                <span>{property.address}</span>
+                              </div>
+                            </div>
+
+                            <Badge variant="outline">{property.listingType}</Badge>
+                          </div>
+
+                          <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
+                            <span>{localizePropertyType(t, property.type)}</span>
+                            {property.region && <span>{property.region}</span>}
+                            {property.city && <span>{property.city}</span>}
+                            {property.district && <span>{property.district}</span>}
+                            {(property.rentPrice ?? property.salePrice) != null && (
+                              <span className="inline-flex items-center gap-1">
+                                <BadgeDollarSign className="h-3.5 w-3.5" />
+                                {(property.rentPrice ?? property.salePrice)!.toLocaleString()}
+                              </span>
+                            )}
+                          </div>
+
+                          <div className="flex flex-wrap gap-1.5">
+                            {property.reasons.slice(0, 3).map((r, i) => {
+                              const args = r.args ? { ...r.args } : undefined;
+                              if (args && args.listingType) {
+                                args.listingType = t(`requestType.${args.listingType}`, { defaultValue: args.listingType });
+                              }
+                              return (
+                                <Badge key={`${r.key}-${i}`} variant="outline" className="text-[11px]">
+                                  {t(`suggestions.reasons.${r.key}`, args || {})}
+                                </Badge>
+                              );
+                            })}
+                          </div>
+
+                          <div className="flex flex-wrap items-center gap-2">
+                            <Button asChild size="sm" variant="outline">
+                              <Link
+                                to="/app/properties/$id"
+                                params={{ id: String(property.id) }}
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                {t("common.open")}
+                              </Link>
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         )}
       </FormDialog>

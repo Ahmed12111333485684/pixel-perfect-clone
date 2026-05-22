@@ -33,7 +33,6 @@ const STATUS_RENTED = "تم التأجير";
 
 const COMMERCIAL_FIELDS = [
   "serialNumber",
-  "complianceNumber",
   "contactDate",
   "propertyStatus",
   "brokerageContract",
@@ -273,9 +272,11 @@ function CommercialListingsPage() {
       cell: (r) => <span className="font-medium">{r.ownerName || t("common.notProvided")}</span>,
     },
     {
-      key: "complianceNumber",
-      header: t("commercialListings.complianceNumber"),
-      cell: (r) => r.complianceNumber || t("common.notProvided"),
+      key: "deedNumber",
+      header: t("commercialListings.deedNumber"),
+      cell: (r) => (
+        r.deedNumber ? <span className="font-mono text-sm">{r.deedNumber}</span> : t("common.notProvided")
+      ),
     },
     {
       key: "mobile1",
@@ -526,7 +527,6 @@ function CommercialListingDialog({
       <div className="space-y-4 rounded-lg border border-border bg-muted/30 p-4">
         <div className="grid gap-4 sm:grid-cols-2">
           <TextField id="serialNumber" label={t("commercialListings.serialNumber")} defaultValue={listing?.serialNumber} readOnly={readOnly} />
-          <TextField id="complianceNumber" label={t("commercialListings.complianceNumber")} defaultValue={listing?.complianceNumber} readOnly={readOnly} />
           <TextField id="contactDate" label={t("commercialListings.contactDate")} defaultValue={listing?.contactDate} readOnly={readOnly} />
           <TextField id="propertyStatus" label={t("commercialListings.propertyStatus")} defaultValue={listing?.propertyStatus} readOnly={readOnly} />
           <TextField id="brokerageContract" label={t("commercialListings.brokerageContract")} defaultValue={listing?.brokerageContract} readOnly={readOnly} />

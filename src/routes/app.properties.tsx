@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
+import PropertyDetailsForm from "@/components/PropertyDetailsForm";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
@@ -17,9 +18,17 @@ import { FormDialog, ConfirmDialog } from "@/components/FormDialog";
 import { Plus } from "lucide-react";
 import { toast } from "sonner";
 import { propertyStatusTone, formatDate } from "@/lib/format";
+import { PROPERTY_TYPES, localizePropertyType } from "@/lib/property-types";
 
-const PROPERTY_TYPES = ["Apartment", "Villa", "Office", "Land", "Shop", "Warehouse"];
 const STATUSES: PropertyStatus[] = ["Pending", "Approved", "Rejected", "Sold"];
+
+function createCustomDetailKey(details: Record<string, any>) {
+  let index = 1;
+  while (Object.prototype.hasOwnProperty.call(details, `custom_field_${index}`)) {
+    index += 1;
+  }
+  return `custom_field_${index}`;
+}
 
 export const Route = createFileRoute("/app/properties")({
   component: PropertiesPage,
@@ -142,7 +151,7 @@ function PropertiesPage() {
     },
     { key: "name", header: t("common.name"), cell: (r) => <span className="font-medium">{r.name}</span> },
     { key: "address", header: t("common.address"), cell: (r) => <span className="text-muted-foreground">{r.address}</span> },
-    { key: "type", header: t("common.type"), cell: (r) => r.type },
+    { key: "type", header: t("common.type"), cell: (r) => localizePropertyType(t, r.type) },
     {
       key: "status", header: t("common.status"),
       cell: (r) => (
@@ -248,7 +257,7 @@ function PropertyDialog({
 }: {
   open: boolean; onOpenChange: (v: boolean) => void; property: PropertyDto | null;
   owners: Owner[]; amenities: Amenity[]; defaultOwnerId?: number; canPickOwner: boolean;
-  onSubmit: (v: { ownerId: number; name: string; address: string; type: string; region?: string | null; city?: string | null; district?: string | null; listingType: "Rental" | "Sale"; salePrice?: number | null; rentPrice?: number | null; deedNumber?: string | null; amenityIds: number[]; files?: File[]; status?: PropertyStatus }) => void;
+  onSubmit: (v: { ownerId: number; name: string; address: string; type: string; region?: string | null; city?: string | null; district?: string | null; listingType: "Rental" | "Sale"; salePrice?: number | null; rentPrice?: number | null; deedNumber?: string | null; details?: Record<string, any> | null; amenityIds: number[]; files?: File[]; status?: PropertyStatus }) => void;
   submitting?: boolean;
 }) {
   const { t } = useTranslation();
@@ -261,6 +270,11 @@ function PropertyDialog({
   const [district, setDistrict] = useState<string>(property?.district ?? "");
   const [listingType, setListingType] = useState<"Rental" | "Sale">(property?.listingType ?? "Rental");
   const [deedNumber, setDeedNumber] = useState<string>(property?.deedNumber ?? "");
+  const [details, setDetails] = useState<Record<string, any>>(property?.details ?? {});
+  const [useTemplate, setUseTemplate] = useState<boolean>(() => {
+    // default to template mode when creating a new property or when there are no details
+    return property == null || Object.keys(property?.details ?? {}).length === 0;
+  });
   const [picked, setPicked] = useState<Set<number>>(new Set(property?.amenities?.map((a) => a.id) ?? []));
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
 
@@ -275,9 +289,11 @@ function PropertyDialog({
     setDistrict(property?.district ?? "");
     setListingType(property?.listingType ?? "Rental");
     setDeedNumber(property?.deedNumber ?? "");
+    setDetails(property?.details ?? {});
+    setUseTemplate(property == null || Object.keys(property?.details ?? {}).length === 0);
     setPicked(new Set(property?.amenities?.map((amenity) => amenity.id) ?? []));
     setSelectedFiles([]);
-  }, [open, property?.id, property?.ownerId, property?.type, property?.region, property?.city, property?.district, property?.listingType, property?.deedNumber, property?.amenities, defaultOwnerId]);
+  }, [open, property?.id, property?.ownerId, property?.type, property?.region, property?.city, property?.district, property?.listingType, property?.deedNumber, property?.amenities, property?.details, defaultOwnerId]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
@@ -304,8 +320,15 @@ function PropertyDialog({
           name: String(fd.get("name") ?? ""),
           address: String(fd.get("address") ?? ""),
           type,
+          region: region || null,
+          city: city || null,
+          district: district || null,
+          listingType,
           salePrice: fd.get("salePrice") === "" ? null : Number(fd.get("salePrice") ?? 0),
-          rentPrice: fd.get("rentPrice") === "" ? null : Number(fd.get("rentPrice") ?? 0),          deedNumber: deedNumber || null,          amenityIds: Array.from(picked),
+          rentPrice: fd.get("rentPrice") === "" ? null : Number(fd.get("rentPrice") ?? 0),
+          deedNumber: deedNumber || null,
+          details: Object.keys(details).length > 0 ? details : null,
+          amenityIds: Array.from(picked),
           status: auth.isStaff ? status : undefined,
           files: selectedFiles.length > 0 ? selectedFiles : undefined,
         });
@@ -340,10 +363,10 @@ function PropertyDialog({
         </div>
         <div className="space-y-2">
           <Label>{t("common.type")}</Label>
-          <Select value={type} onValueChange={setType}>
+          <Select value={type} onValueChange={(v) => { setType(v); setUseTemplate(true); }}>
             <SelectTrigger><SelectValue /></SelectTrigger>
             <SelectContent>
-              {PROPERTY_TYPES.map((p) => <SelectItem key={p} value={p}>{p}</SelectItem>)}
+              {PROPERTY_TYPES.map((p) => <SelectItem key={p} value={p}>{localizePropertyType(t, p)}</SelectItem>)}
             </SelectContent>
           </Select>
         </div>
@@ -431,6 +454,75 @@ function PropertyDialog({
         {selectedFiles.length > 0 && (
           <div className="mt-2 text-sm text-muted-foreground">
             {selectedFiles.length} {t("common.selected")}
+          </div>
+        )}
+      </div>
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <Label>{t("common.details")}</Label>
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setUseTemplate((s) => !s)}
+              className="text-xs text-primary hover:underline"
+            >
+              {useTemplate ? t("common.useCustom") : t("common.useTemplate")}
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                const newKey = createCustomDetailKey(details);
+                setDetails({ ...details, [newKey]: "" });
+                // ensure template mode remains visible so user sees new field
+                setUseTemplate(true);
+              }}
+              className="text-xs text-primary hover:underline"
+            >
+              + {t("common.add")}
+            </button>
+          </div>
+        </div>
+
+        {useTemplate ? (
+          <PropertyDetailsForm type={type} value={details} onChange={setDetails} />
+        ) : Object.keys(details).length === 0 ? (
+          <p className="text-xs text-muted-foreground">{t("common.empty")}</p>
+        ) : (
+          <div className="space-y-2 rounded-md border border-border p-3">
+            {Object.entries(details).map(([key, value]) => (
+              <div key={key} className="flex gap-2">
+                <Input
+                  placeholder={t("common.name")}
+                  value={key}
+                  onChange={(e) => {
+                    const newDetails = { ...details };
+                    delete newDetails[key];
+                    newDetails[e.target.value] = value;
+                    setDetails(newDetails);
+                  }}
+                  className="flex-1"
+                />
+                <Input
+                  placeholder={t("common.value")}
+                  value={String(value)}
+                  onChange={(e) => {
+                    setDetails({ ...details, [key]: e.target.value });
+                  }}
+                  className="flex-1"
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    const newDetails = { ...details };
+                    delete newDetails[key];
+                    setDetails(newDetails);
+                  }}
+                  className="text-xs text-destructive hover:underline px-2"
+                >
+                  ✕
+                </button>
+              </div>
+            ))}
           </div>
         )}
       </div>

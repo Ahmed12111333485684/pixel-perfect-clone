@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { PageHeader } from "@/components/PageHeader";
 import { CheckCircle2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { PROPERTY_TYPES, localizePropertyType } from "@/lib/property-types";
 
 export const Route = createFileRoute("/partner/submit-property")({
   beforeLoad: () => {
@@ -23,7 +24,6 @@ export const Route = createFileRoute("/partner/submit-property")({
 });
 
 const INTENTS: LeadIntent[] = ["Buy", "Rent", "Sell", "LetOut"];
-const PROPERTY_TYPES = ["Apartment", "Villa", "Office", "Land", "Shop", "Warehouse"];
 
 function PartnerSubmitPropertyPage() {
   const { t } = useTranslation();
@@ -107,7 +107,7 @@ function PartnerSubmitPropertyPage() {
             <Select value={type} onValueChange={setType}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
-                {PROPERTY_TYPES.map((p) => <SelectItem key={p} value={p}>{p}</SelectItem>)}
+                {PROPERTY_TYPES.map((p) => <SelectItem key={p} value={p}>{localizePropertyType(t, p)}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>

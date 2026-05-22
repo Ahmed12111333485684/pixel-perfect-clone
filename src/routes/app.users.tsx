@@ -257,7 +257,6 @@ function UserDialog({ open, onOpenChange, user, onSubmit, submitting }: {
                 />
                 <span className="flex-1">
                   <span className="block font-medium">{t(item.label)}</span>
-                  <span className="block text-xs text-muted-foreground">{item.to}</span>
                 </span>
               </label>
             ))}

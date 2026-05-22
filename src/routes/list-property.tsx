@@ -14,6 +14,7 @@ import { LanguageToggle } from "@/components/LanguageToggle";
 import { PublicFooter } from "@/components/PublicFooter";
 import { CheckCircle2, ImagePlus, Loader2, X } from "lucide-react";
 import { toast } from "sonner";
+import { PROPERTY_TYPES, localizePropertyType } from "@/lib/property-types";
 
 export const Route = createFileRoute("/list-property")({
   head: () => ({
@@ -28,7 +29,6 @@ export const Route = createFileRoute("/list-property")({
 });
 
 const INTENTS: LeadIntent[] = ["Sell", "LetOut"];
-const PROPERTY_TYPES = ["Apartment", "Villa", "Office", "Land", "Shop", "Warehouse"];
 
 function LeadIntakePage() {
   const { t } = useTranslation();
@@ -140,7 +140,7 @@ function LeadIntakePage() {
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     {PROPERTY_TYPES.map((p) => (
-                      <SelectItem key={p} value={p}>{p}</SelectItem>
+                      <SelectItem key={p} value={p}>{localizePropertyType(t, p)}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>

@@ -203,6 +203,7 @@ export interface PropertyDto {
   salePrice?: number | null;
   rentPrice?: number | null;
   deedNumber?: string | null;
+  details?: Record<string, any> | null;
   status: PropertyStatus;
   createdAt: string;
   amenities?: Amenity[];
@@ -340,6 +341,11 @@ export interface RequestDetails {
   createdAt: string;
 }
 
+export interface RequestPropertySuggestion extends PropertyDto {
+  score: number;
+  reasons: { key: string; args?: Record<string, string> }[];
+}
+
 export interface CommercialListing {
   id: number;
   rowFlag?: string | null;
@@ -384,7 +390,6 @@ export interface CommercialListing {
   publishedInstagram?: string | null;
   publishedTiktok?: string | null;
   notes?: string | null;
-  complianceNumber?: string | null;
   createdAt: string;
   updatedAt?: string | null;
 }

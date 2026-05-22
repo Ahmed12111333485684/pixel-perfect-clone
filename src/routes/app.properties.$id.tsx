@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { propertyStatusTone, formatDate } from "@/lib/format";
+import { localizePropertyType } from "@/lib/property-types";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
@@ -209,7 +210,7 @@ function PropertyDetail() {
                 <span>{p.address}</span>
               </div>
               <div className="flex flex-wrap gap-2 pt-1">
-                <Chip icon={<Home className="h-3.5 w-3.5" />}>{p.type}</Chip>
+                <Chip icon={<Home className="h-3.5 w-3.5" />}>{localizePropertyType(t, p.type)}</Chip>
                 <Chip icon={<CalendarDays className="h-3.5 w-3.5" />}>{formatDate(p.createdAt)}</Chip>
                 {p.amenities && p.amenities.length > 0 && (
                   <Chip icon={<Sparkles className="h-3.5 w-3.5" />}>
@@ -229,7 +230,7 @@ function PropertyDetail() {
             <FieldGrid>
               <FieldItem icon={<Home className="h-4 w-4" />} label={t("common.name")} value={p.name} />
               <FieldItem icon={<MapPin className="h-4 w-4" />} label={t("common.address")} value={p.address} />
-              <FieldItem icon={<Home className="h-4 w-4" />} label={t("common.type")} value={p.type} />
+              <FieldItem icon={<Home className="h-4 w-4" />} label={t("common.type")} value={localizePropertyType(t, p.type)} />
               <FieldItem
                 icon={<Info className="h-4 w-4" />}
                 label={t("common.status")}

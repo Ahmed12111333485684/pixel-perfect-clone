@@ -47,7 +47,7 @@ function PartnerMyPropertiesPage() {
   const cols: Column<CommercialListing>[] = [
     { key: "serialNumber", header: t("commercialListings.serialNumber"), cell: (r) => <span className="font-medium">{r.serialNumber ?? "-"}</span> },
     { key: "ownerName", header: t("commercialListings.ownerName"), cell: (r) => r.ownerName ?? "-" },
-    { key: "complianceNumber", header: t("commercialListings.complianceNumber"), cell: (r) => r.complianceNumber ?? "-" },
+    { key: "deedNumber", header: t("commercialListings.deedNumber"), cell: (r) => r.deedNumber ? <span className="font-mono text-sm">{r.deedNumber}</span> : "-" },
     { key: "propertyType", header: t("commercialListings.propertyType"), cell: (r) => r.propertyType ?? "-" },
     { key: "location", header: t("commercialListings.location"), cell: (r) => r.location ?? "-" },
     {
@@ -66,7 +66,7 @@ function PartnerMyPropertiesPage() {
       return (
         (record.serialNumber ?? "").toLowerCase().includes(lower)
         || (record.ownerName ?? "").toLowerCase().includes(lower)
-          || (record.complianceNumber ?? "").toLowerCase().includes(lower)
+          || (record.deedNumber ?? "").toLowerCase().includes(lower)
         || (record.location ?? "").toLowerCase().includes(lower)
         || (record.propertyType ?? "").toLowerCase().includes(lower)
         || (record.propertyStatus ?? "").toLowerCase().includes(lower)

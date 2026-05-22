@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { PageHeader } from "@/components/PageHeader";
 import { PublicFooter } from "@/components/PublicFooter";
 import { formatDate, formatMoney } from "@/lib/format";
+import { localizePropertyType } from "@/lib/property-types";
 import { Building2, MapPin, Sparkles, Home, BadgeDollarSign, ImagePlus, ChevronLeft, ChevronRight, X, ZoomIn } from "lucide-react";
 
 export const Route = createFileRoute("/available-properties")({
@@ -167,7 +168,7 @@ function PropertyCard({ property }: { property: PublicProperty }) {
         </div>
         <div className="flex items-center gap-2">
           <Home className="h-4 w-4 text-gold" />
-          <span>{property.type}</span>
+            <span>{localizePropertyType(t, property.type)}</span>
         </div>
         <div className="flex items-center gap-2">
           <Sparkles className="h-4 w-4 text-gold" />

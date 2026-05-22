@@ -34,7 +34,8 @@ export const APP_NAV_ITEMS: AppNavItem[] = [
     children: [
       { to: "/app/commercial-listings", label: "nav.commercialListings", icon: Building2 },
       { to: "/app/residential-seekers", label: "nav.residentialSeekers", icon: Users2 },
-      { to: "/app/requests", label: "nav.buysellRequests", icon: MessageSquare },
+      { to: "/app/requests/buysell", label: "nav.buysellRequests", icon: MessageSquare },
+      { to: "/app/requests/rental", label: "nav.rentalRequests", icon: MessageSquare },
     ],
   },
   { to: "/app/users", label: "nav.users", icon: ShieldCheck, adminOnly: true },
