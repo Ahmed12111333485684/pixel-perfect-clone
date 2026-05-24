@@ -1,10 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useRef, useState, useEffect, type FormEvent } from "react";
 import { useTranslation } from "react-i18next";
-import { api, ApiError, type Lead, type LeadIntent } from "@/lib/api";
+import { api, ApiError, resolveApiAssetUrl, type Lead, type LeadIntent } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { MediaPreview } from "@/components/MediaPreview";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
@@ -100,9 +101,19 @@ function LeadIntakePage() {
                 {submitted.images.slice(0, 6).map((img) => (
                   <div
                     key={img.id}
-                    className="aspect-square rounded-lg border border-border bg-muted text-xs flex items-center justify-center text-muted-foreground"
+                    className="aspect-square overflow-hidden rounded-lg border border-border bg-muted text-xs flex items-center justify-center text-muted-foreground"
                   >
-                    {img.originalFileName}
+                    {img.fileUrl ? (
+                      <MediaPreview
+                        src={resolveApiAssetUrl(img.fileUrl)}
+                        alt={img.originalFileName}
+                        fileName={img.originalFileName}
+                        mimeType={img.mimeType}
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      img.originalFileName
+                    )}
                   </div>
                 ))}
               </div>
@@ -262,12 +273,12 @@ function ImagePicker({ files, onChange }: { files: File[]; onChange: (f: File[])
         className="flex w-full flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-border bg-muted/40 px-6 py-10 text-sm text-muted-foreground transition hover:border-gold hover:bg-accent/40"
       >
         <ImagePlus className="h-6 w-6" />
-        <span>Click to upload images</span>
+        <span>Click to upload images or videos</span>
       </button>
       <input
         ref={inputRef}
         type="file"
-        accept="image/*"
+        accept="image/*,video/*"
         multiple
         className="hidden"
         onChange={(e) => {
@@ -279,7 +290,7 @@ function ImagePicker({ files, onChange }: { files: File[]; onChange: (f: File[])
         <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
           {files.map((f, i) => (
             <div key={i} className="group relative aspect-square overflow-hidden rounded-lg border border-border bg-muted">
-              <img src={URL.createObjectURL(f)} alt={f.name} className="h-full w-full object-cover" />
+              <MediaPreview src={URL.createObjectURL(f)} alt={f.name} fileName={f.name} mimeType={f.type} className="h-full w-full object-cover" />
               <button
                 type="button"
                 onClick={() => onChange(files.filter((_, idx) => idx !== i))}

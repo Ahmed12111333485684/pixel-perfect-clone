@@ -1,4 +1,4 @@
-import { BadgeDollarSign, Building2, ContactRound, CreditCard, Inbox, LayoutDashboard, MessageSquare, ScrollText, ShieldCheck, ShoppingBag, Sparkles, Users, Users2 } from "lucide-react";
+import { BadgeDollarSign, Building2, ClipboardList, ContactRound, CreditCard, Inbox, LayoutDashboard, Megaphone, MessageSquare, ScrollText, ShieldCheck, ShoppingBag, Sparkles, Users, Users2 } from "lucide-react";
 import type { ComponentType } from "react";
 
 import type { Role } from "./api";
@@ -10,6 +10,7 @@ export interface AppNavItem {
   staffOnly?: boolean;
   adminOnly?: boolean;
   partnerOnly?: boolean;
+  employeeOnly?: boolean;
   children?: AppNavItem[];
   isParent?: boolean;
 }
@@ -17,9 +18,11 @@ export interface AppNavItem {
 export const APP_NAV_ITEMS: AppNavItem[] = [
   { to: "/app", label: "nav.dashboard", icon: LayoutDashboard },
   { to: "/app/owners", label: "nav.owners", icon: Users, staffOnly: true },
+  { to: "/app/employee-productivity", label: "nav.productivity", icon: ClipboardList, employeeOnly: true },
   { to: "/app/partners", label: "nav.partners", icon: Users2, adminOnly: true },
   { to: "/app/properties", label: "nav.properties", icon: Building2 },
   { to: "/app/amenities", label: "nav.amenities", icon: Sparkles, staffOnly: true },
+  { to: "/app/advertisements", label: "nav.advertisements", icon: Megaphone },
   { to: "/app/tenants", label: "nav.tenants", icon: ContactRound, staffOnly: true },
   { to: "/app/contracts", label: "nav.contracts", icon: ScrollText },
   { to: "/app/payments", label: "nav.payments", icon: CreditCard },
@@ -31,13 +34,13 @@ export const APP_NAV_ITEMS: AppNavItem[] = [
     label: "nav.listings",
     icon: Building2,
     isParent: true,
-    children: [
-      { to: "/app/commercial-listings", label: "nav.commercialListings", icon: Building2 },
-      { to: "/app/residential-seekers", label: "nav.residentialSeekers", icon: Users2 },
-      { to: "/app/requests/buysell", label: "nav.buysellRequests", icon: MessageSquare },
-      { to: "/app/requests/rental", label: "nav.rentalRequests", icon: MessageSquare },
-    ],
+      children: [
+        { to: "/app/commercial-listings", label: "nav.commercialListings", icon: Building2 },
+        { to: "/app/residential-seekers", label: "nav.residentialSeekers", icon: Users2 },
+        { to: "/app/requests/buysell", label: "nav.buysellRequests", icon: MessageSquare },
+      ],
   },
+  
   { to: "/app/users", label: "nav.users", icon: ShieldCheck, adminOnly: true },
   { to: "/partner/my-properties", label: "nav.myProperties", icon: Building2, partnerOnly: true },
   { to: "/partner/submit-property", label: "nav.submitProperty", icon: Inbox, partnerOnly: true },
@@ -66,6 +69,7 @@ export function getNavItemForPathname(pathname: string): AppNavItem | undefined 
 
 export function isNavItemVisible(item: AppNavItem, role?: Role | null, screenPermissions: string[] = []): boolean {
   if (item.partnerOnly) return role === "Partner";
+  if (item.employeeOnly) return role === "Employee";
   if (role === "Admin") return true;
 
   if (role === "Employee") {
@@ -89,6 +93,7 @@ export function getVisibleNavItems(role?: Role | null, screenPermissions: string
 }
 
 export function isCurrentPathAccessible(pathname: string, role?: Role | null, screenPermissions: string[] = []): boolean {
+  if (role === "Admin") return true;
   const item = getNavItemForPathname(pathname);
   return !item || isNavItemVisible(item, role, screenPermissions);
 }

@@ -240,6 +240,38 @@ export interface Payment {
   id: number; contractId: number; dueDate: string; paidDate?: string | null;
   amount: number; status: PaymentStatusT; createdAt: string;
 }
+export interface EmployeeProductivityRecord {
+  id: number;
+  userId: number;
+  employeeUsername: string;
+  workDate: string;
+  callIntakeCount: number;
+  servedClientsCount: number;
+  officeVisitorsCount: number;
+  whatsappClientsCount: number;
+  googleMapsReviewsCount: number;
+  brokerageContractsCount: number;
+  leaseContractsCount: number;
+  propertyPhotographyCount: number;
+  hashemPropertyPhotographyCount: number;
+  inspectionCount: number;
+  contentWritingCount: number;
+  createdAt: string;
+  updatedAt?: string | null;
+}
+export interface EmployeeProductivityUpsertDto {
+  callIntakeCount: number;
+  servedClientsCount: number;
+  officeVisitorsCount: number;
+  whatsappClientsCount: number;
+  googleMapsReviewsCount: number;
+  brokerageContractsCount: number;
+  leaseContractsCount: number;
+  propertyPhotographyCount: number;
+  hashemPropertyPhotographyCount: number;
+  inspectionCount: number;
+  contentWritingCount: number;
+}
 export interface Buyer { id: number; fullName: string; phone: string; email: string; nationalId: string; createdAt: string; }
 export interface Sale {
   id: number; propertyId: number; buyerClientId: number; salePrice: number;
@@ -412,6 +444,29 @@ export interface ResidentialSeeker {
   paymentType?: string | null;
   preferredLocation?: string | null;
   notes?: string | null;
+  createdAt: string;
+  updatedAt?: string | null;
+}
+
+export interface Advertisement {
+  id: number;
+  code: string;
+  status: string;
+  visitDate?: string | null;
+  expiryDate?: string | null;
+  adNumber?: string | null;
+  propertyType: string;
+  location?: string | null;
+  quantity: number;
+  adType: string;
+  installationType: string;
+  officeName?: string | null;
+  phoneNumber?: string | null;
+  boardPrice?: number | null;
+  remainingAmount?: number | null;
+  notes?: string | null;
+  propertyId?: number | null;
+  propertyCodeOrFallback: string;
   createdAt: string;
   updatedAt?: string | null;
 }

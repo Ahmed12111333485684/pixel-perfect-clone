@@ -10,6 +10,7 @@ import {
   type Contract,
   type Payment,
   type Sale,
+  type EmployeeProductivityRecord,
 } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import {
@@ -67,9 +68,14 @@ function Dashboard() {
     queryKey: ["sales"],
     queryFn: () => api<Sale[]>("/api/sales"),
   });
+  const productivity = useQuery({
+    queryKey: ["employee-productivity"],
+    queryFn: () => api<EmployeeProductivityRecord[]>("/api/employee-productivity"),
+    enabled: auth.hasRole("Admin"),
+  });
 
   const loading =
-    properties.isLoading || contracts.isLoading || payments.isLoading || sales.isLoading;
+    properties.isLoading || contracts.isLoading || payments.isLoading || sales.isLoading || productivity.isLoading;
 
   // ---------- Derived KPIs ----------
   const stats = useMemo(() => {
@@ -274,6 +280,84 @@ function Dashboard() {
       .slice(0, 5);
   }, [properties.data, owners.data]);
 
+  const productivitySummary = useMemo(() => {
+    const rows = productivity.data ?? [];
+    const totals = rows.reduce(
+      (acc, row) => {
+        const callIntakeCount = Number(row.callIntakeCount ?? 0);
+        const servedClientsCount = Number(row.servedClientsCount ?? 0);
+        const officeVisitorsCount = Number(row.officeVisitorsCount ?? 0);
+        const whatsappClientsCount = Number(row.whatsappClientsCount ?? 0);
+        const googleMapsReviewsCount = Number(row.googleMapsReviewsCount ?? 0);
+        const brokerageContractsCount = Number(row.brokerageContractsCount ?? 0);
+        const leaseContractsCount = Number(row.leaseContractsCount ?? 0);
+        const propertyPhotographyCount = Number(row.propertyPhotographyCount ?? 0);
+        const hashemPropertyPhotographyCount = Number(row.hashemPropertyPhotographyCount ?? 0);
+        const inspectionCount = Number(row.inspectionCount ?? 0);
+        const contentWritingCount = Number(row.contentWritingCount ?? 0);
+        const total =
+          callIntakeCount +
+          servedClientsCount +
+          officeVisitorsCount +
+          whatsappClientsCount +
+          googleMapsReviewsCount +
+          brokerageContractsCount +
+          leaseContractsCount +
+          propertyPhotographyCount +
+          hashemPropertyPhotographyCount +
+          inspectionCount +
+          contentWritingCount;
+
+        acc.reports += 1;
+        acc.total += total;
+        acc.callIntakeCount += callIntakeCount;
+        acc.servedClientsCount += servedClientsCount;
+        acc.officeVisitorsCount += officeVisitorsCount;
+        acc.whatsappClientsCount += whatsappClientsCount;
+        acc.googleMapsReviewsCount += googleMapsReviewsCount;
+        acc.brokerageContractsCount += brokerageContractsCount;
+        acc.leaseContractsCount += leaseContractsCount;
+        acc.propertyPhotographyCount += propertyPhotographyCount;
+        acc.hashemPropertyPhotographyCount += hashemPropertyPhotographyCount;
+        acc.inspectionCount += inspectionCount;
+        acc.contentWritingCount += contentWritingCount;
+        acc.byEmployee.set(row.employeeUsername, (acc.byEmployee.get(row.employeeUsername) ?? 0) + total);
+        return acc;
+      },
+      {
+        reports: 0,
+        total: 0,
+        callIntakeCount: 0,
+        servedClientsCount: 0,
+        officeVisitorsCount: 0,
+        whatsappClientsCount: 0,
+        googleMapsReviewsCount: 0,
+        brokerageContractsCount: 0,
+        leaseContractsCount: 0,
+        propertyPhotographyCount: 0,
+        hashemPropertyPhotographyCount: 0,
+        inspectionCount: 0,
+        contentWritingCount: 0,
+        byEmployee: new Map<string, number>(),
+      },
+    );
+
+    const today = new Date();
+    const todayKey = today.toISOString().slice(0, 10);
+    const todayReports = rows.filter((row) => row.workDate.slice(0, 10) === todayKey);
+    const recentEntries = [...rows]
+      .sort((left, right) => new Date(right.workDate).getTime() - new Date(left.workDate).getTime())
+      .slice(0, 5);
+
+    return {
+      ...totals,
+      employees: totals.byEmployee.size,
+      todayReports: todayReports.length,
+      recentEntries,
+      topEmployee: Array.from(totals.byEmployee.entries()).sort((left, right) => right[1] - left[1])[0],
+    };
+  }, [productivity.data]);
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
@@ -463,6 +547,67 @@ function Dashboard() {
         <DetailStat icon={<TrendingUp className="h-5 w-5" />} label={t("dashboard.portfolioValue")} value={formatMoney(stats.portfolioValue)} accent />
       </div>
 
+      {auth.hasRole("Admin") && (
+        <div className="rounded-2xl border border-border bg-card p-5 shadow-card">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <h3 className="font-display text-lg font-semibold">{t("productivity.adminTitle")}</h3>
+              <p className="text-sm text-muted-foreground">{t("productivity.adminSubtitle")}</p>
+            </div>
+            <Button asChild variant="outline">
+              <Link to="/app/employee-productivity">{t("productivity.analytics")}</Link>
+            </Button>
+          </div>
+          <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <DetailStat icon={<Activity className="h-5 w-5" />} label={t("productivity.totalReports")} value={String(productivitySummary.reports)} />
+            <DetailStat icon={<Users className="h-5 w-5" />} label={t("productivity.byEmployee")} value={String(productivitySummary.employees)} />
+            <DetailStat icon={<CheckCircle2 className="h-5 w-5" />} label={t("productivity.todayReport")} value={String(productivitySummary.todayReports)} />
+            <DetailStat icon={<TrendingUp className="h-5 w-5" />} label={t("productivity.totalActions")} value={String(productivitySummary.total)} accent />
+          </div>
+          <div className="mt-4 grid gap-4 lg:grid-cols-2">
+            <div>
+              <h4 className="mb-3 text-sm font-semibold text-foreground">{t("productivity.recentEntries")}</h4>
+              <div className="space-y-2">
+                {(productivitySummary.recentEntries.length === 0 ? [null] : productivitySummary.recentEntries).map((entry, index) => (
+                  <div key={entry?.id ?? index} className="flex items-center justify-between rounded-xl border border-border bg-background px-3 py-2 text-sm">
+                    {entry ? (
+                      <>
+                        <div className="min-w-0">
+                          <div className="truncate font-medium">{entry.employeeUsername}</div>
+                          <div className="text-xs text-muted-foreground">{formatDate(entry.workDate)}</div>
+                        </div>
+                        <div className="text-xs text-muted-foreground tabular-nums">
+                          {entry.callIntakeCount + entry.servedClientsCount + entry.officeVisitorsCount + entry.whatsappClientsCount + entry.googleMapsReviewsCount + entry.brokerageContractsCount + entry.leaseContractsCount + entry.propertyPhotographyCount + entry.hashemPropertyPhotographyCount + entry.inspectionCount + entry.contentWritingCount}
+                        </div>
+                      </>
+                    ) : (
+                      <span className="text-muted-foreground">{t("common.empty")}</span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div>
+              <h4 className="mb-3 text-sm font-semibold text-foreground">{t("productivity.byEmployee")}</h4>
+              <div className="space-y-2">
+                {(productivitySummary.byEmployee.size === 0 ? [null] : Array.from(productivitySummary.byEmployee.entries()).sort((left, right) => right[1] - left[1]).slice(0, 5)).map((entry, index) => (
+                  <div key={entry?.[0] ?? index} className="flex items-center justify-between rounded-xl border border-border bg-background px-3 py-2 text-sm">
+                    {entry ? (
+                      <>
+                        <span className="truncate font-medium">{entry[0]}</span>
+                        <span className="text-xs text-muted-foreground tabular-nums">{entry[1]}</span>
+                      </>
+                    ) : (
+                      <span className="text-muted-foreground">{t("common.empty")}</span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Lists row */}
       <div className="grid gap-4 lg:grid-cols-3">
         {auth.isStaff && (
@@ -560,6 +705,9 @@ function Dashboard() {
               <QuickAction to="/app/owners" icon={<Plus className="h-4 w-4" />} label={t("dashboard.addOwner")} />
             )}
             <QuickAction to="/app/properties" icon={<Building2 className="h-4 w-4" />} label={t("dashboard.addProperty")} />
+            {auth.hasRole("Admin") && (
+              <QuickAction to="/app/employee-productivity" icon={<Activity className="h-4 w-4" />} label={t("productivity.pageTitle")} />
+            )}
             {auth.isStaff && (
               <QuickAction
                 to="/app/leads"

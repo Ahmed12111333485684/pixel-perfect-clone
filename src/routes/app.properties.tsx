@@ -1,4 +1,4 @@
-import { createFileRoute, Link, Outlet } from "@tanstack/react-router";
+import { createFileRoute, Outlet, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import PropertyDetailsForm from "@/components/PropertyDetailsForm";
+import { MediaPreview } from "@/components/MediaPreview";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
@@ -140,7 +141,7 @@ function PropertiesPage() {
           return <div className="h-10 w-14 rounded-md border border-border bg-muted" />;
         }
         return (
-          <img
+          <MediaPreview
             src={src}
             alt={r.name}
             className="h-10 w-14 rounded-md border border-border object-cover"
@@ -159,20 +160,7 @@ function PropertiesPage() {
       ),
     },
     { key: "owner", header: t("nav.owners"), cell: (r) => `#${r.ownerId}` },
-    {
-      key: "open", header: "", className: "w-20",
-      cell: (r) => (
-        <Link
-          to="/app/properties/$id"
-          params={{ id: String(r.id) }}
-          onClick={(e) => e.stopPropagation()}
-          title={t("common.details")}
-          className="inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline"
-        >
-          {t("common.open")}
-        </Link>
-      ),
-    },
+    
     { key: "created", header: t("common.createdAt"), cell: (r) => formatDate(r.createdAt) },
   ];
 
@@ -186,6 +174,8 @@ function PropertiesPage() {
       return nameMatch || addressMatch || typeMatch;
     });
   }, [list.data, search]);
+
+  const navigate = useNavigate();
 
   return (
     <div>
@@ -215,6 +205,7 @@ function PropertiesPage() {
         rowKey={(r) => r.id}
         onEdit={(r) => setEditing(r)}
         onDelete={(r) => setDeleting(r)}
+        onRowClick={(r) => navigate({ to: "/app/properties/$id", params: { id: String(r.id) } })}
       />
 
       <PropertyDialog
@@ -448,7 +439,7 @@ function PropertyDialog({
           name="images"
           type="file"
           multiple
-          accept="image/*"
+          accept="image/*,video/*"
           onChange={handleFileChange}
         />
         {selectedFiles.length > 0 && (

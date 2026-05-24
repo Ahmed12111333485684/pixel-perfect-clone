@@ -141,7 +141,7 @@ function PartnerSubmitPropertyPage() {
             name="images"
             type="file"
             multiple
-            accept="image/*"
+            accept="image/*,video/*"
             onChange={(e) => setFiles(Array.from(e.currentTarget.files ?? []))}
           />
         </div>

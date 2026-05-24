@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { PageHeader } from "@/components/PageHeader";
 import { PublicFooter } from "@/components/PublicFooter";
+import { MediaPreview } from "@/components/MediaPreview";
 import { formatDate, formatMoney } from "@/lib/format";
 import { localizePropertyType } from "@/lib/property-types";
 import { Building2, MapPin, Sparkles, Home, BadgeDollarSign, ImagePlus, ChevronLeft, ChevronRight, X, ZoomIn } from "lucide-react";
@@ -105,7 +106,12 @@ function PropertyCard({ property }: { property: PublicProperty }) {
               aria-label={t("publicProperties.zoomImage", { defaultValue: "Zoom image" })}
               className="group absolute inset-0 h-full w-full"
             >
-              <img src={resolvedImageUrl} alt={activeImage.originalFileName || property.name} className="h-full w-full object-cover transition group-hover:scale-105" />
+              <MediaPreview
+                src={resolvedImageUrl}
+                alt={activeImage.originalFileName || property.name}
+                fileName={activeImage.originalFileName}
+                className="h-full w-full object-cover transition group-hover:scale-105"
+              />
               <span className="pointer-events-none absolute end-3 top-3 grid h-9 w-9 place-items-center rounded-full bg-black/45 text-white opacity-0 backdrop-blur transition group-hover:opacity-100">
                 <ZoomIn className="h-4 w-4" />
               </span>
@@ -192,7 +198,7 @@ function PropertyCard({ property }: { property: PublicProperty }) {
 
       {lightboxOpen && activeImage && (
         <ImageLightbox
-          images={images.map((i) => ({ url: resolveApiAssetUrl(i.url), alt: i.originalFileName || property.name }))}
+          images={images.map((i) => ({ url: resolveApiAssetUrl(i.url), alt: i.originalFileName || property.name, fileName: i.originalFileName }))}
           index={activeIndex}
           onIndexChange={setActiveIndex}
           onClose={() => setLightboxOpen(false)}
@@ -208,7 +214,7 @@ function ImageLightbox({
   onIndexChange,
   onClose,
 }: {
-  images: { url: string; alt: string }[];
+  images: { url: string; alt: string; fileName?: string }[];
   index: number;
   onIndexChange: (i: number) => void;
   onClose: () => void;
@@ -272,10 +278,12 @@ function ImageLightbox({
       )}
 
       <figure className="flex max-h-full max-w-6xl flex-col items-center" onClick={(e) => e.stopPropagation()}>
-        <img
+        <MediaPreview
           src={current.url}
           alt={current.alt}
+          fileName={current.fileName}
           className="max-h-[85vh] max-w-full rounded-lg object-contain shadow-2xl"
+          controls
         />
         {hasMultiple && (
           <figcaption className="mt-3 text-sm text-white/70">

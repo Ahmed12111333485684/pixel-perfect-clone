@@ -6,6 +6,7 @@ import { api, resolveApiAssetUrl, type PropertyDto, type PropertyImage, type Pro
 import { useAuth } from "@/lib/auth";
 import { PageHeader, StatusBadge, LoadingBlock, ErrorBlock, EmptyState } from "@/components/PageHeader";
 import { Button } from "@/components/ui/button";
+import { MediaPreview } from "@/components/MediaPreview";
 import {
   ArrowLeft, Star, Trash2, Upload, ImagePlus, X, ChevronLeft, ChevronRight, ExternalLink,
   MapPin, Home, Hash, CalendarDays, User, Phone, Mail, IdCard, Clock, Info, Sparkles, Image as ImageIcon,
@@ -177,9 +178,11 @@ function PropertyDetail() {
                 className="group absolute inset-0 h-full w-full cursor-zoom-in"
                 aria-label={primary.originalFileName}
               >
-                <img
+                <MediaPreview
                   src={resolveApiAssetUrl(primary.url)}
                   alt={primary.originalFileName}
+                  fileName={primary.originalFileName}
+                  mimeType={primary.mimeType}
                   className="h-full w-full object-cover transition group-hover:scale-[1.02]"
                 />
                 <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
@@ -330,7 +333,7 @@ function PropertyDetail() {
               <input
                 ref={inputRef}
                 type="file"
-                accept="image/*"
+                accept="image/*,video/*"
                 multiple
                 hidden
                 onChange={(e) => {
@@ -371,9 +374,11 @@ function PropertyDetail() {
                       className="absolute inset-0 h-full w-full cursor-zoom-in"
                       aria-label={img.originalFileName}
                     >
-                      <img
+                      <MediaPreview
                         src={resolveApiAssetUrl(img.url)}
                         alt={img.originalFileName}
+                        fileName={img.originalFileName}
+                        mimeType={img.mimeType}
                         className="h-full w-full object-cover transition group-hover:scale-105"
                         loading="lazy"
                       />
@@ -604,10 +609,13 @@ function Lightbox({
         className="flex max-h-full max-w-6xl flex-col items-center"
         onClick={(e) => e.stopPropagation()}
       >
-        <img
+        <MediaPreview
           src={resolveApiAssetUrl(img.url)}
           alt={img.originalFileName}
+          fileName={img.originalFileName}
+          mimeType={img.mimeType}
           className="max-h-[80vh] max-w-full rounded-lg object-contain shadow-2xl"
+          controls
         />
         <figcaption className="mt-3 flex items-center gap-3 text-sm text-white/80">
           <span>{img.originalFileName}</span>

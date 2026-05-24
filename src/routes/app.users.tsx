@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { api, getStoredToken, type UserDto, type Role } from "@/lib/api";
+import type { AppNavItem } from "@/lib/navigation";
 import { useAuth } from "@/lib/auth";
 import { PageHeader, StatusBadge } from "@/components/PageHeader";
 import { DataTable, type Column } from "@/components/DataTable";
@@ -18,7 +19,19 @@ import { formatDate } from "@/lib/format";
 import { APP_NAV_ITEMS } from "@/lib/navigation";
 
 const ROLES: Role[] = ["Admin", "Employee", "Partner"];
-const EMPLOYEE_SCREEN_OPTIONS = APP_NAV_ITEMS.filter((item) => !item.adminOnly && !item.partnerOnly);
+function flattenNav(items: AppNavItem[]): AppNavItem[] {
+  const out: AppNavItem[] = [];
+  function walk(list: AppNavItem[]) {
+    for (const it of list) {
+      out.push(it);
+      if (it.children) walk(it.children);
+    }
+  }
+  walk(items);
+  return out;
+}
+
+const EMPLOYEE_SCREEN_OPTIONS = flattenNav(APP_NAV_ITEMS).filter((item) => !item.adminOnly && !item.partnerOnly);
 
 export const Route = createFileRoute("/app/users")({
   beforeLoad: () => {
@@ -269,8 +282,8 @@ function UserDialog({ open, onOpenChange, user, onSubmit, submitting }: {
           const nextRole = v as Role;
           setRole(nextRole);
           if (nextRole === "Employee" && screenPermissions.length === 0) {
-            setScreenPermissions(["/app"]);
-          }
+              setScreenPermissions(["/app", "/app/employee-productivity"]);
+            }
         }}>
           <SelectTrigger><SelectValue /></SelectTrigger>
           <SelectContent>

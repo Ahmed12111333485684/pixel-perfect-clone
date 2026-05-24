@@ -28,11 +28,13 @@ import { Route as AppPaymentsRouteImport } from './routes/app.payments'
 import { Route as AppPartnersRouteImport } from './routes/app.partners'
 import { Route as AppOwnersRouteImport } from './routes/app.owners'
 import { Route as AppLeadsRouteImport } from './routes/app.leads'
+import { Route as AppEmployeeProductivityRouteImport } from './routes/app.employee-productivity'
 import { Route as AppContractsRouteImport } from './routes/app.contracts'
 import { Route as AppCommercialListingsRouteImport } from './routes/app.commercial-listings'
 import { Route as AppBuyersRouteImport } from './routes/app.buyers'
 import { Route as AppAmenitiesRouteImport } from './routes/app.amenities'
-import { Route as AppRequestsRentalRouteImport } from './routes/app.requests.rental'
+import { Route as AppAdvertisementsRouteImport } from './routes/app.advertisements'
+import { Route as AppRequestsBuysellRouteImport } from './routes/app.requests.buysell'
 import { Route as AppPropertiesIdRouteImport } from './routes/app.properties.$id'
 import { Route as AppLeadsIdRouteImport } from './routes/app.leads.$id'
 
@@ -131,6 +133,11 @@ const AppLeadsRoute = AppLeadsRouteImport.update({
   path: '/leads',
   getParentRoute: () => AppRoute,
 } as any)
+const AppEmployeeProductivityRoute = AppEmployeeProductivityRouteImport.update({
+  id: '/employee-productivity',
+  path: '/employee-productivity',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppContractsRoute = AppContractsRouteImport.update({
   id: '/contracts',
   path: '/contracts',
@@ -151,9 +158,14 @@ const AppAmenitiesRoute = AppAmenitiesRouteImport.update({
   path: '/amenities',
   getParentRoute: () => AppRoute,
 } as any)
-const AppRequestsRentalRoute = AppRequestsRentalRouteImport.update({
-  id: '/rental',
-  path: '/rental',
+const AppAdvertisementsRoute = AppAdvertisementsRouteImport.update({
+  id: '/advertisements',
+  path: '/advertisements',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppRequestsBuysellRoute = AppRequestsBuysellRouteImport.update({
+  id: '/buysell',
+  path: '/buysell',
   getParentRoute: () => AppRequestsRoute,
 } as any)
 const AppPropertiesIdRoute = AppPropertiesIdRouteImport.update({
@@ -174,10 +186,12 @@ export interface FileRoutesByFullPath {
   '/list-property': typeof ListPropertyRoute
   '/login': typeof LoginRoute
   '/property-request': typeof PropertyRequestRoute
+  '/app/advertisements': typeof AppAdvertisementsRoute
   '/app/amenities': typeof AppAmenitiesRoute
   '/app/buyers': typeof AppBuyersRoute
   '/app/commercial-listings': typeof AppCommercialListingsRoute
   '/app/contracts': typeof AppContractsRoute
+  '/app/employee-productivity': typeof AppEmployeeProductivityRoute
   '/app/leads': typeof AppLeadsRouteWithChildren
   '/app/owners': typeof AppOwnersRoute
   '/app/partners': typeof AppPartnersRoute
@@ -193,7 +207,7 @@ export interface FileRoutesByFullPath {
   '/app/': typeof AppIndexRoute
   '/app/leads/$id': typeof AppLeadsIdRoute
   '/app/properties/$id': typeof AppPropertiesIdRoute
-  '/app/requests/rental': typeof AppRequestsRentalRoute
+  '/app/requests/buysell': typeof AppRequestsBuysellRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -201,10 +215,12 @@ export interface FileRoutesByTo {
   '/list-property': typeof ListPropertyRoute
   '/login': typeof LoginRoute
   '/property-request': typeof PropertyRequestRoute
+  '/app/advertisements': typeof AppAdvertisementsRoute
   '/app/amenities': typeof AppAmenitiesRoute
   '/app/buyers': typeof AppBuyersRoute
   '/app/commercial-listings': typeof AppCommercialListingsRoute
   '/app/contracts': typeof AppContractsRoute
+  '/app/employee-productivity': typeof AppEmployeeProductivityRoute
   '/app/leads': typeof AppLeadsRouteWithChildren
   '/app/owners': typeof AppOwnersRoute
   '/app/partners': typeof AppPartnersRoute
@@ -220,7 +236,7 @@ export interface FileRoutesByTo {
   '/app': typeof AppIndexRoute
   '/app/leads/$id': typeof AppLeadsIdRoute
   '/app/properties/$id': typeof AppPropertiesIdRoute
-  '/app/requests/rental': typeof AppRequestsRentalRoute
+  '/app/requests/buysell': typeof AppRequestsBuysellRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -230,10 +246,12 @@ export interface FileRoutesById {
   '/list-property': typeof ListPropertyRoute
   '/login': typeof LoginRoute
   '/property-request': typeof PropertyRequestRoute
+  '/app/advertisements': typeof AppAdvertisementsRoute
   '/app/amenities': typeof AppAmenitiesRoute
   '/app/buyers': typeof AppBuyersRoute
   '/app/commercial-listings': typeof AppCommercialListingsRoute
   '/app/contracts': typeof AppContractsRoute
+  '/app/employee-productivity': typeof AppEmployeeProductivityRoute
   '/app/leads': typeof AppLeadsRouteWithChildren
   '/app/owners': typeof AppOwnersRoute
   '/app/partners': typeof AppPartnersRoute
@@ -249,7 +267,7 @@ export interface FileRoutesById {
   '/app/': typeof AppIndexRoute
   '/app/leads/$id': typeof AppLeadsIdRoute
   '/app/properties/$id': typeof AppPropertiesIdRoute
-  '/app/requests/rental': typeof AppRequestsRentalRoute
+  '/app/requests/buysell': typeof AppRequestsBuysellRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -260,10 +278,12 @@ export interface FileRouteTypes {
     | '/list-property'
     | '/login'
     | '/property-request'
+    | '/app/advertisements'
     | '/app/amenities'
     | '/app/buyers'
     | '/app/commercial-listings'
     | '/app/contracts'
+    | '/app/employee-productivity'
     | '/app/leads'
     | '/app/owners'
     | '/app/partners'
@@ -279,7 +299,7 @@ export interface FileRouteTypes {
     | '/app/'
     | '/app/leads/$id'
     | '/app/properties/$id'
-    | '/app/requests/rental'
+    | '/app/requests/buysell'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -287,10 +307,12 @@ export interface FileRouteTypes {
     | '/list-property'
     | '/login'
     | '/property-request'
+    | '/app/advertisements'
     | '/app/amenities'
     | '/app/buyers'
     | '/app/commercial-listings'
     | '/app/contracts'
+    | '/app/employee-productivity'
     | '/app/leads'
     | '/app/owners'
     | '/app/partners'
@@ -306,7 +328,7 @@ export interface FileRouteTypes {
     | '/app'
     | '/app/leads/$id'
     | '/app/properties/$id'
-    | '/app/requests/rental'
+    | '/app/requests/buysell'
   id:
     | '__root__'
     | '/'
@@ -315,10 +337,12 @@ export interface FileRouteTypes {
     | '/list-property'
     | '/login'
     | '/property-request'
+    | '/app/advertisements'
     | '/app/amenities'
     | '/app/buyers'
     | '/app/commercial-listings'
     | '/app/contracts'
+    | '/app/employee-productivity'
     | '/app/leads'
     | '/app/owners'
     | '/app/partners'
@@ -334,7 +358,7 @@ export interface FileRouteTypes {
     | '/app/'
     | '/app/leads/$id'
     | '/app/properties/$id'
-    | '/app/requests/rental'
+    | '/app/requests/buysell'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -483,6 +507,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppLeadsRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/employee-productivity': {
+      id: '/app/employee-productivity'
+      path: '/employee-productivity'
+      fullPath: '/app/employee-productivity'
+      preLoaderRoute: typeof AppEmployeeProductivityRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/contracts': {
       id: '/app/contracts'
       path: '/contracts'
@@ -511,11 +542,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAmenitiesRouteImport
       parentRoute: typeof AppRoute
     }
-    '/app/requests/rental': {
-      id: '/app/requests/rental'
-      path: '/rental'
-      fullPath: '/app/requests/rental'
-      preLoaderRoute: typeof AppRequestsRentalRouteImport
+    '/app/advertisements': {
+      id: '/app/advertisements'
+      path: '/advertisements'
+      fullPath: '/app/advertisements'
+      preLoaderRoute: typeof AppAdvertisementsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/requests/buysell': {
+      id: '/app/requests/buysell'
+      path: '/buysell'
+      fullPath: '/app/requests/buysell'
+      preLoaderRoute: typeof AppRequestsBuysellRouteImport
       parentRoute: typeof AppRequestsRoute
     }
     '/app/properties/$id': {
@@ -560,11 +598,11 @@ const AppPropertiesRouteWithChildren = AppPropertiesRoute._addFileChildren(
 )
 
 interface AppRequestsRouteChildren {
-  AppRequestsRentalRoute: typeof AppRequestsRentalRoute
+  AppRequestsBuysellRoute: typeof AppRequestsBuysellRoute
 }
 
 const AppRequestsRouteChildren: AppRequestsRouteChildren = {
-  AppRequestsRentalRoute: AppRequestsRentalRoute,
+  AppRequestsBuysellRoute: AppRequestsBuysellRoute,
 }
 
 const AppRequestsRouteWithChildren = AppRequestsRoute._addFileChildren(
@@ -572,10 +610,12 @@ const AppRequestsRouteWithChildren = AppRequestsRoute._addFileChildren(
 )
 
 interface AppRouteChildren {
+  AppAdvertisementsRoute: typeof AppAdvertisementsRoute
   AppAmenitiesRoute: typeof AppAmenitiesRoute
   AppBuyersRoute: typeof AppBuyersRoute
   AppCommercialListingsRoute: typeof AppCommercialListingsRoute
   AppContractsRoute: typeof AppContractsRoute
+  AppEmployeeProductivityRoute: typeof AppEmployeeProductivityRoute
   AppLeadsRoute: typeof AppLeadsRouteWithChildren
   AppOwnersRoute: typeof AppOwnersRoute
   AppPartnersRoute: typeof AppPartnersRoute
@@ -590,10 +630,12 @@ interface AppRouteChildren {
 }
 
 const AppRouteChildren: AppRouteChildren = {
+  AppAdvertisementsRoute: AppAdvertisementsRoute,
   AppAmenitiesRoute: AppAmenitiesRoute,
   AppBuyersRoute: AppBuyersRoute,
   AppCommercialListingsRoute: AppCommercialListingsRoute,
   AppContractsRoute: AppContractsRoute,
+  AppEmployeeProductivityRoute: AppEmployeeProductivityRoute,
   AppLeadsRoute: AppLeadsRouteWithChildren,
   AppOwnersRoute: AppOwnersRoute,
   AppPartnersRoute: AppPartnersRoute,

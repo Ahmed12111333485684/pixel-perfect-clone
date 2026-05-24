@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { FormDialog, ConfirmDialog } from "@/components/FormDialog";
+import { MediaPreview } from "@/components/MediaPreview";
 import { CheckCircle2, ChevronLeft, ChevronRight, ExternalLink, FileImage, Home, Inbox, Mail, MapPin, Phone, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { leadStatusTone, formatDateTime } from "@/lib/format";
@@ -20,29 +21,29 @@ const STATUSES: LeadStatus[] = ["New", "Contacted", "Qualified", "ClosedLost", "
 
 export const Route = createFileRoute("/app/leads")({ component: LeadsPage });
 
-function useAuthenticatedImage(src: string) {
-  const [blobUrl, setBlobUrl] = useState<string | null>(null);
+function useAuthenticatedMedia(src: string) {
+  const [media, setMedia] = useState<{ src: string; mimeType?: string } | null>(null);
 
   useEffect(() => {
-    let objectUrl: string;
+    let objectUrl: string | undefined;
     api<Blob>(src.replace(getApiBaseUrl(), ""), { asBlob: true })
       .then((blob) => {
         objectUrl = URL.createObjectURL(blob);
-        setBlobUrl(objectUrl);
+        setMedia({ src: objectUrl, mimeType: blob.type || undefined });
       })
-      .catch(() => setBlobUrl(null));
+      .catch(() => setMedia(null));
     return () => {
       if (objectUrl) URL.revokeObjectURL(objectUrl);
     };
   }, [src]);
 
-  return blobUrl;
+  return media;
 }
 
-function AuthImg({ src, alt, className }: { src: string; alt: string; className?: string }) {
-  const blobUrl = useAuthenticatedImage(src);
-  if (!blobUrl) return <FileImage className="h-4 w-4 text-muted-foreground" />;
-  return <img src={blobUrl} alt={alt} className={className} />;
+function AuthMedia({ src, alt, className, mimeType, controls }: { src: string; alt: string; className?: string; mimeType?: string; controls?: boolean }) {
+  const media = useAuthenticatedMedia(src);
+  if (!media) return <FileImage className="h-4 w-4 text-muted-foreground" />;
+  return <MediaPreview src={media.src} alt={alt} mimeType={mimeType ?? media.mimeType} className={className} controls={controls} />;
 }
 
 function LeadLightbox({
@@ -51,7 +52,7 @@ function LeadLightbox({
   onClose,
   onChange,
 }: {
-  images: { src: string; alt: string }[];
+  images: { src: string; alt: string; mimeType?: string }[];
   index: number;
   onClose: () => void;
   onChange: (i: number) => void;
@@ -116,10 +117,12 @@ function LeadLightbox({
         className="flex max-h-full max-w-6xl flex-col items-center"
         onClick={(e) => e.stopPropagation()}
       >
-        <AuthImg
+        <AuthMedia
           src={img.src}
           alt={img.alt}
+          mimeType={img.mimeType}
           className="max-h-[80vh] max-w-full rounded-lg object-contain shadow-2xl"
+          controls
         />
         <figcaption className="mt-3 flex items-center gap-3 text-sm text-white/80">
           <span>{img.alt}</span>
@@ -141,7 +144,7 @@ function LeadsPage() {
   const [selected, setSelected] = useState<Lead | null>(null);
   const [editing, setEditing] = useState<Lead | null>(null);
   const [approving, setApproving] = useState<Lead | null>(null);
-  const [lightboxImages, setLightboxImages] = useState<{ src: string; alt: string }[]>([]);
+  const [lightboxImages, setLightboxImages] = useState<{ src: string; alt: string; mimeType?: string }[]>([]);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
 
   const list = useQuery({
@@ -200,6 +203,7 @@ function LeadsPage() {
       (lead.images ?? []).map((i) => ({
         src: resolveApiAssetUrl(`/api/leads/${lead.id}/images/${i.id}/file`),
         alt: i.originalFileName,
+        mimeType: i.mimeType,
       }))
     );
     setLightboxIndex(startIndex);
@@ -288,7 +292,7 @@ function LeadsPage() {
         title={selected?.propertyName ?? ""}
         description={selected?.propertyAddress}
         size="lg"
-        submitLabel={t("common.close" as never) ?? "Close"}
+        submitLabel={t("common.close") ?? "Close"}
         onSubmit={(e) => { e.preventDefault(); setSelected(null); }}
       >
         {selected && (
@@ -444,10 +448,12 @@ function LeadsPage() {
                         onClick={() => openLightbox(selected, idx)}
                         className="group relative overflow-hidden rounded-md border border-border bg-muted aspect-square flex items-center justify-center hover:bg-muted/80 transition-colors cursor-zoom-in"
                       >
-                        <AuthImg
+                        <AuthMedia
                           src={src}
                           alt={img.originalFileName}
+                          mimeType={img.mimeType}
                           className="h-full w-full object-cover group-hover:opacity-75"
+                          controls={false}
                         />
                         <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity">
                           <ExternalLink className="h-4 w-4 text-white" />
