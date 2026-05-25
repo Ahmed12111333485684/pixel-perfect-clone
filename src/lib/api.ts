@@ -149,6 +149,10 @@ export interface Partner {
   phone?: string | null;
   email?: string | null;
   nationalId?: string | null;
+  falLicenseNumber?: string | null;
+  commercialRegistrationNumber?: string | null;
+  location?: string | null;
+  photoUrl?: string | null;
   notes?: string | null;
   userId?: number | null;
   createdAt: string;
@@ -156,7 +160,7 @@ export interface Partner {
 
 export interface CreatePartnerDto {
   fullName: string;
-  phone?: string;
+  phone: string;
   email?: string;
   nationalId?: string;
   notes?: string;
@@ -164,7 +168,7 @@ export interface CreatePartnerDto {
 
 export interface UpdatePartnerDto {
   fullName: string;
-  phone?: string;
+  phone: string;
   email?: string;
   nationalId?: string;
   notes?: string;
@@ -482,12 +486,16 @@ export function fetchPartner(id: string) {
   return api<Partner>(`/api/partners/${id}`);
 }
 
-export function createPartner(input: CreatePartnerDto) {
-  return api("/api/partners", { method: "POST", body: input });
+export function createPartner(input: FormData) {
+  const formData = new FormData();
+  input.forEach((value, key) => formData.append(key, value));
+  return api("/api/partners", { method: "POST", formData });
 }
 
-export function updatePartner(id: string, input: UpdatePartnerDto) {
-  return api(`/api/partners/${id}`, { method: "PUT", body: input });
+export function updatePartner(id: string, input: FormData) {
+  const formData = new FormData();
+  input.forEach((value, key) => formData.append(key, value));
+  return api(`/api/partners/${id}`, { method: "PUT", formData });
 }
 
 export function deletePartner(id: string) {

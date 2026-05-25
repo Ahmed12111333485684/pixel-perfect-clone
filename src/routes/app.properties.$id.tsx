@@ -24,26 +24,29 @@ export const Route = createFileRoute("/app/properties/$id")({
 
 const STATUSES: PropertyStatus[] = ["Pending", "Approved", "Rejected", "Sold"];
 
-// Map of well-known DTO keys -> i18n label keys (so optional fields render with proper translations)
+// Map of well-known detail keys -> i18n label keys.
 const FIELD_LABEL_KEYS: Record<string, string> = {
-  preferredContactAt: "common.preferredContactAt",
-  lastContactedAt: "common.lastContactedAt",
-  assignedToUsername: "common.assignedTo",
-  notes: "common.notes",
-  intent: "common.intent",
-  salePrice: "common.salePrice",
-  rentPrice: "common.monthlyRent",
-  fullName: "common.fullName",
-  phone: "common.phone",
-  email: "common.email",
-  ownerNationalId: "common.nationalId",
-  nationalId: "common.nationalId",
-  description: "common.description",
+  rooms: "common.rooms",
+  area: "common.area",
+  facade: "common.facade",
+  street_width: "common.streetWidth",
+  category: "common.category",
+  floor: "common.floor",
+  furnished: "common.furnished",
+  price_per_meter: "common.pricePerMeter",
+  zoning: "common.zoning",
+  buildable: "common.buildable",
+  frontage_m: "common.frontageM",
+  street_facing: "common.streetFacing",
+  storefront_width_m: "common.storefrontWidthM",
+  has_storage: "common.hasStorage",
+  ceiling_height_m: "common.ceilingHeightM",
+  loading_docks: "common.loadingDocks",
+  climate_control: "common.climateControl",
+  yard_area: "common.yardArea",
 };
 
-const KNOWN_TOP_KEYS = new Set(["id", "ownerId", "name", "address", "type", "status", "createdAt", "amenities"]);
-// Fields rendered explicitly in dedicated sections — exclude from "additional" bucket.
-const CONTACT_KEYS = new Set(["fullName", "phone", "email", "preferredContactAt", "lastContactedAt", "assignedToUsername", "ownerNationalId", "nationalId", "notes"]);
+const KNOWN_TOP_KEYS = new Set(["id", "ownerId", "name", "address", "type", "status", "createdAt", "amenities", "details", "salePrice", "rentPrice", "deedNumber", "region", "city", "district", "listingType"]);
 
 function PropertyDetail() {
   const { id } = Route.useParams();
@@ -142,12 +145,7 @@ function PropertyDetail() {
 
   const p = property.data;
 
-  // Bucket the DTO into contact-style fields and miscellaneous extras.
-  const allEntries = Object.entries(p as unknown as Record<string, unknown>);
-  const contactEntries = allEntries.filter(([k, v]) => CONTACT_KEYS.has(k) && hasValue(v));
-  const additionalEntries = allEntries.filter(
-    ([k, v]) => !KNOWN_TOP_KEYS.has(k) && !CONTACT_KEYS.has(k) && hasValue(v),
-  );
+  const detailEntries = Object.entries((p.details ?? {}) as Record<string, unknown>).filter(([, v]) => hasValue(v));
 
   return (
     <div>
@@ -251,26 +249,10 @@ function PropertyDetail() {
             </FieldGrid>
           </SectionCard>
 
-          {contactEntries.length > 0 && (
-            <SectionCard title={t("common.contactInformation")} icon={<User className="h-4 w-4" />}>
+          <SectionCard title={t("common.details")} icon={<Info className="h-4 w-4" />}>
+            {detailEntries.length > 0 ? (
               <FieldGrid>
-                {contactEntries.map(([k, v]) => (
-                  <FieldItem
-                    key={k}
-                    icon={iconForKey(k)}
-                    label={labelFor(k, t)}
-                    value={renderValue(v, t)}
-                    full={k === "notes"}
-                  />
-                ))}
-              </FieldGrid>
-            </SectionCard>
-          )}
-
-          {additionalEntries.length > 0 && (
-            <SectionCard title={t("common.additionalInfo")} icon={<Info className="h-4 w-4" />}>
-              <FieldGrid>
-                {additionalEntries.map(([k, v]) => (
+                {detailEntries.map(([k, v]) => (
                   <FieldItem
                     key={k}
                     icon={iconForKey(k)}
@@ -279,8 +261,10 @@ function PropertyDetail() {
                   />
                 ))}
               </FieldGrid>
-            </SectionCard>
-          )}
+            ) : (
+              <span className="text-sm text-muted-foreground">{t("common.empty")}</span>
+            )}
+          </SectionCard>
 
           <SectionCard title={t("nav.amenities")} icon={<Sparkles className="h-4 w-4" />}>
             {p.amenities && p.amenities.length > 0 ? (

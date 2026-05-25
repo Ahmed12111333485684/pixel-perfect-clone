@@ -7,15 +7,15 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { localizePropertyType } from "@/lib/property-types";
 
-export default function PropertyDetailsForm({ type, value, onChange }: { type: string; value: Record<string, any>; onChange: (v: Record<string, any>) => void }) {
+export default function PropertyDetailsForm({ type, value, onChange, mode = "create" }: { type: string; value: Record<string, any>; onChange: (v: Record<string, any>) => void; mode?: "create" | "edit" }) {
   const { t } = useTranslation();
   const q = useQuery({ queryKey: ["property-templates", type], queryFn: () => api(`/api/propertytemplates?type=${encodeURIComponent(type)}`) });
 
   const BUILTIN_TEMPLATES: any[] = [
-    { type: "Apartment", fields: [{ key: "rooms", label: "Rooms", dataType: "number", required: true }, { key: "area", label: "Area (sqm)", dataType: "number", required: true }, { key: "floor", label: "Floor", dataType: "number" }, { key: "furnished", label: "Furnished", dataType: "boolean" }] },
-    { type: "Villa", fields: [{ key: "bedrooms", label: "Bedrooms", dataType: "number", required: true }, { key: "area", label: "Lot area (sqm)", dataType: "number", required: true }, { key: "has_garage", label: "Garage", dataType: "boolean" }] },
+    { type: "Apartment", fields: [{ key: "rooms", label: "عدد الغرف", dataType: "number", required: true }, { key: "area", label: "Area (sqm)", dataType: "number", required: true }, { key: "floor", label: "Floor", dataType: "number" }, { key: "furnished", label: "Furnished", dataType: "boolean" }] },
+    { type: "Villa", fields: [{ key: "rooms", label: "Number of rooms", dataType: "number", required: true }, { key: "area", label: "Lot area (sqm)", dataType: "number", required: true }, { key: "has_garage", label: "Garage", dataType: "boolean" }] },
     { type: "Office", fields: [{ key: "floor", label: "Floor", dataType: "number" }, { key: "area", label: "Area (sqm)", dataType: "number", required: true }, { key: "meeting_rooms", label: "Meeting rooms", dataType: "number" }, { key: "parking_spots", label: "Parking spots", dataType: "number" }, { key: "open_plan", label: "Open plan", dataType: "boolean" }] },
-    { type: "Land", fields: [{ key: "area", label: "Lot area (sqm)", dataType: "number", required: true }, { key: "zoning", label: "Zoning", dataType: "string" }, { key: "buildable", label: "Buildable", dataType: "boolean" }, { key: "frontage_m", label: "Frontage (m)", dataType: "number" }] },
+    { type: "Land", fields: [{ key: "facade", label: "الواجهة", dataType: "string" }, { key: "street_width", label: "عرض الشارع", dataType: "string" }, { key: "area", label: "المساحة", dataType: "number", required: true }, { key: "price_per_meter", label: "سعر المتر", dataType: "number" }] },
     { type: "Shop", fields: [{ key: "area", label: "Area (sqm)", dataType: "number", required: true }, { key: "street_facing", label: "Street facing", dataType: "boolean" }, { key: "storefront_width_m", label: "Storefront width (m)", dataType: "number" }, { key: "has_storage", label: "Has storage", dataType: "boolean" }] },
     { type: "Warehouse", fields: [{ key: "area", label: "Area (sqm)", dataType: "number", required: true }, { key: "ceiling_height_m", label: "Ceiling height (m)", dataType: "number" }, { key: "loading_docks", label: "Loading docks", dataType: "number" }, { key: "climate_control", label: "Climate control", dataType: "boolean" }, { key: "yard_area", label: "Yard area (sqm)", dataType: "number" }] }
   ];
@@ -38,13 +38,27 @@ export default function PropertyDetailsForm({ type, value, onChange }: { type: s
 
   if (!template) return null;
 
+  const editableFields = mode === "edit"
+    ? Object.entries(value ?? {})
+        .filter(([, fieldValue]) => fieldValue !== null && fieldValue !== undefined && fieldValue !== "")
+        .map(([key, fieldValue]) => {
+          const templateField = (template.fields || []).find((f: any) => f.key === key);
+          return {
+            key,
+            value: fieldValue,
+            label: templateField?.label ?? key,
+            dataType: templateField?.dataType ?? (typeof fieldValue === "number" ? "number" : typeof fieldValue === "boolean" ? "boolean" : "string"),
+          };
+        })
+    : template.fields;
+
   return (
     <div className="space-y-2">
       <Label>{`${t("common.type")}: ${localizePropertyType(t, template.type)}`}</Label>
       <div className="grid gap-3 sm:grid-cols-2">
-        {template.fields.map((f: any) => {
+        {editableFields.map((f: any) => {
           const key = f.key;
-          const val = readValue(key);
+          const val = mode === "edit" ? f.value : readValue(key);
           if (f.dataType === "number") {
             return (
               <div key={key} className="space-y-2">
@@ -56,7 +70,9 @@ export default function PropertyDetailsForm({ type, value, onChange }: { type: s
                     const next = { ...value };
                     const nextValue = e.target.value === "" ? null : Number(e.target.value);
                     next[key] = nextValue;
-                    for (const alias of legacyKeyAliases[key] ?? []) delete next[alias];
+                    if (mode === "create") {
+                      for (const alias of legacyKeyAliases[key] ?? []) delete next[alias];
+                    }
                     onChange(next);
                   }}
                 />
@@ -79,7 +95,9 @@ export default function PropertyDetailsForm({ type, value, onChange }: { type: s
                 onChange={(e) => {
                   const next = { ...value };
                   next[key] = e.target.value;
-                  for (const alias of legacyKeyAliases[key] ?? []) delete next[alias];
+                  if (mode === "create") {
+                    for (const alias of legacyKeyAliases[key] ?? []) delete next[alias];
+                  }
                   onChange(next);
                 }}
               />
@@ -87,48 +105,6 @@ export default function PropertyDetailsForm({ type, value, onChange }: { type: s
           );
         })}
       </div>
-      {/* Render any extra custom fields not part of the template */}
-      {Object.keys(value ?? {}).filter((k) => !(template.fields || []).some((f: any) => f.key === k)).length > 0 && (
-        <div className="space-y-2">
-          <Label>{t("common.additionalFields")}</Label>
-          <div className="space-y-2 rounded-md border border-border p-3">
-            {Object.entries(value).filter(([k]) => !(template.fields || []).some((f: any) => f.key === k)).map(([key, val]) => (
-              <div key={key} className="flex gap-2">
-                <Input
-                  placeholder={t("common.name")}
-                  value={key}
-                  onChange={(e) => {
-                    const newKey = e.target.value;
-                    if (!newKey) return;
-                    const next = { ...value };
-                    delete next[key];
-                    next[newKey] = val;
-                    onChange(next);
-                  }}
-                  className="flex-1"
-                />
-                <Input
-                  placeholder={t("common.value")}
-                  value={String(val ?? "")}
-                  onChange={(e) => onChange({ ...value, [key]: e.target.value })}
-                  className="flex-1"
-                />
-                <button
-                  type="button"
-                  onClick={() => {
-                    const next = { ...value };
-                    delete next[key];
-                    onChange(next);
-                  }}
-                  className="text-xs text-destructive hover:underline px-2"
-                >
-                  ✕
-                </button>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
     </div>
   );
 }

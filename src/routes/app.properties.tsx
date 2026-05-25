@@ -76,13 +76,13 @@ function PropertiesPage() {
   const [search, setSearch] = useState("");
 
   const upsert = useMutation({
-    mutationFn: async (vals: { id?: number; ownerId: number; name: string; address: string; type: string; region?: string | null; city?: string | null; district?: string | null; listingType: "Rental" | "Sale"; salePrice?: number | null; rentPrice?: number | null; deedNumber?: string | null; amenityIds: number[]; files?: File[]; status?: PropertyStatus }) => {
+    mutationFn: async (vals: { id?: number; ownerId: number; name: string; address: string; type: string; region?: string | null; city?: string | null; district?: string | null; listingType: "Rental" | "Sale"; salePrice?: number | null; rentPrice?: number | null; deedNumber?: string | null; details?: Record<string, any> | null; amenityIds: number[]; files?: File[]; status?: PropertyStatus }) => {
       let propertyId: number;
       if (vals.id) {
         propertyId = vals.id;
-        await api(`/api/properties/${vals.id}`, { method: "PUT", body: { ownerId: vals.ownerId, name: vals.name, address: vals.address, type: vals.type, region: vals.region, city: vals.city, district: vals.district, listingType: vals.listingType, salePrice: vals.salePrice, rentPrice: vals.rentPrice, deedNumber: vals.deedNumber, amenityIds: vals.amenityIds } });
+        await api(`/api/properties/${vals.id}`, { method: "PUT", body: { ownerId: vals.ownerId, name: vals.name, address: vals.address, type: vals.type, region: vals.region, city: vals.city, district: vals.district, listingType: vals.listingType, salePrice: vals.salePrice, rentPrice: vals.rentPrice, deedNumber: vals.deedNumber, details: vals.details, amenityIds: vals.amenityIds } });
       } else {
-        const response = await api<{ id: number }>("/api/properties", { method: "POST", body: { ownerId: vals.ownerId, name: vals.name, address: vals.address, type: vals.type, region: vals.region, city: vals.city, district: vals.district, listingType: vals.listingType, salePrice: vals.salePrice, rentPrice: vals.rentPrice, deedNumber: vals.deedNumber, amenityIds: vals.amenityIds } });
+        const response = await api<{ id: number }>("/api/properties", { method: "POST", body: { ownerId: vals.ownerId, name: vals.name, address: vals.address, type: vals.type, region: vals.region, city: vals.city, district: vals.district, listingType: vals.listingType, salePrice: vals.salePrice, rentPrice: vals.rentPrice, deedNumber: vals.deedNumber, details: vals.details, amenityIds: vals.amenityIds } });
         propertyId = response.id;
       }
       // Upload files if any
@@ -266,10 +266,6 @@ function PropertyDialog({
   const [listingType, setListingType] = useState<"Rental" | "Sale">(property?.listingType ?? "Rental");
   const [deedNumber, setDeedNumber] = useState<string>(property?.deedNumber ?? "");
   const [details, setDetails] = useState<Record<string, any>>(property?.details ?? {});
-  const [useTemplate, setUseTemplate] = useState<boolean>(() => {
-    // default to template mode when creating a new property or when there are no details
-    return property == null || Object.keys(property?.details ?? {}).length === 0;
-  });
   const [picked, setPicked] = useState<Set<number>>(new Set(property?.amenities?.map((a) => a.id) ?? []));
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
 
@@ -285,7 +281,6 @@ function PropertyDialog({
     setListingType(property?.listingType ?? "Rental");
     setDeedNumber(property?.deedNumber ?? "");
     setDetails(property?.details ?? {});
-    setUseTemplate(property == null || Object.keys(property?.details ?? {}).length === 0);
     setPicked(new Set(property?.amenities?.map((amenity) => amenity.id) ?? []));
     setSelectedFiles([]);
   }, [open, property?.id, property?.ownerId, property?.type, property?.region, property?.city, property?.district, property?.listingType, property?.deedNumber, property?.amenities, property?.details, defaultOwnerId]);
@@ -306,11 +301,11 @@ function PropertyDialog({
       title={property ? t("common.edit") : t("common.add")}
       submitting={submitting}
       size="lg"
-      onSubmit={(e) => {
+            onSubmit={(e) => {
         e.preventDefault();
         const fd = new FormData(e.currentTarget);
         const oid = canPickOwner ? Number(ownerId) : (defaultOwnerId ?? Number(ownerId));
-        onSubmit({
+              onSubmit({
           ownerId: oid,
           name: String(fd.get("name") ?? ""),
           address: String(fd.get("address") ?? ""),
@@ -322,7 +317,7 @@ function PropertyDialog({
           salePrice: fd.get("salePrice") === "" ? null : Number(fd.get("salePrice") ?? 0),
           rentPrice: fd.get("rentPrice") === "" ? null : Number(fd.get("rentPrice") ?? 0),
           deedNumber: deedNumber || null,
-          details: Object.keys(details).length > 0 ? details : null,
+          details,
           amenityIds: Array.from(picked),
           status: auth.isStaff ? status : undefined,
           files: selectedFiles.length > 0 ? selectedFiles : undefined,
@@ -358,7 +353,7 @@ function PropertyDialog({
         </div>
         <div className="space-y-2">
           <Label>{t("common.type")}</Label>
-          <Select value={type} onValueChange={(v) => { setType(v); setUseTemplate(true); }}>
+          <Select value={type} onValueChange={setType}>
             <SelectTrigger><SelectValue /></SelectTrigger>
             <SelectContent>
               {PROPERTY_TYPES.map((p) => <SelectItem key={p} value={p}>{localizePropertyType(t, p)}</SelectItem>)}
@@ -455,71 +450,9 @@ function PropertyDialog({
       <div className="space-y-2">
         <div className="flex items-center justify-between">
           <Label>{t("common.details")}</Label>
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={() => setUseTemplate((s) => !s)}
-              className="text-xs text-primary hover:underline"
-            >
-              {useTemplate ? t("common.useCustom") : t("common.useTemplate")}
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                const newKey = createCustomDetailKey(details);
-                setDetails({ ...details, [newKey]: "" });
-                // ensure template mode remains visible so user sees new field
-                setUseTemplate(true);
-              }}
-              className="text-xs text-primary hover:underline"
-            >
-              + {t("common.add")}
-            </button>
-          </div>
         </div>
 
-        {useTemplate ? (
-          <PropertyDetailsForm type={type} value={details} onChange={setDetails} />
-        ) : Object.keys(details).length === 0 ? (
-          <p className="text-xs text-muted-foreground">{t("common.empty")}</p>
-        ) : (
-          <div className="space-y-2 rounded-md border border-border p-3">
-            {Object.entries(details).map(([key, value]) => (
-              <div key={key} className="flex gap-2">
-                <Input
-                  placeholder={t("common.name")}
-                  value={key}
-                  onChange={(e) => {
-                    const newDetails = { ...details };
-                    delete newDetails[key];
-                    newDetails[e.target.value] = value;
-                    setDetails(newDetails);
-                  }}
-                  className="flex-1"
-                />
-                <Input
-                  placeholder={t("common.value")}
-                  value={String(value)}
-                  onChange={(e) => {
-                    setDetails({ ...details, [key]: e.target.value });
-                  }}
-                  className="flex-1"
-                />
-                <button
-                  type="button"
-                  onClick={() => {
-                    const newDetails = { ...details };
-                    delete newDetails[key];
-                    setDetails(newDetails);
-                  }}
-                  className="text-xs text-destructive hover:underline px-2"
-                >
-                  ✕
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
+        <PropertyDetailsForm type={type} value={details} onChange={setDetails} mode={property ? "edit" : "create"} />
       </div>
     </FormDialog>
   );

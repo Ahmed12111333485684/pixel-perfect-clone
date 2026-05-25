@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
+  resolveApiAssetUrl,
   createPartner,
   createPartnerAccount,
   deletePartner,
@@ -17,7 +18,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { FormDialog, ConfirmDialog } from "@/components/FormDialog";
-import { Plus, KeyRound } from "lucide-react";
+import { MediaPreview } from "@/components/MediaPreview";
+import { ImagePlus, KeyRound, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { formatDate } from "@/lib/format";
 
@@ -39,11 +41,21 @@ function PartnersPage() {
   const [search, setSearch] = useState("");
 
   const upsert = useMutation({
-    mutationFn: async (vals: { id?: string; fullName: string; phone?: string; email?: string; nationalId?: string; notes?: string }) => {
+    mutationFn: async (vals: { id?: string; fullName: string; phone: string; email?: string; nationalId?: string; falLicenseNumber?: string; commercialRegistrationNumber?: string; location?: string; notes?: string; photo?: File | null }) => {
+      const formData = new FormData();
+      formData.append("fullName", vals.fullName);
+      formData.append("phone", vals.phone);
+      if (vals.email) formData.append("email", vals.email);
+      if (vals.nationalId) formData.append("nationalId", vals.nationalId);
+      if (vals.falLicenseNumber) formData.append("falLicenseNumber", vals.falLicenseNumber);
+      if (vals.commercialRegistrationNumber) formData.append("commercialRegistrationNumber", vals.commercialRegistrationNumber);
+      if (vals.location) formData.append("location", vals.location);
+      if (vals.notes) formData.append("notes", vals.notes);
+      if (vals.photo) formData.append("photo", vals.photo);
       if (vals.id) {
-        await updatePartner(vals.id, vals);
+        await updatePartner(vals.id, formData);
       } else {
-        await createPartner(vals);
+        await createPartner(formData);
       }
     },
     onSuccess: () => {
@@ -88,8 +100,25 @@ function PartnersPage() {
   }
 
   const cols: Column<Partner>[] = [
+    {
+      key: "photo",
+      header: t("common.photo"),
+      className: "w-20",
+      cell: (r) => r.photoUrl ? (
+        <div className="h-12 w-12 overflow-hidden rounded-lg border border-border bg-muted">
+          <MediaPreview src={resolveApiAssetUrl(r.photoUrl)} alt={r.fullName} className="h-full w-full object-cover" />
+        </div>
+      ) : (
+        <div className="flex h-12 w-12 items-center justify-center rounded-lg border border-dashed border-border text-muted-foreground">
+          <ImagePlus className="h-4 w-4" />
+        </div>
+      ),
+    },
     { key: "name", header: t("common.fullName"), cell: (r) => <span className="font-medium">{r.fullName}</span> },
     { key: "phone", header: t("common.phone"), cell: (r) => r.phone ?? "—" },
+    { key: "falLicenseNumber", header: t("common.falLicenseNumber"), cell: (r) => r.falLicenseNumber ?? "—" },
+    { key: "commercialRegistrationNumber", header: t("common.commercialRegistrationNumber"), cell: (r) => r.commercialRegistrationNumber ?? "—" },
+    { key: "location", header: t("common.partnerLocation"), cell: (r) => r.location ?? "—" },
     { key: "email", header: t("common.email"), cell: (r) => r.email ?? "—" },
     { key: "nid", header: t("common.nationalId"), cell: (r) => <span className="font-mono text-xs">{r.nationalId ?? "—"}</span> },
     { key: "created", header: t("common.createdAt"), cell: (r) => formatDate(r.createdAt) },
@@ -112,6 +141,9 @@ function PartnersPage() {
       return (
         p.fullName.toLowerCase().includes(lower)
         || (p.phone ?? "").toLowerCase().includes(lower)
+        || (p.falLicenseNumber ?? "").toLowerCase().includes(lower)
+        || (p.commercialRegistrationNumber ?? "").toLowerCase().includes(lower)
+        || (p.location ?? "").toLowerCase().includes(lower)
         || (p.email ?? "").toLowerCase().includes(lower)
         || (p.nationalId ?? "").toLowerCase().includes(lower)
       );
@@ -179,7 +211,7 @@ function PartnerDialog({ open, onOpenChange, partner, onSubmit, submitting }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   partner: Partner | null;
-  onSubmit: (vals: { fullName: string; phone?: string; email?: string; nationalId?: string; notes?: string }) => void;
+  onSubmit: (vals: { fullName: string; phone: string; email?: string; nationalId?: string; falLicenseNumber?: string; commercialRegistrationNumber?: string; location?: string; notes?: string; photo?: File | null }) => void;
   submitting?: boolean;
 }) {
   const { t } = useTranslation();
@@ -191,22 +223,43 @@ function PartnerDialog({ open, onOpenChange, partner, onSubmit, submitting }: {
       onOpenChange={onOpenChange}
       title={partner ? t("common.edit") : t("common.add")}
       submitting={submitting}
+      size="lg"
       onSubmit={(e) => {
         e.preventDefault();
         const fd = new FormData(e.currentTarget);
+        const photoInput = e.currentTarget.elements.namedItem("photo") as HTMLInputElement | null;
         onSubmit({
           fullName: String(fd.get("fullName") ?? ""),
-          phone: String(fd.get("phone") ?? "") || undefined,
+          phone: String(fd.get("phone") ?? ""),
           email: String(fd.get("email") ?? "") || undefined,
           nationalId: String(fd.get("nationalId") ?? "") || undefined,
+          falLicenseNumber: String(fd.get("falLicenseNumber") ?? "") || undefined,
+          commercialRegistrationNumber: String(fd.get("commercialRegistrationNumber") ?? "") || undefined,
+          location: String(fd.get("location") ?? "") || undefined,
           notes: String(fd.get("notes") ?? "") || undefined,
+          photo: photoInput?.files?.[0] ?? null,
         });
       }}
     >
       <FormField id="fullName" label={t("common.fullName")} defaultValue={partner?.fullName} required />
-      <FormField id="phone" label={t("common.phone")} defaultValue={partner?.phone ?? ""} />
+      <FormField id="phone" label={t("common.phone")} defaultValue={partner?.phone ?? ""} required />
       <FormField id="email" label={t("common.email")} type="email" defaultValue={partner?.email ?? ""} />
       <FormField id="nationalId" label={t("common.nationalId")} defaultValue={partner?.nationalId ?? ""} />
+      <FormField id="falLicenseNumber" label={t("common.falLicenseNumber")} defaultValue={partner?.falLicenseNumber ?? ""} />
+      <FormField id="commercialRegistrationNumber" label={t("common.commercialRegistrationNumber")} defaultValue={partner?.commercialRegistrationNumber ?? ""} />
+      <FormField id="location" label={t("common.partnerLocation")} defaultValue={partner?.location ?? ""} />
+      <div className="space-y-2">
+        <Label htmlFor="photo">{t("common.photo")}</Label>
+        <Input id="photo" name="photo" type="file" accept="image/*" />
+        {partner?.photoUrl && (
+          <div className="flex items-center gap-3 rounded-lg border border-border bg-muted/40 p-3">
+            <div className="h-16 w-16 overflow-hidden rounded-md border border-border bg-background">
+              <MediaPreview src={resolveApiAssetUrl(partner.photoUrl)} alt={partner.fullName} className="h-full w-full object-cover" />
+            </div>
+            <div className="text-sm text-muted-foreground">{t("common.photo")}</div>
+          </div>
+        )}
+      </div>
       <FormField id="notes" label={t("common.notes")} defaultValue={partner?.notes ?? ""} />
     </FormDialog>
   );
