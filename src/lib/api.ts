@@ -140,6 +140,7 @@ export interface Owner {
   phone: string;
   email: string;
   nationalId: string;
+  notes?: string | null;
   createdAt: string;
 }
 
@@ -426,8 +427,16 @@ export interface CommercialListing {
   publishedInstagram?: string | null;
   publishedTiktok?: string | null;
   notes?: string | null;
+  brokerageContracts?: CommercialListingBrokerageContract[] | null;
   createdAt: string;
   updatedAt?: string | null;
+}
+
+export interface CommercialListingBrokerageContract {
+  brokerageContract?: string | null;
+  licenseNumber?: string | null;
+  contractExpiry?: string | null;
+  sortOrder: number;
 }
 
 export interface ResidentialSeeker {

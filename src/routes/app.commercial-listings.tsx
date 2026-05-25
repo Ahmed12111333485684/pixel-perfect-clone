@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { api, fetchPartners, type CommercialListing, type Partner } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
@@ -37,9 +37,6 @@ const DEAL_THROUGH_OFFICE = "المكتب";
 const COMMERCIAL_FIELDS = [
   "contactDate",
   "propertyStatus",
-  "brokerageContract",
-  "licenseNumber",
-  "contractExpiry",
   "adNumber",
   "dealThrough",
   "employee",
@@ -63,6 +60,13 @@ const COMMERCIAL_FIELDS = [
 ] as const;
 
 type CommercialFieldKey = (typeof COMMERCIAL_FIELDS)[number];
+
+type BrokerageContractFormValue = {
+  id: string;
+  brokerageContract: string;
+  licenseNumber: string;
+  contractExpiry: string;
+};
 
 type PublishingChannel = {
   key: keyof CommercialListing;
@@ -120,12 +124,39 @@ function readFieldValue(fd: FormData, key: string) {
   return String(fd.get(key) ?? "").trim();
 }
 
+function makeContractId() {
+  return typeof crypto !== "undefined" && crypto.randomUUID
+    ? crypto.randomUUID()
+    : `contract-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
+
+function emptyBrokerageContract(): BrokerageContractFormValue {
+  return {
+    id: makeContractId(),
+    brokerageContract: "",
+    licenseNumber: "",
+    contractExpiry: "",
+  };
+}
+
+function normalizeBrokerageContracts(contracts: BrokerageContractFormValue[]) {
+  return contracts
+    .map((contract, index) => ({
+      brokerageContract: contract.brokerageContract.trim(),
+      licenseNumber: contract.licenseNumber.trim(),
+      contractExpiry: contract.contractExpiry.trim(),
+      sortOrder: index,
+    }))
+    .filter((contract) => contract.brokerageContract || contract.licenseNumber || contract.contractExpiry);
+}
+
 function buildCommercialPayload(
   fd: FormData,
   publishing: PublishingState,
+  contracts: BrokerageContractFormValue[],
   original?: CommercialListing | null,
 ) {
-  const payload: Record<string, string> = {};
+  const payload: Record<string, unknown> = {};
 
   COMMERCIAL_FIELDS.forEach((key) => {
     const value = readFieldValue(fd, key);
@@ -140,6 +171,8 @@ function buildCommercialPayload(
       payload[channel.key] = value;
     }
   });
+
+  payload.brokerageContracts = normalizeBrokerageContracts(contracts);
 
   return payload;
 }
@@ -193,12 +226,16 @@ function CommercialListingsPage() {
     setPage(1);
   };
 
-  const handleCreate = async (e: React.FormEvent<HTMLFormElement>, publishing: PublishingState) => {
+  const handleCreate = async (
+    e: React.FormEvent<HTMLFormElement>,
+    publishing: PublishingState,
+    contracts: BrokerageContractFormValue[],
+  ) => {
     e.preventDefault();
     setSubmitting(true);
     try {
       const fd = new FormData(e.currentTarget);
-      const payload = buildCommercialPayload(fd, publishing);
+      const payload = buildCommercialPayload(fd, publishing, contracts);
       await api<CommercialListing>("/api/commercial-listings", { method: "POST", body: payload });
       toast.success(t("common.created"));
       setCreating(false);
@@ -210,13 +247,17 @@ function CommercialListingsPage() {
     }
   };
 
-  const handleUpdate = async (e: React.FormEvent<HTMLFormElement>, publishing: PublishingState) => {
+  const handleUpdate = async (
+    e: React.FormEvent<HTMLFormElement>,
+    publishing: PublishingState,
+    contracts: BrokerageContractFormValue[],
+  ) => {
     e.preventDefault();
     if (!selected) return;
     setSubmitting(true);
     try {
       const fd = new FormData(e.currentTarget);
-      const payload = buildCommercialPayload(fd, publishing, selected);
+      const payload = buildCommercialPayload(fd, publishing, contracts, selected);
       if (Object.keys(payload).length === 0) {
         setSelected(null);
         return;
@@ -291,6 +332,14 @@ function CommercialListingsPage() {
         if (normalized === DEAL_THROUGH_OWNER) return t("commercialListings.dealThroughOwner");
         if (normalized === DEAL_THROUGH_OFFICE) return t("commercialListings.dealThroughOffice");
         return r.dealThrough || t("common.notProvided");
+      },
+    },
+    {
+      key: "brokerageContractsCount",
+      header: t("commercialListings.brokerageContracts"),
+      cell: (r) => {
+        const count = r.brokerageContracts?.length ?? 0;
+        return count > 0 ? `${count}` : t("common.notProvided");
       },
     },
     {
@@ -522,21 +571,45 @@ function CommercialListingDialog({
   submitting?: boolean;
   title: string;
   submitLabel: string;
-  onSubmit: (e: React.FormEvent<HTMLFormElement>, publishing: PublishingState) => void | Promise<void>;
+  onSubmit: (e: React.FormEvent<HTMLFormElement>, publishing: PublishingState, contracts: BrokerageContractFormValue[]) => void | Promise<void>;
 }) {
   const { t } = useTranslation();
   const [publishing, setPublishing] = useState<PublishingState>(() => buildPublishingState(listing));
   const [broker, setBroker] = useState<string>(listing?.broker ?? "");
   const [propertyStatus, setPropertyStatus] = useState<string>(listing?.propertyStatus ?? STATUS_AVAILABLE);
   const [dealThrough, setDealThrough] = useState<string>(listing?.dealThrough ?? DEAL_THROUGH_OWNER);
+  const [contracts, setContracts] = useState<BrokerageContractFormValue[]>(() => {
+    const initialContracts = listing?.brokerageContracts?.length ? listing.brokerageContracts : [null];
+    return initialContracts.map((contract) => contract ? {
+      id: makeContractId(),
+      brokerageContract: contract.brokerageContract ?? "",
+      licenseNumber: contract.licenseNumber ?? "",
+      contractExpiry: contract.contractExpiry ?? "",
+    } : emptyBrokerageContract());
+  });
 
-  const partnerOptions = partners
+  const partnerOptions = useMemo(() => partners
     .filter((partner) => partner.fullName.trim().length > 0)
-    .sort((a, b) => a.fullName.localeCompare(b.fullName));
+    .sort((a, b) => a.fullName.localeCompare(b.fullName)), [partners]);
 
   const hasCurrentBrokerInPartners = broker
     ? partnerOptions.some((partner) => partner.fullName === broker)
     : true;
+
+  const updateContract = useCallback((id: string, field: keyof Omit<BrokerageContractFormValue, "id">, value: string) => {
+    setContracts((current) => current.map((item) => (item.id === id ? { ...item, [field]: value } : item)));
+  }, []);
+
+  const addContract = useCallback(() => {
+    setContracts((current) => [...current, emptyBrokerageContract()]);
+  }, []);
+
+  const removeContract = useCallback((id: string) => {
+    setContracts((current) => {
+      if (current.length <= 1) return current;
+      return current.filter((item) => item.id !== id);
+    });
+  }, []);
 
   useEffect(() => {
     if (open) {
@@ -544,6 +617,16 @@ function CommercialListingDialog({
       setBroker(listing?.broker ?? "");
       setPropertyStatus(listing?.propertyStatus ?? STATUS_AVAILABLE);
       setDealThrough(listing?.dealThrough ?? DEAL_THROUGH_OWNER);
+      setContracts(
+        listing?.brokerageContracts?.length
+          ? listing.brokerageContracts.map((contract) => ({
+            id: makeContractId(),
+            brokerageContract: contract.brokerageContract ?? "",
+            licenseNumber: contract.licenseNumber ?? "",
+            contractExpiry: contract.contractExpiry ?? "",
+          }))
+          : [emptyBrokerageContract()],
+      );
     }
   }, [listing, open]);
 
@@ -556,7 +639,7 @@ function CommercialListingDialog({
       submitLabel={submitLabel}
       submitting={submitting}
       size="lg"
-      onSubmit={(e) => onSubmit(e, publishing)}
+      onSubmit={(e) => onSubmit(e, publishing, contracts)}
     >
       <div className="space-y-4 rounded-lg border border-border bg-muted/30 p-4">
         <div className="grid gap-4 sm:grid-cols-2">
@@ -580,9 +663,6 @@ function CommercialListingDialog({
             </Select>
             <input type="hidden" name="propertyStatus" value={propertyStatus} />
           </div>
-          <TextField id="brokerageContract" label={t("commercialListings.brokerageContract")} defaultValue={listing?.brokerageContract} readOnly={readOnly} />
-          <TextField id="licenseNumber" label={t("commercialListings.licenseNumber")} defaultValue={listing?.licenseNumber} readOnly={readOnly} />
-          <TextField id="contractExpiry" label={t("commercialListings.contractExpiry")} defaultValue={listing?.contractExpiry} readOnly={readOnly} />
           <div className="space-y-2">
             <Label htmlFor="dealThrough" className="text-xs font-medium">
               {t("commercialListings.dealThrough")}
@@ -624,6 +704,36 @@ function CommercialListingDialog({
             </Select>
             <input type="hidden" name="broker" value={broker} />
           </div>
+        </div>
+      </div>
+
+      <div className="space-y-4 rounded-lg border border-border bg-muted/30 p-4">
+        <div className="flex items-center justify-between gap-3">
+          <Label className="text-sm font-medium">{t("commercialListings.brokerageContracts")}</Label>
+          {!readOnly && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={addContract}
+            >
+              <Plus className="me-1 h-4 w-4" />
+              {t("commercialListings.addBrokerageContract")}
+            </Button>
+          )}
+        </div>
+        <div className="space-y-4">
+          {contracts.map((contract, index) => (
+            <BrokerageContractRow
+              key={contract.id}
+              contract={contract}
+              index={index}
+              readOnly={readOnly}
+              onChange={updateContract}
+              onRemove={removeContract}
+              t={t}
+            />
+          ))}
         </div>
       </div>
 
@@ -742,3 +852,79 @@ function TextareaField({
     </div>
   );
 }
+
+const BrokerageContractRow = memo(function BrokerageContractRow({
+  contract,
+  index,
+  readOnly,
+  onChange,
+  onRemove,
+  t,
+}: {
+  contract: BrokerageContractFormValue;
+  index: number;
+  readOnly: boolean;
+  onChange: (id: string, field: keyof Omit<BrokerageContractFormValue, "id">, value: string) => void;
+  onRemove: (id: string) => void;
+  t: (key: string) => string;
+}) {
+  return (
+    <div className="rounded-lg border border-border bg-card p-4 shadow-sm">
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <span className="text-xs font-medium text-muted-foreground">{t("commercialListings.brokerageContracts")} {index + 1}</span>
+        {!readOnly && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => onRemove(contract.id)}
+          >
+            <X className="me-1 h-4 w-4" />
+            {t("common.delete")}
+          </Button>
+        )}
+      </div>
+      <div className="grid gap-4 sm:grid-cols-3">
+        <div className="space-y-2">
+          <Label htmlFor={`brokerageContract-${contract.id}`} className="text-xs font-medium">
+            {t("commercialListings.brokerageContract")}
+          </Label>
+          <Input
+            id={`brokerageContract-${contract.id}`}
+            value={contract.brokerageContract}
+            onChange={(event) => onChange(contract.id, "brokerageContract", event.target.value)}
+            readOnly={readOnly}
+            disabled={readOnly}
+            className="mt-1"
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor={`licenseNumber-${contract.id}`} className="text-xs font-medium">
+            {t("commercialListings.licenseNumber")}
+          </Label>
+          <Input
+            id={`licenseNumber-${contract.id}`}
+            value={contract.licenseNumber}
+            onChange={(event) => onChange(contract.id, "licenseNumber", event.target.value)}
+            readOnly={readOnly}
+            disabled={readOnly}
+            className="mt-1"
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor={`contractExpiry-${contract.id}`} className="text-xs font-medium">
+            {t("commercialListings.contractExpiry")}
+          </Label>
+          <Input
+            id={`contractExpiry-${contract.id}`}
+            value={contract.contractExpiry}
+            onChange={(event) => onChange(contract.id, "contractExpiry", event.target.value)}
+            readOnly={readOnly}
+            disabled={readOnly}
+            className="mt-1"
+          />
+        </div>
+      </div>
+    </div>
+  );
+});

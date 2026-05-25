@@ -9,6 +9,7 @@ import { DataTable, type Column } from "@/components/DataTable";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { FormDialog, ConfirmDialog } from "@/components/FormDialog";
 import { Plus, KeyRound, BarChart3 } from "lucide-react";
 import { toast } from "sonner";
@@ -183,6 +184,7 @@ function OwnerDialog({ open, onOpenChange, owner, onSubmit, submitting }: {
       onOpenChange={onOpenChange}
       title={owner ? t("common.edit") : t("common.add")}
       submitting={submitting}
+      size="lg"
       onSubmit={(e) => {
         e.preventDefault();
         const fd = new FormData(e.currentTarget);
@@ -191,6 +193,7 @@ function OwnerDialog({ open, onOpenChange, owner, onSubmit, submitting }: {
           phone: String(fd.get("phone") ?? ""),
           email: String(fd.get("email") ?? ""),
           nationalId: String(fd.get("nationalId") ?? ""),
+          notes: String(fd.get("notes") ?? "") || undefined,
         });
       }}
     >
@@ -198,6 +201,7 @@ function OwnerDialog({ open, onOpenChange, owner, onSubmit, submitting }: {
       <FormField id="phone" label={t("common.phone")} defaultValue={owner?.phone} />
       <FormField id="email" label={t("common.email")} type="email" defaultValue={owner?.email} />
       <FormField id="nationalId" label={t("common.nationalId")} defaultValue={owner?.nationalId} />
+      <TextareaField id="notes" label={t("common.notes")} defaultValue={owner?.notes ?? ""} />
     </FormDialog>
   );
 }
@@ -272,6 +276,19 @@ export function FormField({ id, label, type = "text", defaultValue, required = t
     <div className="space-y-2">
       <Label htmlFor={id}>{label}</Label>
       <Input id={id} name={id} type={type} defaultValue={defaultValue ?? ""} required={required} />
+    </div>
+  );
+}
+
+function TextareaField({ id, label, defaultValue }: {
+  id: string;
+  label: string;
+  defaultValue?: string;
+}) {
+  return (
+    <div className="space-y-2">
+      <Label htmlFor={id}>{label}</Label>
+      <Textarea id={id} name={id} defaultValue={defaultValue ?? ""} rows={5} />
     </div>
   );
 }
