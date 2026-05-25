@@ -29,16 +29,19 @@ interface CommercialListingSearchResult {
 
 const PUBLISHED_VALUE = "تم";
 const STATUS_AVAILABLE = "متاح";
-const STATUS_RENTED = "تم التأجير";
+const STATUS_OCCUPIED = "مشغول";
+const STATUS_UNAVAILABLE = "غير متاح";
+const DEAL_THROUGH_OWNER = "المالك";
+const DEAL_THROUGH_OFFICE = "المكتب";
 
 const COMMERCIAL_FIELDS = [
-  "serialNumber",
   "contactDate",
   "propertyStatus",
   "brokerageContract",
   "licenseNumber",
   "contractExpiry",
   "adNumber",
+  "dealThrough",
   "employee",
   "broker",
   "ownerName",
@@ -86,6 +89,17 @@ const PUBLISHING_CHANNELS: PublishingChannel[] = [
 ];
 
 type PublishingState = Record<string, boolean>;
+
+const PROPERTY_STATUS_OPTIONS = [
+  { value: STATUS_AVAILABLE, labelKey: "commercialListings.statusAvailable" },
+  { value: STATUS_OCCUPIED, labelKey: "commercialListings.statusOccupied" },
+  { value: STATUS_UNAVAILABLE, labelKey: "commercialListings.statusUnavailable" },
+] as const;
+
+const DEAL_THROUGH_OPTIONS = [
+  { value: DEAL_THROUGH_OWNER, labelKey: "commercialListings.dealThroughOwner" },
+  { value: DEAL_THROUGH_OFFICE, labelKey: "commercialListings.dealThroughOffice" },
+] as const;
 
 function normalizeValue(value: string | null | undefined) {
   return (value ?? "").trim();
@@ -235,8 +249,9 @@ function CommercialListingsPage() {
 
   const statusTone = (value?: string | null) => {
     const normalized = normalizeValue(value);
-    if (normalized === STATUS_RENTED) return "success" as const;
     if (normalized === STATUS_AVAILABLE) return "info" as const;
+    if (normalized === STATUS_OCCUPIED) return "warning" as const;
+    if (normalized === STATUS_UNAVAILABLE) return "destructive" as const;
     return "neutral" as const;
   };
 
@@ -244,15 +259,16 @@ function CommercialListingsPage() {
     const normalized = normalizeValue(value);
     if (!normalized) return t("common.notProvided");
     if (normalized === STATUS_AVAILABLE) return t("commercialListings.statusAvailable");
-    if (normalized === STATUS_RENTED) return t("commercialListings.statusRented");
+    if (normalized === STATUS_OCCUPIED) return t("commercialListings.statusOccupied");
+    if (normalized === STATUS_UNAVAILABLE) return t("commercialListings.statusUnavailable");
     return value ?? t("common.notProvided");
   };
 
   const columns: Column<CommercialListing>[] = [
     {
-      key: "serialNumber",
-      header: t("commercialListings.serialNumber"),
-      cell: (r) => r.serialNumber || t("common.notProvided"),
+      key: "adNumber",
+      header: t("commercialListings.adNumber"),
+      cell: (r) => r.adNumber || t("common.notProvided"),
     },
     {
       key: "contactDate",
@@ -265,6 +281,17 @@ function CommercialListingsPage() {
       cell: (r) => (
         <StatusBadge tone={statusTone(r.propertyStatus)}>{statusLabel(r.propertyStatus)}</StatusBadge>
       ),
+    },
+    {
+      key: "dealThrough",
+      header: t("commercialListings.dealThrough"),
+      cell: (r) => {
+        const normalized = normalizeValue(r.dealThrough);
+        if (!normalized) return t("common.notProvided");
+        if (normalized === DEAL_THROUGH_OWNER) return t("commercialListings.dealThroughOwner");
+        if (normalized === DEAL_THROUGH_OFFICE) return t("commercialListings.dealThroughOffice");
+        return r.dealThrough || t("common.notProvided");
+      },
     },
     {
       key: "ownerName",
@@ -367,8 +394,11 @@ function CommercialListingsPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">{t("common.all")}</SelectItem>
-                <SelectItem value={STATUS_AVAILABLE}>{t("commercialListings.statusAvailable")}</SelectItem>
-                <SelectItem value={STATUS_RENTED}>{t("commercialListings.statusRented")}</SelectItem>
+                {PROPERTY_STATUS_OPTIONS.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {t(option.labelKey)}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
@@ -497,6 +527,8 @@ function CommercialListingDialog({
   const { t } = useTranslation();
   const [publishing, setPublishing] = useState<PublishingState>(() => buildPublishingState(listing));
   const [broker, setBroker] = useState<string>(listing?.broker ?? "");
+  const [propertyStatus, setPropertyStatus] = useState<string>(listing?.propertyStatus ?? STATUS_AVAILABLE);
+  const [dealThrough, setDealThrough] = useState<string>(listing?.dealThrough ?? DEAL_THROUGH_OWNER);
 
   const partnerOptions = partners
     .filter((partner) => partner.fullName.trim().length > 0)
@@ -510,6 +542,8 @@ function CommercialListingDialog({
     if (open) {
       setPublishing(buildPublishingState(listing));
       setBroker(listing?.broker ?? "");
+      setPropertyStatus(listing?.propertyStatus ?? STATUS_AVAILABLE);
+      setDealThrough(listing?.dealThrough ?? DEAL_THROUGH_OWNER);
     }
   }, [listing, open]);
 
@@ -526,13 +560,47 @@ function CommercialListingDialog({
     >
       <div className="space-y-4 rounded-lg border border-border bg-muted/30 p-4">
         <div className="grid gap-4 sm:grid-cols-2">
-          <TextField id="serialNumber" label={t("commercialListings.serialNumber")} defaultValue={listing?.serialNumber} readOnly={readOnly} />
+          <TextField id="adNumber" label={t("commercialListings.adNumber")} defaultValue={listing?.adNumber} readOnly={readOnly} />
           <TextField id="contactDate" label={t("commercialListings.contactDate")} defaultValue={listing?.contactDate} readOnly={readOnly} />
-          <TextField id="propertyStatus" label={t("commercialListings.propertyStatus")} defaultValue={listing?.propertyStatus} readOnly={readOnly} />
+          <div className="space-y-2">
+            <Label htmlFor="propertyStatus" className="text-xs font-medium">
+              {t("commercialListings.propertyStatus")}
+            </Label>
+            <Select value={propertyStatus} onValueChange={setPropertyStatus} disabled={readOnly}>
+              <SelectTrigger id="propertyStatus" className="mt-1">
+                <SelectValue placeholder={t("commercialListings.propertyStatus")} />
+              </SelectTrigger>
+              <SelectContent>
+                {PROPERTY_STATUS_OPTIONS.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {t(option.labelKey)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <input type="hidden" name="propertyStatus" value={propertyStatus} />
+          </div>
           <TextField id="brokerageContract" label={t("commercialListings.brokerageContract")} defaultValue={listing?.brokerageContract} readOnly={readOnly} />
           <TextField id="licenseNumber" label={t("commercialListings.licenseNumber")} defaultValue={listing?.licenseNumber} readOnly={readOnly} />
           <TextField id="contractExpiry" label={t("commercialListings.contractExpiry")} defaultValue={listing?.contractExpiry} readOnly={readOnly} />
-          <TextField id="adNumber" label={t("commercialListings.adNumber")} defaultValue={listing?.adNumber} readOnly={readOnly} />
+          <div className="space-y-2">
+            <Label htmlFor="dealThrough" className="text-xs font-medium">
+              {t("commercialListings.dealThrough")}
+            </Label>
+            <Select value={dealThrough} onValueChange={setDealThrough} disabled={readOnly}>
+              <SelectTrigger id="dealThrough" className="mt-1">
+                <SelectValue placeholder={t("commercialListings.dealThrough")} />
+              </SelectTrigger>
+              <SelectContent>
+                {DEAL_THROUGH_OPTIONS.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {t(option.labelKey)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <input type="hidden" name="dealThrough" value={dealThrough} />
+          </div>
           <TextField id="employee" label={t("common.employee")} defaultValue={listing?.employee} readOnly={readOnly} />
           <div className="space-y-2">
             <Label htmlFor="broker" className="text-xs font-medium">

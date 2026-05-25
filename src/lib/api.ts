@@ -385,13 +385,13 @@ export interface RequestPropertySuggestion extends PropertyDto {
 export interface CommercialListing {
   id: number;
   rowFlag?: string | null;
-  serialNumber?: string | null;
   contactDate?: string | null;
   propertyStatus?: string | null;
   brokerageContract?: string | null;
   licenseNumber?: string | null;
   contractExpiry?: string | null;
   adNumber?: string | null;
+  dealThrough?: string | null;
   employee?: string | null;
   broker?: string | null;
   ownerName?: string | null;

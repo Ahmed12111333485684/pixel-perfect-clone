@@ -284,13 +284,13 @@ const en = {
   commercialListings: {
     pageTitle: "Commercial & Investment Listings",
     pageSubtitle: "Manage commercial and investment rental property offers",
-    serialNumber: "Serial #",
     contactDate: "Contact Date",
     propertyStatus: "Property Status",
     brokerageContract: "Brokerage Contract",
     licenseNumber: "License Number",
     contractExpiry: "Contract Expiry",
     adNumber: "Ad Number",
+    dealThrough: "Deal through",
     broker: "Broker",
     ownerName: "Owner / Representative",
     mobile1: "Primary Mobile",
@@ -311,7 +311,10 @@ const en = {
     published: "Published",
     notPublished: "Not Published",
     statusAvailable: "Available",
-    statusRented: "Rented",
+    statusOccupied: "Occupied",
+    statusUnavailable: "Unavailable",
+    dealThroughOwner: "Owner",
+    dealThroughOffice: "Office",
     
     channels: {
       tahmid: "Tahmid",
@@ -741,13 +744,13 @@ const ar = {
   commercialListings: {
     pageTitle: "العروض الإيجارية التجارية والاستثمارية",
     pageSubtitle: "إدارة عروض تأجير العقارات التجارية والاستثمارية",
-    serialNumber: "الرقم التسلسلي",
     contactDate: "تاريخ التواصل",
     propertyStatus: "حالة العقار",
     brokerageContract: "عقد وساطة",
     licenseNumber: "رقم الترخيص",
     contractExpiry: "تاريخ انتهاء العقد",
     adNumber: "رقم الإعلان",
+    dealThrough: "صفقة من خلال",
     broker: "الوسيط",
     ownerName: "اسم المالك / من يمثله",
     mobile1: "الجوال الرئيسي",
@@ -768,7 +771,10 @@ const ar = {
     published: "تم النشر",
     notPublished: "لم يُنشر",
     statusAvailable: "متاح",
-    statusRented: "تم التأجير",
+    statusOccupied: "مشغول",
+    statusUnavailable: "غير متاح",
+    dealThroughOwner: "المالك",
+    dealThroughOffice: "المكتب",
     
     channels: {
       tahmid: "تعميد",

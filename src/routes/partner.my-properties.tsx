@@ -45,7 +45,7 @@ function PartnerMyPropertiesPage() {
   }
 
   const cols: Column<CommercialListing>[] = [
-    { key: "serialNumber", header: t("commercialListings.serialNumber"), cell: (r) => <span className="font-medium">{r.serialNumber ?? "-"}</span> },
+    { key: "adNumber", header: t("commercialListings.adNumber"), cell: (r) => <span className="font-medium">{r.adNumber ?? "-"}</span> },
     { key: "ownerName", header: t("commercialListings.ownerName"), cell: (r) => r.ownerName ?? "-" },
     { key: "deedNumber", header: t("commercialListings.deedNumber"), cell: (r) => r.deedNumber ? <span className="font-mono text-sm">{r.deedNumber}</span> : "-" },
     { key: "propertyType", header: t("commercialListings.propertyType"), cell: (r) => r.propertyType ?? "-" },
@@ -64,7 +64,7 @@ function PartnerMyPropertiesPage() {
     const lower = search.toLowerCase();
     return (list.data ?? []).filter((record) => {
       return (
-        (record.serialNumber ?? "").toLowerCase().includes(lower)
+        (record.adNumber ?? "").toLowerCase().includes(lower)
         || (record.ownerName ?? "").toLowerCase().includes(lower)
           || (record.deedNumber ?? "").toLowerCase().includes(lower)
         || (record.location ?? "").toLowerCase().includes(lower)
