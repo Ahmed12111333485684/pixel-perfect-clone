@@ -74,10 +74,17 @@ function PropertyDetail() {
       for (const file of files) {
         const fd = new FormData();
         fd.append("file", file);
-        await api(`/api/properties/${propId}/images`, { method: "POST", formData: fd });
+        await api<PropertyImage>(`/api/properties/${propId}/images`, { method: "POST", formData: fd });
       }
+      return api<PropertyImage[]>(`/api/properties/${propId}/images`);
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["property-images", propId] }); toast.success(t("common.success")); },
+    onSuccess: (freshImages) => {
+      // Force immediate UI sync using the canonical list from the API.
+      qc.setQueryData<PropertyImage[]>(["property-images", propId], freshImages);
+      qc.invalidateQueries({ queryKey: ["property-images", propId] });
+      qc.invalidateQueries({ queryKey: ["property-images-preview", propId] });
+      toast.success(t("common.success"));
+    },
     onError: (e: Error) => toast.error(e.message),
   });
 

@@ -102,10 +102,14 @@ function PropertiesPage() {
           throw e;
         }
       }
+
+      return { propertyId };
     },
-    onSuccess: (_, vars) => {
+    onSuccess: ({ propertyId }, vars) => {
       qc.invalidateQueries({ queryKey: ["properties"] });
       qc.invalidateQueries({ queryKey: ["property-images-preview"] });
+      qc.invalidateQueries({ queryKey: ["property-images", propertyId] });
+      qc.invalidateQueries({ queryKey: ["property", propertyId] });
       
       if (!auth.isStaff && !vars.id) {
         toast.success(t("property.submittedForReview"));

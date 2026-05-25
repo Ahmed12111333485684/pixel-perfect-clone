@@ -12,13 +12,26 @@ export default function PropertyDetailsForm({ type, value, onChange }: { type: s
   const q = useQuery({ queryKey: ["property-templates", type], queryFn: () => api(`/api/propertytemplates?type=${encodeURIComponent(type)}`) });
 
   const BUILTIN_TEMPLATES: any[] = [
-    { type: "Apartment", fields: [{ key: "rooms", label: "Rooms", dataType: "number", required: true }, { key: "area_sqm", label: "Area (sqm)", dataType: "number" }, { key: "floor", label: "Floor", dataType: "number" }, { key: "furnished", label: "Furnished", dataType: "boolean" }] },
-    { type: "Villa", fields: [{ key: "bedrooms", label: "Bedrooms", dataType: "number", required: true }, { key: "lot_area_sqm", label: "Lot area (sqm)", dataType: "number" }, { key: "has_garage", label: "Garage", dataType: "boolean" }] },
-    { type: "Office", fields: [{ key: "floor", label: "Floor", dataType: "number" }, { key: "area_sqm", label: "Area (sqm)", dataType: "number", required: true }, { key: "meeting_rooms", label: "Meeting rooms", dataType: "number" }, { key: "parking_spots", label: "Parking spots", dataType: "number" }, { key: "open_plan", label: "Open plan", dataType: "boolean" }] },
-    { type: "Land", fields: [{ key: "lot_area_sqm", label: "Lot area (sqm)", dataType: "number", required: true }, { key: "zoning", label: "Zoning", dataType: "string" }, { key: "buildable", label: "Buildable", dataType: "boolean" }, { key: "frontage_m", label: "Frontage (m)", dataType: "number" }] },
-    { type: "Shop", fields: [{ key: "area_sqm", label: "Area (sqm)", dataType: "number", required: true }, { key: "street_facing", label: "Street facing", dataType: "boolean" }, { key: "storefront_width_m", label: "Storefront width (m)", dataType: "number" }, { key: "has_storage", label: "Has storage", dataType: "boolean" }] },
-    { type: "Warehouse", fields: [{ key: "area_sqm", label: "Area (sqm)", dataType: "number", required: true }, { key: "ceiling_height_m", label: "Ceiling height (m)", dataType: "number" }, { key: "loading_docks", label: "Loading docks", dataType: "number" }, { key: "climate_control", label: "Climate control", dataType: "boolean" }, { key: "yard_area_sqm", label: "Yard area (sqm)", dataType: "number" }] }
+    { type: "Apartment", fields: [{ key: "rooms", label: "Rooms", dataType: "number", required: true }, { key: "area", label: "Area (sqm)", dataType: "number", required: true }, { key: "floor", label: "Floor", dataType: "number" }, { key: "furnished", label: "Furnished", dataType: "boolean" }] },
+    { type: "Villa", fields: [{ key: "bedrooms", label: "Bedrooms", dataType: "number", required: true }, { key: "area", label: "Lot area (sqm)", dataType: "number", required: true }, { key: "has_garage", label: "Garage", dataType: "boolean" }] },
+    { type: "Office", fields: [{ key: "floor", label: "Floor", dataType: "number" }, { key: "area", label: "Area (sqm)", dataType: "number", required: true }, { key: "meeting_rooms", label: "Meeting rooms", dataType: "number" }, { key: "parking_spots", label: "Parking spots", dataType: "number" }, { key: "open_plan", label: "Open plan", dataType: "boolean" }] },
+    { type: "Land", fields: [{ key: "area", label: "Lot area (sqm)", dataType: "number", required: true }, { key: "zoning", label: "Zoning", dataType: "string" }, { key: "buildable", label: "Buildable", dataType: "boolean" }, { key: "frontage_m", label: "Frontage (m)", dataType: "number" }] },
+    { type: "Shop", fields: [{ key: "area", label: "Area (sqm)", dataType: "number", required: true }, { key: "street_facing", label: "Street facing", dataType: "boolean" }, { key: "storefront_width_m", label: "Storefront width (m)", dataType: "number" }, { key: "has_storage", label: "Has storage", dataType: "boolean" }] },
+    { type: "Warehouse", fields: [{ key: "area", label: "Area (sqm)", dataType: "number", required: true }, { key: "ceiling_height_m", label: "Ceiling height (m)", dataType: "number" }, { key: "loading_docks", label: "Loading docks", dataType: "number" }, { key: "climate_control", label: "Climate control", dataType: "boolean" }, { key: "yard_area", label: "Yard area (sqm)", dataType: "number" }] }
   ];
+
+  const legacyKeyAliases: Record<string, string[]> = {
+    area: ["area_sqm", "lot_area_sqm", "yard_area_sqm"],
+  };
+
+  const readValue = (fieldKey: string) => {
+    if (value?.[fieldKey] !== undefined) return value[fieldKey];
+    const aliases = legacyKeyAliases[fieldKey] ?? [];
+    for (const alias of aliases) {
+      if (value?.[alias] !== undefined) return value[alias];
+    }
+    return undefined;
+  };
 
   const templates = (q.data && Array.isArray(q.data) && q.data.length > 0) ? q.data : BUILTIN_TEMPLATES;
   const template = templates.find((t: any) => t.type && t.type.toLowerCase() === type.toLowerCase()) ?? templates[0] ?? null;
@@ -31,12 +44,22 @@ export default function PropertyDetailsForm({ type, value, onChange }: { type: s
       <div className="grid gap-3 sm:grid-cols-2">
         {template.fields.map((f: any) => {
           const key = f.key;
-          const val = value?.[key];
+          const val = readValue(key);
           if (f.dataType === "number") {
             return (
               <div key={key} className="space-y-2">
                 <Label>{f.label}</Label>
-                <Input type="number" value={val ?? ""} onChange={(e) => onChange({ ...value, [key]: e.target.value === "" ? null : Number(e.target.value) })} />
+                <Input
+                  type="number"
+                  value={val ?? ""}
+                  onChange={(e) => {
+                    const next = { ...value };
+                    const nextValue = e.target.value === "" ? null : Number(e.target.value);
+                    next[key] = nextValue;
+                    for (const alias of legacyKeyAliases[key] ?? []) delete next[alias];
+                    onChange(next);
+                  }}
+                />
               </div>
             );
           }
@@ -51,7 +74,15 @@ export default function PropertyDetailsForm({ type, value, onChange }: { type: s
           return (
             <div key={key} className="space-y-2">
               <Label>{f.label}</Label>
-              <Input value={val ?? ""} onChange={(e) => onChange({ ...value, [key]: e.target.value })} />
+              <Input
+                value={val ?? ""}
+                onChange={(e) => {
+                  const next = { ...value };
+                  next[key] = e.target.value;
+                  for (const alias of legacyKeyAliases[key] ?? []) delete next[alias];
+                  onChange(next);
+                }}
+              />
             </div>
           );
         })}

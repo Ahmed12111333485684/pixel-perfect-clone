@@ -368,6 +368,7 @@ const en = {
     propertyCodeOrFallback: "Property number",
   },
   leadStatus: { New: "New", Contacted: "Contacted", Qualified: "Qualified", ClosedLost: "Closed (lost)", ClosedWon: "Closed (won)" },
+  listingType: { Rental: "Rental", Sale: "Sale" },
   propertyStatus: { Pending: "Pending", Approved: "Approved", Rejected: "Rejected", Sold: "Sold" },
   contractStatus: { Active: "Active", Expired: "Expired", Terminated: "Terminated", Pending: "Pending" },
   paymentStatus: { Pending: "Pending", Paid: "Paid", Overdue: "Overdue" },
@@ -818,6 +819,7 @@ const ar = {
   },
   intent: { Buy: "شراء", Rent: "استئجار", Sell: "بيع", LetOut: "تأجير" },
   leadStatus: { New: "جديد", Contacted: "تم التواصل", Qualified: "مؤهّل", ClosedLost: "مغلق (خسارة)", ClosedWon: "مغلق (نجاح)" },
+  listingType: { Rental: "إيجار", Sale: "بيع" },
   propertyStatus: { Pending: "قيد المراجعة", Approved: "معتمد", Rejected: "مرفوض", Sold: "مُباع" },
   contractStatus: { Active: "نشط", Expired: "منتهي", Terminated: "مُلغى", Pending: "قيد الانتظار" },
   paymentStatus: { Pending: "قيد الانتظار", Paid: "مدفوع", Overdue: "متأخر" },  requestStatus: { New: "جديد", "In Progress": "قيد المعالجة", Completed: "مكتمل", Cancelled: "ملغى" },  role: {
