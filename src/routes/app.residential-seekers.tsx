@@ -1,18 +1,21 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { api, type ResidentialSeeker, fetchPartners } from "@/lib/api";
+import { api, resolveApiAssetUrl, type ResidentialSeeker, type RequestPropertySuggestion, fetchPartners } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
+import { PROPERTY_TYPES, localizePropertyType } from "@/lib/property-types";
 import { PageHeader, StatusBadge } from "@/components/PageHeader";
 import { DataTable, type Column } from "@/components/DataTable";
 import { FormDialog, ConfirmDialog } from "@/components/FormDialog";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, X } from "lucide-react";
+import { BadgeDollarSign, Building2, MapPin, Plus, Sparkles, X } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/app/residential-seekers")({
@@ -36,6 +39,8 @@ const RESIDENTIAL_FIELDS = [
   "employee",
   "receiver",
   "sourceChannel",
+  "listingType",
+  "propertyType",
   "fullName",
   "mobile",
   "nationality",
@@ -111,6 +116,12 @@ function ResidentialSeekersPage() {
       },
     }),
     enabled: hasAccess,
+  });
+
+  const suggestionsQuery = useQuery({
+    queryKey: ["residential-seeker-suggestions", selected?.id],
+    queryFn: () => api<RequestPropertySuggestion[]>(`/api/residential-seekers/${selected?.id}/property-suggestions`),
+    enabled: !!selected?.id,
   });
 
   const handleReset = () => {
@@ -237,6 +248,16 @@ function ResidentialSeekersPage() {
       key: "paymentType",
       header: t("residentialSeekers.paymentType"),
       cell: (r) => r.paymentType || t("common.notProvided"),
+    },
+    {
+      key: "listingType",
+      header: t("residentialSeekers.listingType"),
+      cell: (r) => r.listingType ? t(`listingType.${r.listingType}`, { defaultValue: r.listingType }) : t("common.notProvided"),
+    },
+    {
+      key: "propertyType",
+      header: t("residentialSeekers.propertyType"),
+      cell: (r) => r.propertyType ? localizePropertyType(t, r.propertyType) : t("common.notProvided"),
     },
     {
       key: "preferredLocation",
@@ -368,6 +389,9 @@ function ResidentialSeekersPage() {
         open={creating}
         onOpenChange={setCreating}
         seeker={null}
+        suggestions={[]}
+        suggestionsLoading={false}
+        suggestionsError={null}
         readOnly={!canManage}
         submitting={submitting}
         title={`${t("common.add")} ${t("nav.residentialSeekers")}`}
@@ -381,6 +405,9 @@ function ResidentialSeekersPage() {
           if (!value) setSelected(null);
         }}
         seeker={selected}
+        suggestions={suggestionsQuery.data ?? []}
+        suggestionsLoading={suggestionsQuery.isLoading}
+        suggestionsError={suggestionsQuery.error}
         readOnly={!canManage}
         submitting={submitting}
         title={canManage ? t("common.edit") : t("common.details")}
@@ -411,6 +438,9 @@ function ResidentialSeekerDialog({
   open,
   onOpenChange,
   seeker,
+  suggestions = [],
+  suggestionsLoading = false,
+  suggestionsError = null,
   readOnly,
   submitting,
   title,
@@ -420,6 +450,9 @@ function ResidentialSeekerDialog({
   open: boolean;
   onOpenChange: (value: boolean) => void;
   seeker: ResidentialSeeker | null;
+  suggestions: RequestPropertySuggestion[];
+  suggestionsLoading: boolean;
+  suggestionsError: unknown;
   readOnly: boolean;
   submitting?: boolean;
   title: string;
@@ -427,6 +460,10 @@ function ResidentialSeekerDialog({
   onSubmit: (e: React.FormEvent<HTMLFormElement>) => void | Promise<void>;
 }) {
   const { t } = useTranslation();
+  const [listingType, setListingType] = useState(seeker?.listingType ?? "Rental");
+  const maxBudgetLabel = listingType === "Rental"
+    ? t("residentialSeekers.maxRentalBudget")
+    : t("residentialSeekers.maxBudget");
 
   return (
     <FormDialog
@@ -471,6 +508,29 @@ function ResidentialSeekerDialog({
 
       <div className="space-y-4 rounded-lg border border-border bg-muted/30 p-4">
         <div className="grid gap-4 sm:grid-cols-2">
+          <SelectField
+            id="listingType"
+            label={t("residentialSeekers.listingType")}
+            defaultValue={seeker?.listingType ?? "Rental"}
+            readOnly={readOnly}
+            onValueChange={setListingType}
+            options={[
+              { value: "Rental", label: t("listingType.Rental") },
+              { value: "Sale", label: t("listingType.Sale") },
+            ]}
+          />
+          <SelectField
+            id="propertyType"
+            label={t("residentialSeekers.propertyType")}
+            defaultValue={seeker?.propertyType ?? PROPERTY_TYPES[0]}
+            readOnly={readOnly}
+            options={PROPERTY_TYPES.map((type) => ({ value: type, label: localizePropertyType(t, type) }))}
+          />
+        </div>
+      </div>
+
+      <div className="space-y-4 rounded-lg border border-border bg-muted/30 p-4">
+        <div className="grid gap-4 sm:grid-cols-2">
           <TextareaField
             id="requestDescription"
             label={t("residentialSeekers.requestDescription")}
@@ -478,7 +538,7 @@ function ResidentialSeekerDialog({
             readOnly={readOnly}
             className="sm:col-span-2"
           />
-          <TextField id="maxBudget" label={t("residentialSeekers.maxBudget")} defaultValue={seeker?.maxBudget} readOnly={readOnly} />
+          <TextField id="maxBudget" label={maxBudgetLabel} defaultValue={seeker?.maxBudget} readOnly={readOnly} />
           <TextField id="paymentType" label={t("residentialSeekers.paymentType")} defaultValue={seeker?.paymentType} readOnly={readOnly} />
           <TextField id="preferredLocation" label={t("residentialSeekers.preferredLocation")} defaultValue={seeker?.preferredLocation} readOnly={readOnly} />
         </div>
@@ -487,6 +547,122 @@ function ResidentialSeekerDialog({
       <div className="space-y-4 rounded-lg border border-border bg-muted/30 p-4">
         <TextareaField id="notes" label={t("common.notes")} defaultValue={seeker?.notes} readOnly={readOnly} />
       </div>
+
+      {seeker && (
+        <div className="space-y-4 rounded-lg border border-border bg-muted/30 p-4">
+          <div className="mb-3 flex items-center justify-between gap-2">
+            <div>
+              <p className="text-sm font-semibold">{t("common.suggestions", { defaultValue: "Suggested properties" })}</p>
+              <p className="text-xs text-muted-foreground">
+                {t("common.autoMatched", { defaultValue: "Top matches for this request" })}
+              </p>
+            </div>
+            <Badge variant="outline" className="gap-1">
+              <Sparkles className="h-3.5 w-3.5" />
+              {suggestions.length}
+            </Badge>
+          </div>
+
+          {suggestionsLoading ? (
+            <div className="rounded-lg border border-dashed border-border px-4 py-6 text-center text-sm text-muted-foreground">
+              {t("common.loading")}
+            </div>
+          ) : suggestionsError ? (
+            <div className="rounded-lg border border-dashed border-destructive/40 px-4 py-6 text-center text-sm text-destructive">
+              {t("common.error")}
+            </div>
+          ) : suggestions.length === 0 ? (
+            <div className="rounded-lg border border-dashed border-border px-4 py-6 text-center text-sm text-muted-foreground">
+              {t("common.noData", { defaultValue: "No property suggestions found." })}
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {suggestions.map((property) => (
+                <div key={property.id} className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
+                  <div className="flex gap-3 p-3">
+                    <div className="h-20 w-28 shrink-0 overflow-hidden rounded-lg border border-border bg-muted">
+                      {property.primaryImageUrl ? (
+                        <img
+                          src={resolveApiAssetUrl(property.primaryImageUrl)}
+                          alt={property.name}
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <div className="flex h-full items-center justify-center text-muted-foreground">
+                          <Building2 className="h-5 w-5" />
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="min-w-0 flex-1 space-y-2">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                            <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5">
+                              <Sparkles className="h-3 w-3" />
+                              {t("common.match", { defaultValue: "Match" })} {property.score}
+                            </span>
+                          </div>
+                          <div className="mt-1 truncate font-medium">{property.name}</div>
+                          <div className="mt-1 flex items-start gap-1 text-xs text-muted-foreground">
+                            <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                            <span>{property.address}</span>
+                          </div>
+                        </div>
+
+                        <Badge variant="outline">{t(`listingType.${property.listingType}`, { defaultValue: property.listingType })}</Badge>
+                      </div>
+
+                      <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
+                        <span>{localizePropertyType(t, property.type)}</span>
+                        {property.region && <span>{property.region}</span>}
+                        {property.city && <span>{property.city}</span>}
+                        {property.district && <span>{property.district}</span>}
+                        {(property.rentPrice ?? property.salePrice) != null && (
+                          <span className="inline-flex items-center gap-1">
+                            <BadgeDollarSign className="h-3.5 w-3.5" />
+                            {(property.rentPrice ?? property.salePrice)!.toLocaleString()}
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="flex flex-wrap gap-1.5">
+                        {property.reasons.slice(0, 3).map((reason, index) => {
+                          const args = reason.args ? { ...reason.args } : undefined;
+                          if (args && args.listingType) {
+                            args.listingType = t(`requestType.${args.listingType}`, { defaultValue: args.listingType });
+                          }
+                          if (args && args.propertyType) {
+                            args.propertyType = localizePropertyType(t, args.propertyType);
+                          }
+
+                          return (
+                            <Badge key={`${reason.key}-${index}`} variant="outline" className="text-[11px]">
+                              {t(`suggestions.reasons.${reason.key}`, args || {})}
+                            </Badge>
+                          );
+                        })}
+                      </div>
+
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Button asChild size="sm" variant="outline">
+                          <Link
+                            to="/app/properties/$id"
+                            params={{ id: String(property.id) }}
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            {t("common.open")}
+                          </Link>
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
     </FormDialog>
   );
 }
@@ -546,6 +722,42 @@ function TextareaField({
         rows={3}
         className="mt-1"
       />
+    </div>
+  );
+}
+
+function SelectField({
+  id,
+  label,
+  defaultValue,
+  readOnly,
+  options,
+  onValueChange,
+}: {
+  id: string;
+  label: string;
+  defaultValue: string;
+  readOnly: boolean;
+  options: Array<{ value: string; label: string }>;
+  onValueChange?: (value: string) => void;
+}) {
+  return (
+    <div className="space-y-2">
+      <Label htmlFor={id} className="text-xs font-medium">
+        {label}
+      </Label>
+      <Select name={id} defaultValue={defaultValue} disabled={readOnly} onValueChange={onValueChange}>
+        <SelectTrigger id={id} className="mt-1">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {options.map((option) => (
+            <SelectItem key={option.value} value={option.value}>
+              {option.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
     </div>
   );
 }

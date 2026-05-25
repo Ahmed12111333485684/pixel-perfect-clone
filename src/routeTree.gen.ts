@@ -22,7 +22,6 @@ import { Route as AppUsersRouteImport } from './routes/app.users'
 import { Route as AppTenantsRouteImport } from './routes/app.tenants'
 import { Route as AppSalesRouteImport } from './routes/app.sales'
 import { Route as AppResidentialSeekersRouteImport } from './routes/app.residential-seekers'
-import { Route as AppRequestsRouteImport } from './routes/app.requests'
 import { Route as AppPropertiesRouteImport } from './routes/app.properties'
 import { Route as AppPaymentsRouteImport } from './routes/app.payments'
 import { Route as AppPartnersRouteImport } from './routes/app.partners'
@@ -34,7 +33,6 @@ import { Route as AppCommercialListingsRouteImport } from './routes/app.commerci
 import { Route as AppBuyersRouteImport } from './routes/app.buyers'
 import { Route as AppAmenitiesRouteImport } from './routes/app.amenities'
 import { Route as AppAdvertisementsRouteImport } from './routes/app.advertisements'
-import { Route as AppRequestsBuysellRouteImport } from './routes/app.requests.buysell'
 import { Route as AppPropertiesIdRouteImport } from './routes/app.properties.$id'
 import { Route as AppLeadsIdRouteImport } from './routes/app.leads.$id'
 
@@ -103,11 +101,6 @@ const AppResidentialSeekersRoute = AppResidentialSeekersRouteImport.update({
   path: '/residential-seekers',
   getParentRoute: () => AppRoute,
 } as any)
-const AppRequestsRoute = AppRequestsRouteImport.update({
-  id: '/requests',
-  path: '/requests',
-  getParentRoute: () => AppRoute,
-} as any)
 const AppPropertiesRoute = AppPropertiesRouteImport.update({
   id: '/properties',
   path: '/properties',
@@ -163,11 +156,6 @@ const AppAdvertisementsRoute = AppAdvertisementsRouteImport.update({
   path: '/advertisements',
   getParentRoute: () => AppRoute,
 } as any)
-const AppRequestsBuysellRoute = AppRequestsBuysellRouteImport.update({
-  id: '/buysell',
-  path: '/buysell',
-  getParentRoute: () => AppRequestsRoute,
-} as any)
 const AppPropertiesIdRoute = AppPropertiesIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -197,7 +185,6 @@ export interface FileRoutesByFullPath {
   '/app/partners': typeof AppPartnersRoute
   '/app/payments': typeof AppPaymentsRoute
   '/app/properties': typeof AppPropertiesRouteWithChildren
-  '/app/requests': typeof AppRequestsRouteWithChildren
   '/app/residential-seekers': typeof AppResidentialSeekersRoute
   '/app/sales': typeof AppSalesRoute
   '/app/tenants': typeof AppTenantsRoute
@@ -207,7 +194,6 @@ export interface FileRoutesByFullPath {
   '/app/': typeof AppIndexRoute
   '/app/leads/$id': typeof AppLeadsIdRoute
   '/app/properties/$id': typeof AppPropertiesIdRoute
-  '/app/requests/buysell': typeof AppRequestsBuysellRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -226,7 +212,6 @@ export interface FileRoutesByTo {
   '/app/partners': typeof AppPartnersRoute
   '/app/payments': typeof AppPaymentsRoute
   '/app/properties': typeof AppPropertiesRouteWithChildren
-  '/app/requests': typeof AppRequestsRouteWithChildren
   '/app/residential-seekers': typeof AppResidentialSeekersRoute
   '/app/sales': typeof AppSalesRoute
   '/app/tenants': typeof AppTenantsRoute
@@ -236,7 +221,6 @@ export interface FileRoutesByTo {
   '/app': typeof AppIndexRoute
   '/app/leads/$id': typeof AppLeadsIdRoute
   '/app/properties/$id': typeof AppPropertiesIdRoute
-  '/app/requests/buysell': typeof AppRequestsBuysellRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -257,7 +241,6 @@ export interface FileRoutesById {
   '/app/partners': typeof AppPartnersRoute
   '/app/payments': typeof AppPaymentsRoute
   '/app/properties': typeof AppPropertiesRouteWithChildren
-  '/app/requests': typeof AppRequestsRouteWithChildren
   '/app/residential-seekers': typeof AppResidentialSeekersRoute
   '/app/sales': typeof AppSalesRoute
   '/app/tenants': typeof AppTenantsRoute
@@ -267,7 +250,6 @@ export interface FileRoutesById {
   '/app/': typeof AppIndexRoute
   '/app/leads/$id': typeof AppLeadsIdRoute
   '/app/properties/$id': typeof AppPropertiesIdRoute
-  '/app/requests/buysell': typeof AppRequestsBuysellRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -289,7 +271,6 @@ export interface FileRouteTypes {
     | '/app/partners'
     | '/app/payments'
     | '/app/properties'
-    | '/app/requests'
     | '/app/residential-seekers'
     | '/app/sales'
     | '/app/tenants'
@@ -299,7 +280,6 @@ export interface FileRouteTypes {
     | '/app/'
     | '/app/leads/$id'
     | '/app/properties/$id'
-    | '/app/requests/buysell'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -318,7 +298,6 @@ export interface FileRouteTypes {
     | '/app/partners'
     | '/app/payments'
     | '/app/properties'
-    | '/app/requests'
     | '/app/residential-seekers'
     | '/app/sales'
     | '/app/tenants'
@@ -328,7 +307,6 @@ export interface FileRouteTypes {
     | '/app'
     | '/app/leads/$id'
     | '/app/properties/$id'
-    | '/app/requests/buysell'
   id:
     | '__root__'
     | '/'
@@ -348,7 +326,6 @@ export interface FileRouteTypes {
     | '/app/partners'
     | '/app/payments'
     | '/app/properties'
-    | '/app/requests'
     | '/app/residential-seekers'
     | '/app/sales'
     | '/app/tenants'
@@ -358,7 +335,6 @@ export interface FileRouteTypes {
     | '/app/'
     | '/app/leads/$id'
     | '/app/properties/$id'
-    | '/app/requests/buysell'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -465,13 +441,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppResidentialSeekersRouteImport
       parentRoute: typeof AppRoute
     }
-    '/app/requests': {
-      id: '/app/requests'
-      path: '/requests'
-      fullPath: '/app/requests'
-      preLoaderRoute: typeof AppRequestsRouteImport
-      parentRoute: typeof AppRoute
-    }
     '/app/properties': {
       id: '/app/properties'
       path: '/properties'
@@ -549,13 +518,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAdvertisementsRouteImport
       parentRoute: typeof AppRoute
     }
-    '/app/requests/buysell': {
-      id: '/app/requests/buysell'
-      path: '/buysell'
-      fullPath: '/app/requests/buysell'
-      preLoaderRoute: typeof AppRequestsBuysellRouteImport
-      parentRoute: typeof AppRequestsRoute
-    }
     '/app/properties/$id': {
       id: '/app/properties/$id'
       path: '/$id'
@@ -597,18 +559,6 @@ const AppPropertiesRouteWithChildren = AppPropertiesRoute._addFileChildren(
   AppPropertiesRouteChildren,
 )
 
-interface AppRequestsRouteChildren {
-  AppRequestsBuysellRoute: typeof AppRequestsBuysellRoute
-}
-
-const AppRequestsRouteChildren: AppRequestsRouteChildren = {
-  AppRequestsBuysellRoute: AppRequestsBuysellRoute,
-}
-
-const AppRequestsRouteWithChildren = AppRequestsRoute._addFileChildren(
-  AppRequestsRouteChildren,
-)
-
 interface AppRouteChildren {
   AppAdvertisementsRoute: typeof AppAdvertisementsRoute
   AppAmenitiesRoute: typeof AppAmenitiesRoute
@@ -621,7 +571,6 @@ interface AppRouteChildren {
   AppPartnersRoute: typeof AppPartnersRoute
   AppPaymentsRoute: typeof AppPaymentsRoute
   AppPropertiesRoute: typeof AppPropertiesRouteWithChildren
-  AppRequestsRoute: typeof AppRequestsRouteWithChildren
   AppResidentialSeekersRoute: typeof AppResidentialSeekersRoute
   AppSalesRoute: typeof AppSalesRoute
   AppTenantsRoute: typeof AppTenantsRoute
@@ -641,7 +590,6 @@ const AppRouteChildren: AppRouteChildren = {
   AppPartnersRoute: AppPartnersRoute,
   AppPaymentsRoute: AppPaymentsRoute,
   AppPropertiesRoute: AppPropertiesRouteWithChildren,
-  AppRequestsRoute: AppRequestsRouteWithChildren,
   AppResidentialSeekersRoute: AppResidentialSeekersRoute,
   AppSalesRoute: AppSalesRoute,
   AppTenantsRoute: AppTenantsRoute,

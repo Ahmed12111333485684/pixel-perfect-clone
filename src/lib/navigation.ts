@@ -1,4 +1,4 @@
-import { BadgeDollarSign, Building2, ClipboardList, ContactRound, CreditCard, Inbox, LayoutDashboard, Megaphone, MessageSquare, ScrollText, ShieldCheck, ShoppingBag, Sparkles, Users, Users2 } from "lucide-react";
+import { BadgeDollarSign, Building2, ClipboardList, ContactRound, CreditCard, Inbox, LayoutDashboard, Megaphone, ScrollText, ShieldCheck, ShoppingBag, Sparkles, Users, Users2 } from "lucide-react";
 import type { ComponentType } from "react";
 
 import type { Role } from "./api";
@@ -37,7 +37,6 @@ export const APP_NAV_ITEMS: AppNavItem[] = [
       children: [
         { to: "/app/commercial-listings", label: "nav.commercialListings", icon: Building2 },
         { to: "/app/residential-seekers", label: "nav.residentialSeekers", icon: Users2 },
-        { to: "/app/requests/buysell", label: "nav.buysellRequests", icon: MessageSquare },
       ],
   },
   

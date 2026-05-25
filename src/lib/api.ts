@@ -434,6 +434,8 @@ export interface ResidentialSeeker {
   employee?: string | null;
   receiver?: string | null;
   sourceChannel?: string | null;
+  listingType?: string | null;
+  propertyType?: string | null;
   mobile?: string | null;
   fullName?: string | null;
   nationality?: string | null;
