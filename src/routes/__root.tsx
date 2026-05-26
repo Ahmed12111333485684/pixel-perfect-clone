@@ -36,7 +36,11 @@ export const Route = createRootRoute({
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "Estatly — Property Management" },
-      { name: "description", content: "Beautiful properties, expertly managed. Listings, leads, contracts, and payments in one place." },
+      {
+        name: "description",
+        content:
+          "Beautiful properties, expertly managed. Listings, leads, contracts, and payments in one place.",
+      },
       { name: "author", content: "Estatly" },
       { property: "og:title", content: "Estatly — Property Management" },
       { property: "og:description", content: "Beautiful properties, expertly managed." },
@@ -83,7 +87,7 @@ function RootComponent() {
             refetchOnWindowFocus: false,
           },
         },
-      })
+      }),
   );
 
   useEffect(() => {

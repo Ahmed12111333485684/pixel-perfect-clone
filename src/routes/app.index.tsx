@@ -14,9 +14,23 @@ import {
 } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import {
-  Building2, Users, Inbox, ScrollText, ArrowRight, ArrowUpRight, ArrowDownRight,
-  TrendingUp, DollarSign, AlertTriangle, CheckCircle2, Clock, Plus, BadgeDollarSign,
-  Percent, Wallet, Activity,
+  Building2,
+  Users,
+  Inbox,
+  ScrollText,
+  ArrowRight,
+  ArrowUpRight,
+  ArrowDownRight,
+  TrendingUp,
+  DollarSign,
+  AlertTriangle,
+  CheckCircle2,
+  Clock,
+  Plus,
+  BadgeDollarSign,
+  Percent,
+  Wallet,
+  Activity,
 } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { Button } from "@/components/ui/button";
@@ -25,8 +39,19 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { formatMoney, formatDate } from "@/lib/format";
 import {
-  ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid,
-  PieChart, Pie, Cell, BarChart, Bar, Legend,
+  ResponsiveContainer,
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  Tooltip,
+  CartesianGrid,
+  PieChart,
+  Pie,
+  Cell,
+  BarChart,
+  Bar,
+  Legend,
 } from "recharts";
 
 export const Route = createFileRoute("/app/")({
@@ -45,7 +70,10 @@ function Dashboard() {
   const isRtl = i18n.language === "ar";
   const [period, setPeriod] = useState<Period>("30d");
 
-  const properties = useQuery({ queryKey: ["properties"], queryFn: () => api<PropertyDto[]>("/api/properties") });
+  const properties = useQuery({
+    queryKey: ["properties"],
+    queryFn: () => api<PropertyDto[]>("/api/properties"),
+  });
   const owners = useQuery({
     queryKey: ["owners"],
     queryFn: () => api<Owner[]>("/api/owners"),
@@ -75,7 +103,11 @@ function Dashboard() {
   });
 
   const loading =
-    properties.isLoading || contracts.isLoading || payments.isLoading || sales.isLoading || productivity.isLoading;
+    properties.isLoading ||
+    contracts.isLoading ||
+    payments.isLoading ||
+    sales.isLoading ||
+    productivity.isLoading;
 
   // ---------- Derived KPIs ----------
   const stats = useMemo(() => {
@@ -109,8 +141,12 @@ function Dashboard() {
         return d >= prevSince && d < since;
       })
       .reduce((sum, p) => sum + Number(p.amount || 0), 0);
-    const revenueDelta = prevRevenue === 0 ? (periodRevenue > 0 ? 100 : 0)
-      : ((periodRevenue - prevRevenue) / prevRevenue) * 100;
+    const revenueDelta =
+      prevRevenue === 0
+        ? periodRevenue > 0
+          ? 100
+          : 0
+        : ((periodRevenue - prevRevenue) / prevRevenue) * 100;
 
     const periodSales = sls
       .filter((s) => new Date(s.soldAt).getTime() >= since)
@@ -121,8 +157,8 @@ function Dashboard() {
         return d >= prevSince && d < since;
       })
       .reduce((sum, s) => sum + Number(s.salePrice || 0), 0);
-    const salesDelta = prevSales === 0 ? (periodSales > 0 ? 100 : 0)
-      : ((periodSales - prevSales) / prevSales) * 100;
+    const salesDelta =
+      prevSales === 0 ? (periodSales > 0 ? 100 : 0) : ((periodSales - prevSales) / prevSales) * 100;
 
     const approved = props.filter((p) => p.status === "Approved").length;
     const sold = props.filter((p) => p.status === "Sold").length;
@@ -142,27 +178,44 @@ function Dashboard() {
     const totalClosed = closedWon + closedLost;
     const conversion = totalClosed > 0 ? (closedWon / totalClosed) * 100 : 0;
 
-    const openLeads = lds.filter((l) => l.status !== "ClosedLost" && l.status !== "ClosedWon").length;
+    const openLeads = lds.filter(
+      (l) => l.status !== "ClosedLost" && l.status !== "ClosedWon",
+    ).length;
 
-    const avgRent = activeContracts > 0
-      ? conts.filter((c) => c.status === "Active").reduce((s, c) => s + Number(c.monthlyRent || 0), 0) / activeContracts
-      : 0;
+    const avgRent =
+      activeContracts > 0
+        ? conts
+            .filter((c) => c.status === "Active")
+            .reduce((s, c) => s + Number(c.monthlyRent || 0), 0) / activeContracts
+        : 0;
 
-    const avgSalePrice = sls.length > 0
-      ? sls.reduce((s, x) => s + Number(x.salePrice || 0), 0) / sls.length
-      : 0;
+    const avgSalePrice =
+      sls.length > 0 ? sls.reduce((s, x) => s + Number(x.salePrice || 0), 0) / sls.length : 0;
 
-    const portfolioValue = sls.reduce((s, x) => s + Number(x.salePrice || 0), 0)
-      + conts.filter((c) => c.status === "Active").reduce((s, c) => s + Number(c.monthlyRent || 0) * 12, 0);
+    const portfolioValue =
+      sls.reduce((s, x) => s + Number(x.salePrice || 0), 0) +
+      conts
+        .filter((c) => c.status === "Active")
+        .reduce((s, c) => s + Number(c.monthlyRent || 0) * 12, 0);
 
     return {
-      periodRevenue, revenueDelta,
-      periodSales, salesDelta,
-      approved, sold, pending, rejected,
-      activeContracts, occupancy,
-      overdue, overdueAmount,
-      conversion, openLeads,
-      avgRent, avgSalePrice, portfolioValue,
+      periodRevenue,
+      revenueDelta,
+      periodSales,
+      salesDelta,
+      approved,
+      sold,
+      pending,
+      rejected,
+      activeContracts,
+      occupancy,
+      overdue,
+      overdueAmount,
+      conversion,
+      openLeads,
+      avgRent,
+      avgSalePrice,
+      portfolioValue,
       counts: {
         properties: props.length,
         owners: owners.data?.length ?? 0,
@@ -185,7 +238,9 @@ function Dashboard() {
       months.push({
         key,
         label: d.toLocaleDateString(i18n.language, { month: "short" }),
-        rent: 0, sales: 0, total: 0,
+        rent: 0,
+        sales: 0,
+        total: 0,
       });
     }
     const idx = new Map(months.map((m, i) => [m.key, i]));
@@ -209,10 +264,26 @@ function Dashboard() {
   const propertyStatusData = useMemo(() => {
     const props = properties.data ?? [];
     return [
-      { name: t("propertyStatus.Approved"), value: props.filter((p) => p.status === "Approved").length, color: "var(--success)" },
-      { name: t("propertyStatus.Pending"), value: props.filter((p) => p.status === "Pending").length, color: "var(--warning)" },
-      { name: t("propertyStatus.Sold"), value: props.filter((p) => p.status === "Sold").length, color: "var(--gold)" },
-      { name: t("propertyStatus.Rejected"), value: props.filter((p) => p.status === "Rejected").length, color: "var(--destructive)" },
+      {
+        name: t("propertyStatus.Approved"),
+        value: props.filter((p) => p.status === "Approved").length,
+        color: "var(--success)",
+      },
+      {
+        name: t("propertyStatus.Pending"),
+        value: props.filter((p) => p.status === "Pending").length,
+        color: "var(--warning)",
+      },
+      {
+        name: t("propertyStatus.Sold"),
+        value: props.filter((p) => p.status === "Sold").length,
+        color: "var(--gold)",
+      },
+      {
+        name: t("propertyStatus.Rejected"),
+        value: props.filter((p) => p.status === "Rejected").length,
+        color: "var(--destructive)",
+      },
     ].filter((d) => d.value > 0);
   }, [properties.data, t]);
 
@@ -230,41 +301,73 @@ function Dashboard() {
     const lds = leads.data ?? [];
     return [
       { name: t("leadStatus.New"), value: lds.filter((l) => l.status === "New").length },
-      { name: t("leadStatus.Contacted"), value: lds.filter((l) => l.status === "Contacted").length },
-      { name: t("leadStatus.Qualified"), value: lds.filter((l) => l.status === "Qualified").length },
-      { name: t("leadStatus.ClosedWon"), value: lds.filter((l) => l.status === "ClosedWon").length },
+      {
+        name: t("leadStatus.Contacted"),
+        value: lds.filter((l) => l.status === "Contacted").length,
+      },
+      {
+        name: t("leadStatus.Qualified"),
+        value: lds.filter((l) => l.status === "Qualified").length,
+      },
+      {
+        name: t("leadStatus.ClosedWon"),
+        value: lds.filter((l) => l.status === "ClosedWon").length,
+      },
     ];
   }, [leads.data, t]);
 
   const leadsByIntentData = useMemo(() => {
     const lds = leads.data ?? [];
-    return (["Buy", "Rent", "Sell", "LetOut"] as const).map((k) => ({
-      name: t(`intent.${k}`),
-      value: lds.filter((l) => l.intent === k).length,
-    })).filter((d) => d.value > 0);
+    return (["Buy", "Rent", "Sell", "LetOut"] as const)
+      .map((k) => ({
+        name: t(`intent.${k}`),
+        value: lds.filter((l) => l.intent === k).length,
+      }))
+      .filter((d) => d.value > 0);
   }, [leads.data, t]);
 
   const paymentsBreakdownData = useMemo(() => {
     const pays = payments.data ?? [];
     return [
-      { name: t("paymentStatus.Paid"), value: pays.filter((p) => p.status === "Paid").length, color: "var(--success)" },
-      { name: t("paymentStatus.Pending"), value: pays.filter((p) => p.status === "Pending").length, color: "var(--warning)" },
-      { name: t("paymentStatus.Overdue"), value: pays.filter((p) => p.status === "Overdue").length, color: "var(--destructive)" },
+      {
+        name: t("paymentStatus.Paid"),
+        value: pays.filter((p) => p.status === "Paid").length,
+        color: "var(--success)",
+      },
+      {
+        name: t("paymentStatus.Pending"),
+        value: pays.filter((p) => p.status === "Pending").length,
+        color: "var(--warning)",
+      },
+      {
+        name: t("paymentStatus.Overdue"),
+        value: pays.filter((p) => p.status === "Overdue").length,
+        color: "var(--destructive)",
+      },
     ].filter((d) => d.value > 0);
   }, [payments.data, t]);
 
   const recentLeads = useMemo(
-    () => [...(leads.data ?? [])].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 5),
-    [leads.data]
+    () =>
+      [...(leads.data ?? [])]
+        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+        .slice(0, 5),
+    [leads.data],
   );
   const recentSales = useMemo(
-    () => [...(sales.data ?? [])].sort((a, b) => new Date(b.soldAt).getTime() - new Date(a.soldAt).getTime()).slice(0, 5),
-    [sales.data]
+    () =>
+      [...(sales.data ?? [])]
+        .sort((a, b) => new Date(b.soldAt).getTime() - new Date(a.soldAt).getTime())
+        .slice(0, 5),
+    [sales.data],
   );
   const upcomingPayments = useMemo(() => {
     const now = Date.now();
     return [...(payments.data ?? [])]
-      .filter((p) => p.status !== "Paid" && new Date(p.dueDate).getTime() >= now - 7 * 24 * 60 * 60 * 1000)
+      .filter(
+        (p) =>
+          p.status !== "Paid" && new Date(p.dueDate).getTime() >= now - 7 * 24 * 60 * 60 * 1000,
+      )
       .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime())
       .slice(0, 6);
   }, [payments.data]);
@@ -321,7 +424,10 @@ function Dashboard() {
         acc.hashemPropertyPhotographyCount += hashemPropertyPhotographyCount;
         acc.inspectionCount += inspectionCount;
         acc.contentWritingCount += contentWritingCount;
-        acc.byEmployee.set(row.employeeUsername, (acc.byEmployee.get(row.employeeUsername) ?? 0) + total);
+        acc.byEmployee.set(
+          row.employeeUsername,
+          (acc.byEmployee.get(row.employeeUsername) ?? 0) + total,
+        );
         return acc;
       },
       {
@@ -354,7 +460,9 @@ function Dashboard() {
       employees: totals.byEmployee.size,
       todayReports: todayReports.length,
       recentEntries,
-      topEmployee: Array.from(totals.byEmployee.entries()).sort((left, right) => right[1] - left[1])[0],
+      topEmployee: Array.from(totals.byEmployee.entries()).sort(
+        (left, right) => right[1] - left[1],
+      )[0],
     };
   }, [productivity.data]);
 
@@ -392,7 +500,11 @@ function Dashboard() {
         <KpiCard
           label={t("dashboard.occupancyRate")}
           value={`${stats.occupancy.toFixed(1)}%`}
-          subtitle={!auth.isStaff ? `${stats.activeContracts} /${stats.approved} ${t("nav.properties").toLowerCase()}` : `${stats.activeContracts} / ${stats.approved}`}
+          subtitle={
+            !auth.isStaff
+              ? `${stats.activeContracts} /${stats.approved} ${t("nav.properties").toLowerCase()}`
+              : `${stats.activeContracts} / ${stats.approved}`
+          }
           icon={<Percent className="h-5 w-5" />}
           tone="success"
           loading={loading}
@@ -412,26 +524,35 @@ function Dashboard() {
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <MiniStat
           icon={<Building2 className="h-4 w-4" />}
-          label={t("dashboard.properties")} value={stats.counts.properties}
-          to="/app/properties" loading={properties.isLoading}
+          label={t("dashboard.properties")}
+          value={stats.counts.properties}
+          to="/app/properties"
+          loading={properties.isLoading}
         />
         {auth.isStaff && (
           <MiniStat
             icon={<Users className="h-4 w-4" />}
-            label={t("dashboard.owners")} value={stats.counts.owners}
-            to="/app/owners" loading={owners.isLoading}
+            label={t("dashboard.owners")}
+            value={stats.counts.owners}
+            to="/app/owners"
+            loading={owners.isLoading}
           />
         )}
         <MiniStat
           icon={<ScrollText className="h-4 w-4" />}
-          label={t("dashboard.contracts")} value={stats.activeContracts}
-          to="/app/contracts" loading={contracts.isLoading}
+          label={t("dashboard.contracts")}
+          value={stats.activeContracts}
+          to="/app/contracts"
+          loading={contracts.isLoading}
         />
         <MiniStat
           icon={<AlertTriangle className="h-4 w-4" />}
-          label={t("dashboard.overduePayments")} value={stats.overdue}
+          label={t("dashboard.overduePayments")}
+          value={stats.overdue}
           subtitle={formatMoney(stats.overdueAmount)}
-          to="/app/payments" loading={payments.isLoading} tone="destructive"
+          to="/app/payments"
+          loading={payments.isLoading}
+          tone="destructive"
         />
       </div>
 
@@ -454,14 +575,40 @@ function Dashboard() {
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
-                <XAxis dataKey="label" stroke="var(--muted-foreground)" fontSize={12} tickLine={false} axisLine={false} reversed={isRtl} />
-                <YAxis stroke="var(--muted-foreground)" fontSize={12} tickLine={false} axisLine={false}
-                  tickFormatter={(v) => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : String(v)}
-                  orientation={isRtl ? "right" : "left"} />
+                <XAxis
+                  dataKey="label"
+                  stroke="var(--muted-foreground)"
+                  fontSize={12}
+                  tickLine={false}
+                  axisLine={false}
+                  reversed={isRtl}
+                />
+                <YAxis
+                  stroke="var(--muted-foreground)"
+                  fontSize={12}
+                  tickLine={false}
+                  axisLine={false}
+                  tickFormatter={(v) => (v >= 1000 ? `${(v / 1000).toFixed(0)}k` : String(v))}
+                  orientation={isRtl ? "right" : "left"}
+                />
                 <Tooltip content={<ChartTooltip />} />
                 <Legend wrapperStyle={{ fontSize: 12 }} />
-                <Area type="monotone" dataKey="rent" name={t("common.monthlyRent")} stroke="var(--primary)" fill="url(#grad-rent)" strokeWidth={2} />
-                <Area type="monotone" dataKey="sales" name={t("nav.sales")} stroke="var(--gold)" fill="url(#grad-sales)" strokeWidth={2} />
+                <Area
+                  type="monotone"
+                  dataKey="rent"
+                  name={t("common.monthlyRent")}
+                  stroke="var(--primary)"
+                  fill="url(#grad-rent)"
+                  strokeWidth={2}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="sales"
+                  name={t("nav.sales")}
+                  stroke="var(--gold)"
+                  fill="url(#grad-sales)"
+                  strokeWidth={2}
+                />
               </AreaChart>
             </ResponsiveContainer>
           )}
@@ -475,8 +622,16 @@ function Dashboard() {
           ) : (
             <ResponsiveContainer width="100%" height={280}>
               <PieChart>
-                <Pie data={propertyStatusData} dataKey="value" nameKey="name" cx="50%" cy="50%"
-                  innerRadius={60} outerRadius={95} paddingAngle={2}>
+                <Pie
+                  data={propertyStatusData}
+                  dataKey="value"
+                  nameKey="name"
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={60}
+                  outerRadius={95}
+                  paddingAngle={2}
+                >
                   {propertyStatusData.map((entry, i) => (
                     <Cell key={i} fill={entry.color} />
                   ))}
@@ -493,12 +648,27 @@ function Dashboard() {
       <div className="grid gap-4 lg:grid-cols-3">
         {auth.isStaff && (
           <ChartCard title={t("dashboard.leadsFunnel")}>
-            {leads.isLoading ? <Skeleton className="h-[240px] w-full" /> : (
+            {leads.isLoading ? (
+              <Skeleton className="h-[240px] w-full" />
+            ) : (
               <ResponsiveContainer width="100%" height={240}>
                 <BarChart data={leadsFunnelData} margin={{ left: 4, right: 12, top: 8, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
-                  <XAxis dataKey="name" stroke="var(--muted-foreground)" fontSize={11} tickLine={false} axisLine={false} reversed={isRtl} />
-                  <YAxis stroke="var(--muted-foreground)" fontSize={11} tickLine={false} axisLine={false} orientation={isRtl ? "right" : "left"} />
+                  <XAxis
+                    dataKey="name"
+                    stroke="var(--muted-foreground)"
+                    fontSize={11}
+                    tickLine={false}
+                    axisLine={false}
+                    reversed={isRtl}
+                  />
+                  <YAxis
+                    stroke="var(--muted-foreground)"
+                    fontSize={11}
+                    tickLine={false}
+                    axisLine={false}
+                    orientation={isRtl ? "right" : "left"}
+                  />
                   <Tooltip content={<ChartTooltip />} />
                   <Bar dataKey="value" fill="var(--primary)" radius={[6, 6, 0, 0]} />
                 </BarChart>
@@ -508,43 +678,88 @@ function Dashboard() {
         )}
 
         <ChartCard title={t("dashboard.paymentsBreakdown")}>
-          {payments.isLoading ? <Skeleton className="h-[240px] w-full" /> :
-            paymentsBreakdownData.length === 0 ? <EmptyChart label={t("dashboard.noData")} /> : (
-              <ResponsiveContainer width="100%" height={240}>
-                <PieChart>
-                  <Pie data={paymentsBreakdownData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={90}>
-                    {paymentsBreakdownData.map((e, i) => <Cell key={i} fill={e.color} />)}
-                  </Pie>
-                  <Tooltip content={<ChartTooltip />} />
-                  <Legend wrapperStyle={{ fontSize: 12 }} />
-                </PieChart>
-              </ResponsiveContainer>
-            )
-          }
+          {payments.isLoading ? (
+            <Skeleton className="h-[240px] w-full" />
+          ) : paymentsBreakdownData.length === 0 ? (
+            <EmptyChart label={t("dashboard.noData")} />
+          ) : (
+            <ResponsiveContainer width="100%" height={240}>
+              <PieChart>
+                <Pie
+                  data={paymentsBreakdownData}
+                  dataKey="value"
+                  nameKey="name"
+                  cx="50%"
+                  cy="50%"
+                  outerRadius={90}
+                >
+                  {paymentsBreakdownData.map((e, i) => (
+                    <Cell key={i} fill={e.color} />
+                  ))}
+                </Pie>
+                <Tooltip content={<ChartTooltip />} />
+                <Legend wrapperStyle={{ fontSize: 12 }} />
+              </PieChart>
+            </ResponsiveContainer>
+          )}
         </ChartCard>
 
         <ChartCard title={t("dashboard.propertyTypes")}>
-          {properties.isLoading ? <Skeleton className="h-[240px] w-full" /> :
-            propertyTypeData.length === 0 ? <EmptyChart label={t("dashboard.noData")} /> : (
-              <ResponsiveContainer width="100%" height={240}>
-                <BarChart data={propertyTypeData} layout="vertical" margin={{ left: 4, right: 16, top: 4, bottom: 4 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" horizontal={false} />
-                  <XAxis type="number" stroke="var(--muted-foreground)" fontSize={11} tickLine={false} axisLine={false} />
-                  <YAxis dataKey="name" type="category" stroke="var(--muted-foreground)" fontSize={11} tickLine={false} axisLine={false} width={80} orientation={isRtl ? "right" : "left"} />
-                  <Tooltip content={<ChartTooltip />} />
-                  <Bar dataKey="value" fill="var(--gold)" radius={[0, 6, 6, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            )
-          }
+          {properties.isLoading ? (
+            <Skeleton className="h-[240px] w-full" />
+          ) : propertyTypeData.length === 0 ? (
+            <EmptyChart label={t("dashboard.noData")} />
+          ) : (
+            <ResponsiveContainer width="100%" height={240}>
+              <BarChart
+                data={propertyTypeData}
+                layout="vertical"
+                margin={{ left: 4, right: 16, top: 4, bottom: 4 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" horizontal={false} />
+                <XAxis
+                  type="number"
+                  stroke="var(--muted-foreground)"
+                  fontSize={11}
+                  tickLine={false}
+                  axisLine={false}
+                />
+                <YAxis
+                  dataKey="name"
+                  type="category"
+                  stroke="var(--muted-foreground)"
+                  fontSize={11}
+                  tickLine={false}
+                  axisLine={false}
+                  width={80}
+                  orientation={isRtl ? "right" : "left"}
+                />
+                <Tooltip content={<ChartTooltip />} />
+                <Bar dataKey="value" fill="var(--gold)" radius={[0, 6, 6, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          )}
         </ChartCard>
       </div>
 
       {/* Detail strip: avg rent / sale / portfolio */}
       <div className="grid gap-4 sm:grid-cols-3">
-        <DetailStat icon={<Wallet className="h-5 w-5" />} label={t("dashboard.avgRent")} value={formatMoney(stats.avgRent)} />
-        <DetailStat icon={<BadgeDollarSign className="h-5 w-5" />} label={t("dashboard.avgSalePrice")} value={formatMoney(stats.avgSalePrice)} />
-        <DetailStat icon={<TrendingUp className="h-5 w-5" />} label={t("dashboard.portfolioValue")} value={formatMoney(stats.portfolioValue)} accent />
+        <DetailStat
+          icon={<Wallet className="h-5 w-5" />}
+          label={t("dashboard.avgRent")}
+          value={formatMoney(stats.avgRent)}
+        />
+        <DetailStat
+          icon={<BadgeDollarSign className="h-5 w-5" />}
+          label={t("dashboard.avgSalePrice")}
+          value={formatMoney(stats.avgSalePrice)}
+        />
+        <DetailStat
+          icon={<TrendingUp className="h-5 w-5" />}
+          label={t("dashboard.portfolioValue")}
+          value={formatMoney(stats.portfolioValue)}
+          accent
+        />
       </div>
 
       {auth.hasRole("Admin") && (
@@ -559,25 +774,62 @@ function Dashboard() {
             </Button>
           </div>
           <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            <DetailStat icon={<Activity className="h-5 w-5" />} label={t("productivity.totalReports")} value={String(productivitySummary.reports)} />
-            <DetailStat icon={<Users className="h-5 w-5" />} label={t("productivity.byEmployee")} value={String(productivitySummary.employees)} />
-            <DetailStat icon={<CheckCircle2 className="h-5 w-5" />} label={t("productivity.todayReport")} value={String(productivitySummary.todayReports)} />
-            <DetailStat icon={<TrendingUp className="h-5 w-5" />} label={t("productivity.totalActions")} value={String(productivitySummary.total)} accent />
+            <DetailStat
+              icon={<Activity className="h-5 w-5" />}
+              label={t("productivity.totalReports")}
+              value={String(productivitySummary.reports)}
+            />
+            <DetailStat
+              icon={<Users className="h-5 w-5" />}
+              label={t("productivity.byEmployee")}
+              value={String(productivitySummary.employees)}
+            />
+            <DetailStat
+              icon={<CheckCircle2 className="h-5 w-5" />}
+              label={t("productivity.todayReport")}
+              value={String(productivitySummary.todayReports)}
+            />
+            <DetailStat
+              icon={<TrendingUp className="h-5 w-5" />}
+              label={t("productivity.totalActions")}
+              value={String(productivitySummary.total)}
+              accent
+            />
           </div>
           <div className="mt-4 grid gap-4 lg:grid-cols-2">
             <div>
-              <h4 className="mb-3 text-sm font-semibold text-foreground">{t("productivity.recentEntries")}</h4>
+              <h4 className="mb-3 text-sm font-semibold text-foreground">
+                {t("productivity.recentEntries")}
+              </h4>
               <div className="space-y-2">
-                {(productivitySummary.recentEntries.length === 0 ? [null] : productivitySummary.recentEntries).map((entry, index) => (
-                  <div key={entry?.id ?? index} className="flex items-center justify-between rounded-xl border border-border bg-background px-3 py-2 text-sm">
+                {(productivitySummary.recentEntries.length === 0
+                  ? [null]
+                  : productivitySummary.recentEntries
+                ).map((entry, index) => (
+                  <div
+                    key={entry?.id ?? index}
+                    className="flex items-center justify-between rounded-xl border border-border bg-background px-3 py-2 text-sm"
+                  >
                     {entry ? (
                       <>
                         <div className="min-w-0">
                           <div className="truncate font-medium">{entry.employeeUsername}</div>
-                          <div className="text-xs text-muted-foreground">{formatDate(entry.workDate)}</div>
+                          <div className="text-xs text-muted-foreground">
+                            {formatDate(entry.workDate)}
+                          </div>
                         </div>
                         <div className="text-xs text-muted-foreground tabular-nums">
-                          {entry.callIntakeCount + entry.servedClientsCount + entry.officeVisitorsCount + entry.whatsappClientsCount + entry.googleMapsReviewsCount + entry.brokerageContractsCount + entry.leaseContractsCount + entry.propertyPhotographyCount + entry.hashemPropertyPhotographyCount + entry.inspectionCount + entry.contentWritingCount}
+                          {entry.callIntakeCount +
+                            entry.servedClientsCount +
+                            entry.officeVisitorsCount +
+                            entry.whatsappClientsCount +
+                            entry.googleMapsReviewsCount +
+                            entry.brokerageContractsCount +
+                            entry.leaseContractsCount +
+                            entry.propertyPhotographyCount +
+                            entry.hashemPropertyPhotographyCount +
+                            entry.inspectionCount +
+                            entry.contentWritingCount}
                         </div>
                       </>
                     ) : (
@@ -588,14 +840,26 @@ function Dashboard() {
               </div>
             </div>
             <div>
-              <h4 className="mb-3 text-sm font-semibold text-foreground">{t("productivity.byEmployee")}</h4>
+              <h4 className="mb-3 text-sm font-semibold text-foreground">
+                {t("productivity.byEmployee")}
+              </h4>
               <div className="space-y-2">
-                {(productivitySummary.byEmployee.size === 0 ? [null] : Array.from(productivitySummary.byEmployee.entries()).sort((left, right) => right[1] - left[1]).slice(0, 5)).map((entry, index) => (
-                  <div key={entry?.[0] ?? index} className="flex items-center justify-between rounded-xl border border-border bg-background px-3 py-2 text-sm">
+                {(productivitySummary.byEmployee.size === 0
+                  ? [null]
+                  : Array.from(productivitySummary.byEmployee.entries())
+                      .sort((left, right) => right[1] - left[1])
+                      .slice(0, 5)
+                ).map((entry, index) => (
+                  <div
+                    key={entry?.[0] ?? index}
+                    className="flex items-center justify-between rounded-xl border border-border bg-background px-3 py-2 text-sm"
+                  >
                     {entry ? (
                       <>
                         <span className="truncate font-medium">{entry[0]}</span>
-                        <span className="text-xs text-muted-foreground tabular-nums">{entry[1]}</span>
+                        <span className="text-xs text-muted-foreground tabular-nums">
+                          {entry[1]}
+                        </span>
                       </>
                     ) : (
                       <span className="text-muted-foreground">{t("common.empty")}</span>
@@ -620,7 +884,11 @@ function Dashboard() {
               key: l.id,
               primary: l.fullName,
               secondary: `${l.propertyName} · ${t(`intent.${l.intent}`)}`,
-              meta: <Badge variant="outline" className="text-[10px]">{t(`leadStatus.${l.status}`)}</Badge>,
+              meta: (
+                <Badge variant="outline" className="text-[10px]">
+                  {t(`leadStatus.${l.status}`)}
+                </Badge>
+              ),
               tail: formatDate(l.createdAt),
             }))}
           />
@@ -668,7 +936,10 @@ function Dashboard() {
           <div className="rounded-2xl border border-border bg-card p-5 shadow-card lg:col-span-2">
             <div className="mb-4 flex items-center justify-between">
               <h3 className="font-display text-lg font-semibold">{t("dashboard.topOwners")}</h3>
-              <Link to="/app/owners" className="text-xs text-muted-foreground hover:text-foreground">
+              <Link
+                to="/app/owners"
+                className="text-xs text-muted-foreground hover:text-foreground"
+              >
                 {t("dashboard.viewAll")} →
               </Link>
             </div>
@@ -688,7 +959,10 @@ function Dashboard() {
                         <span className="text-muted-foreground tabular-nums">{count}</span>
                       </div>
                       <div className="h-2 overflow-hidden rounded-full bg-muted">
-                        <div className="h-full rounded-full bg-gold-gradient" style={{ width: `${pct}%` }} />
+                        <div
+                          className="h-full rounded-full bg-gold-gradient"
+                          style={{ width: `${pct}%` }}
+                        />
                       </div>
                     </li>
                   );
@@ -702,11 +976,23 @@ function Dashboard() {
           <h3 className="mb-4 font-display text-lg font-semibold">{t("dashboard.quickActions")}</h3>
           <div className="space-y-2">
             {auth.isStaff && (
-              <QuickAction to="/app/owners" icon={<Plus className="h-4 w-4" />} label={t("dashboard.addOwner")} />
+              <QuickAction
+                to="/app/owners"
+                icon={<Plus className="h-4 w-4" />}
+                label={t("dashboard.addOwner")}
+              />
             )}
-            <QuickAction to="/app/properties" icon={<Building2 className="h-4 w-4" />} label={t("dashboard.addProperty")} />
+            <QuickAction
+              to="/app/properties"
+              icon={<Building2 className="h-4 w-4" />}
+              label={t("dashboard.addProperty")}
+            />
             {auth.hasRole("Admin") && (
-              <QuickAction to="/app/employee-productivity" icon={<Activity className="h-4 w-4" />} label={t("productivity.pageTitle")} />
+              <QuickAction
+                to="/app/employee-productivity"
+                icon={<Activity className="h-4 w-4" />}
+                label={t("productivity.pageTitle")}
+              />
             )}
             {auth.isStaff && (
               <QuickAction
@@ -733,29 +1019,59 @@ function Dashboard() {
 // ============== Sub-components ==============
 
 function KpiCard({
-  label, value, delta, subtitle, icon, accent, tone, loading, help,
+  label,
+  value,
+  delta,
+  subtitle,
+  icon,
+  accent,
+  tone,
+  loading,
+  help,
 }: {
-  label: string; value: string; delta?: number; subtitle?: string;
-  icon: React.ReactNode; accent?: "gold"; tone?: "success" | "info" | "destructive"; loading?: boolean; help?: string;
+  label: string;
+  value: string;
+  delta?: number;
+  subtitle?: string;
+  icon: React.ReactNode;
+  accent?: "gold";
+  tone?: "success" | "info" | "destructive";
+  loading?: boolean;
+  help?: string;
 }) {
   const positive = (delta ?? 0) >= 0;
   return (
-    <div className={`relative overflow-hidden rounded-2xl border border-border bg-card p-5 shadow-card ${accent === "gold" ? "ring-1 ring-gold/30" : ""}`} title={help}>
+    <div
+      className={`relative overflow-hidden rounded-2xl border border-border bg-card p-5 shadow-card ${accent === "gold" ? "ring-1 ring-gold/30" : ""}`}
+      title={help}
+    >
       <div className="flex items-start justify-between">
-        <span className={`grid h-10 w-10 place-items-center rounded-xl ${
-          accent === "gold" ? "bg-gold-gradient text-gold-foreground" :
-          tone === "success" ? "bg-success/15 text-success" :
-          tone === "info" ? "bg-primary/10 text-primary" :
-          tone === "destructive" ? "bg-destructive/10 text-destructive" :
-          "bg-accent text-accent-foreground"
-        }`}>
+        <span
+          className={`grid h-10 w-10 place-items-center rounded-xl ${
+            accent === "gold"
+              ? "bg-gold-gradient text-gold-foreground"
+              : tone === "success"
+                ? "bg-success/15 text-success"
+                : tone === "info"
+                  ? "bg-primary/10 text-primary"
+                  : tone === "destructive"
+                    ? "bg-destructive/10 text-destructive"
+                    : "bg-accent text-accent-foreground"
+          }`}
+        >
           {icon}
         </span>
         {delta !== undefined && (
-          <span className={`inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 text-[11px] font-medium ${
-            positive ? "bg-success/10 text-success" : "bg-destructive/10 text-destructive"
-          }`}>
-            {positive ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
+          <span
+            className={`inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 text-[11px] font-medium ${
+              positive ? "bg-success/10 text-success" : "bg-destructive/10 text-destructive"
+            }`}
+          >
+            {positive ? (
+              <ArrowUpRight className="h-3 w-3" />
+            ) : (
+              <ArrowDownRight className="h-3 w-3" />
+            )}
             {Math.abs(delta).toFixed(1)}%
           </span>
         )}
@@ -774,19 +1090,41 @@ function KpiCard({
 }
 
 function MiniStat({
-  icon, label, value, subtitle, to, loading, tone,
+  icon,
+  label,
+  value,
+  subtitle,
+  to,
+  loading,
+  tone,
 }: {
-  icon: React.ReactNode; label: string; value: number | string; subtitle?: string;
-  to: string; loading?: boolean; tone?: "destructive";
+  icon: React.ReactNode;
+  label: string;
+  value: number | string;
+  subtitle?: string;
+  to: string;
+  loading?: boolean;
+  tone?: "destructive";
 }) {
   return (
-    <Link to={to} className="group flex items-center gap-3 rounded-xl border border-border bg-card p-4 shadow-card transition hover:shadow-elegant">
-      <span className={`grid h-9 w-9 place-items-center rounded-lg ${
-        tone === "destructive" ? "bg-destructive/10 text-destructive" : "bg-muted text-foreground/70"
-      }`}>{icon}</span>
+    <Link
+      to={to}
+      className="group flex items-center gap-3 rounded-xl border border-border bg-card p-4 shadow-card transition hover:shadow-elegant"
+    >
+      <span
+        className={`grid h-9 w-9 place-items-center rounded-lg ${
+          tone === "destructive"
+            ? "bg-destructive/10 text-destructive"
+            : "bg-muted text-foreground/70"
+        }`}
+      >
+        {icon}
+      </span>
       <div className="min-w-0 flex-1">
         <div className="text-[11px] uppercase tracking-wide text-muted-foreground">{label}</div>
-        {loading ? <Skeleton className="mt-1 h-5 w-12" /> : (
+        {loading ? (
+          <Skeleton className="mt-1 h-5 w-12" />
+        ) : (
           <div className="font-semibold tabular-nums">{value}</div>
         )}
         {subtitle && <div className="text-[11px] text-muted-foreground">{subtitle}</div>}
@@ -797,16 +1135,30 @@ function MiniStat({
 }
 
 function DetailStat({
-  icon, label, value, accent,
-}: { icon: React.ReactNode; label: string; value: string; accent?: boolean }) {
+  icon,
+  label,
+  value,
+  accent,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+  accent?: boolean;
+}) {
   return (
-    <div className={`rounded-2xl border border-border p-5 shadow-card ${
-      accent ? "bg-gradient-to-br from-card to-accent/40 ring-1 ring-gold/20" : "bg-card"
-    }`}>
+    <div
+      className={`rounded-2xl border border-border p-5 shadow-card ${
+        accent ? "bg-gradient-to-br from-card to-accent/40 ring-1 ring-gold/20" : "bg-card"
+      }`}
+    >
       <div className="flex items-center gap-3">
-        <span className={`grid h-9 w-9 place-items-center rounded-lg ${
-          accent ? "bg-gold-gradient text-gold-foreground" : "bg-accent text-accent-foreground"
-        }`}>{icon}</span>
+        <span
+          className={`grid h-9 w-9 place-items-center rounded-lg ${
+            accent ? "bg-gold-gradient text-gold-foreground" : "bg-accent text-accent-foreground"
+          }`}
+        >
+          {icon}
+        </span>
         <div>
           <div className="text-xs text-muted-foreground">{label}</div>
           <div className="font-display text-xl font-semibold tracking-tight">{value}</div>
@@ -817,8 +1169,14 @@ function DetailStat({
 }
 
 function ChartCard({
-  title, children, className,
-}: { title: string; children: React.ReactNode; className?: string }) {
+  title,
+  children,
+  className,
+}: {
+  title: string;
+  children: React.ReactNode;
+  className?: string;
+}) {
   return (
     <div className={`rounded-2xl border border-border bg-card p-5 shadow-card ${className ?? ""}`}>
       <h3 className="mb-3 font-display text-base font-semibold">{title}</h3>
@@ -829,9 +1187,7 @@ function ChartCard({
 
 function EmptyChart({ label }: { label: string }) {
   return (
-    <div className="grid h-[240px] place-items-center text-sm text-muted-foreground">
-      {label}
-    </div>
+    <div className="grid h-[240px] place-items-center text-sm text-muted-foreground">{label}</div>
   );
 }
 
@@ -844,17 +1200,31 @@ interface ListItem {
 }
 
 function ListCard({
-  title, to, items, empty, loading,
-}: { title: string; to: string; items: ListItem[]; empty: string; loading?: boolean }) {
+  title,
+  to,
+  items,
+  empty,
+  loading,
+}: {
+  title: string;
+  to: string;
+  items: ListItem[];
+  empty: string;
+  loading?: boolean;
+}) {
   return (
     <div className="rounded-2xl border border-border bg-card p-5 shadow-card">
       <div className="mb-3 flex items-center justify-between">
         <h3 className="font-display text-base font-semibold">{title}</h3>
-        <Link to={to} className="text-xs text-muted-foreground hover:text-foreground">→</Link>
+        <Link to={to} className="text-xs text-muted-foreground hover:text-foreground">
+          →
+        </Link>
       </div>
       {loading ? (
         <div className="space-y-2">
-          {[0, 1, 2, 3].map((i) => <Skeleton key={i} className="h-12 w-full" />)}
+          {[0, 1, 2, 3].map((i) => (
+            <Skeleton key={i} className="h-12 w-full" />
+          ))}
         </div>
       ) : items.length === 0 ? (
         <p className="py-6 text-center text-sm text-muted-foreground">{empty}</p>
@@ -881,8 +1251,18 @@ function ListCard({
 }
 
 function QuickAction({
-  to, icon, label, badge, destructive,
-}: { to: string; icon: React.ReactNode; label: string; badge?: string; destructive?: boolean }) {
+  to,
+  icon,
+  label,
+  badge,
+  destructive,
+}: {
+  to: string;
+  icon: React.ReactNode;
+  label: string;
+  badge?: string;
+  destructive?: boolean;
+}) {
   return (
     <Button asChild variant="outline" className="w-full justify-between">
       <Link to={to}>
@@ -900,20 +1280,38 @@ function QuickAction({
   );
 }
 
-function ChartTooltip({ active, payload, label }: any) {
+function ChartTooltip({
+  active,
+  payload,
+  label,
+}: {
+  active?: boolean;
+  payload?: Array<{
+    name?: string;
+    value?: number | string;
+    color?: string;
+    payload?: Record<string, unknown>;
+  }>;
+  label?: string;
+}) {
   if (!active || !payload || payload.length === 0) return null;
   return (
     <div className="rounded-lg border border-border bg-popover p-2.5 text-xs shadow-elegant">
       {label && <div className="mb-1 font-medium">{label}</div>}
       <div className="space-y-0.5">
-        {payload.map((p: any, i: number) => (
+        {payload.map((p, i) => (
           <div key={i} className="flex items-center gap-2">
-            <span className="h-2 w-2 rounded-full" style={{ background: p.color || p.payload?.color }} />
+            <span
+              className="h-2 w-2 rounded-full"
+              style={{
+                background:
+                  (p.color as string) ||
+                  String(((p.payload as Record<string, unknown>) || {})["color"] ?? ""),
+              }}
+            />
             <span className="text-muted-foreground">{p.name}:</span>
             <span className="font-medium tabular-nums">
-              {typeof p.value === "number" && p.value >= 1000
-                ? p.value.toLocaleString()
-                : p.value}
+              {typeof p.value === "number" && p.value >= 1000 ? p.value.toLocaleString() : p.value}
             </span>
           </div>
         ))}

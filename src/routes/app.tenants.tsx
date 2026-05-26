@@ -9,7 +9,13 @@ import { DataTable, type Column } from "@/components/DataTable";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { FormDialog, ConfirmDialog } from "@/components/FormDialog";
 import { Plus } from "lucide-react";
 import { toast } from "sonner";
@@ -17,13 +23,18 @@ import { formatDate } from "@/lib/format";
 import { FormField } from "./app.owners";
 
 interface Person {
-  id: number; fullName: string; phone: string; email: string; nationalId: string; createdAt: string;
+  id: number;
+  fullName: string;
+  phone: string;
+  email: string;
+  nationalId: string;
+  createdAt: string;
 }
 
 export interface PeopleResourceConfig {
-  resource: string;        // path segment, e.g. "tenants"
+  resource: string; // path segment, e.g. "tenants"
   queryKey: string;
-  titleKey: string;        // i18n key for nav label
+  titleKey: string; // i18n key for nav label
 }
 
 export function PeopleResource({ resource, queryKey, titleKey }: PeopleResourceConfig) {
@@ -40,20 +51,37 @@ export function PeopleResource({ resource, queryKey, titleKey }: PeopleResourceC
       if (vals.id) await api(`/api/${resource}/${vals.id}`, { method: "PUT", body: vals });
       else await api(`/api/${resource}`, { method: "POST", body: vals });
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: [queryKey] }); toast.success(t("common.success")); setEditing(null); setCreating(false); },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: [queryKey] });
+      toast.success(t("common.success"));
+      setEditing(null);
+      setCreating(false);
+    },
     onError: (e: Error) => toast.error(e.message),
   });
   const del = useMutation({
     mutationFn: (id: number) => api(`/api/${resource}/${id}`, { method: "DELETE" }),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: [queryKey] }); toast.success(t("common.deleted")); setDeleting(null); },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: [queryKey] });
+      toast.success(t("common.deleted"));
+      setDeleting(null);
+    },
     onError: (e: Error) => toast.error(e.message),
   });
 
   const cols: Column<Person>[] = [
-    { key: "name", header: t("common.fullName"), cell: (r) => <span className="font-medium">{r.fullName}</span> },
+    {
+      key: "name",
+      header: t("common.fullName"),
+      cell: (r) => <span className="font-medium">{r.fullName}</span>,
+    },
     { key: "phone", header: t("common.phone"), cell: (r) => r.phone },
     { key: "email", header: t("common.email"), cell: (r) => r.email },
-    { key: "nid", header: t("common.nationalId"), cell: (r) => <span className="font-mono text-xs">{r.nationalId}</span> },
+    {
+      key: "nid",
+      header: t("common.nationalId"),
+      cell: (r) => <span className="font-mono text-xs">{r.nationalId}</span>,
+    },
     { key: "created", header: t("common.createdAt"), cell: (r) => formatDate(r.createdAt) },
   ];
 
@@ -73,7 +101,12 @@ export function PeopleResource({ resource, queryKey, titleKey }: PeopleResourceC
     <div>
       <PageHeader
         title={t(titleKey)}
-        actions={<Button onClick={() => setCreating(true)}><Plus className="me-1 h-4 w-4" />{t("common.add")}</Button>}
+        actions={
+          <Button onClick={() => setCreating(true)}>
+            <Plus className="me-1 h-4 w-4" />
+            {t("common.add")}
+          </Button>
+        }
       />
       <div className="mb-4">
         <Input
@@ -83,11 +116,24 @@ export function PeopleResource({ resource, queryKey, titleKey }: PeopleResourceC
           className="max-w-sm"
         />
       </div>
-      <DataTable columns={cols} rows={filteredPeople} loading={list.isLoading} error={list.error} rowKey={(r) => r.id} onEdit={setEditing} onDelete={setDeleting} />
+      <DataTable
+        columns={cols}
+        rows={filteredPeople}
+        loading={list.isLoading}
+        error={list.error}
+        rowKey={(r) => r.id}
+        onEdit={setEditing}
+        onDelete={setDeleting}
+      />
       <FormDialog
         key={`${editing?.id ?? "new"}-${creating ? "create" : "edit"}`}
         open={creating || !!editing}
-        onOpenChange={(v) => { if (!v) { setCreating(false); setEditing(null); } }}
+        onOpenChange={(v) => {
+          if (!v) {
+            setCreating(false);
+            setEditing(null);
+          }
+        }}
         title={editing ? t("common.edit") : t("common.add")}
         submitting={upsert.isPending}
         onSubmit={(e) => {
@@ -104,8 +150,17 @@ export function PeopleResource({ resource, queryKey, titleKey }: PeopleResourceC
       >
         <FormField id="fullName" label={t("common.fullName")} defaultValue={editing?.fullName} />
         <FormField id="phone" label={t("common.phone")} defaultValue={editing?.phone} />
-        <FormField id="email" label={t("common.email")} type="email" defaultValue={editing?.email} />
-        <FormField id="nationalId" label={t("common.nationalId")} defaultValue={editing?.nationalId} />
+        <FormField
+          id="email"
+          label={t("common.email")}
+          type="email"
+          defaultValue={editing?.email}
+        />
+        <FormField
+          id="nationalId"
+          label={t("common.nationalId")}
+          defaultValue={editing?.nationalId}
+        />
       </FormDialog>
       <ConfirmDialog
         open={!!deleting}
@@ -146,7 +201,14 @@ function TenantsPage() {
   const [search, setSearch] = useState("");
 
   const upsert = useMutation({
-    mutationFn: async (vals: { id?: number; propertyId: number; fullName: string; phone: string; email: string; nationalId: string }) => {
+    mutationFn: async (vals: {
+      id?: number;
+      propertyId: number;
+      fullName: string;
+      phone: string;
+      email: string;
+      nationalId: string;
+    }) => {
       const body = {
         propertyId: vals.propertyId,
         fullName: vals.fullName,
@@ -182,40 +244,65 @@ function TenantsPage() {
     const lowerSearch = search.toLowerCase();
     return (tenants.data ?? []).filter((tenant) => {
       const property = tenant.propertyName ?? "";
-      return [tenant.fullName, tenant.phone, tenant.email, tenant.nationalId, property]
-        .some((value) => value.toLowerCase().includes(lowerSearch));
+      return [tenant.fullName, tenant.phone, tenant.email, tenant.nationalId, property].some(
+        (value) => value.toLowerCase().includes(lowerSearch),
+      );
     });
   }, [tenants.data, search]);
 
   const columns: Column<Tenant>[] = [
-    { key: "name", header: t("common.fullName"), cell: (r) => <span className="font-medium">{r.fullName}</span> },
+    {
+      key: "name",
+      header: t("common.fullName"),
+      cell: (r) => <span className="font-medium">{r.fullName}</span>,
+    },
     {
       key: "property",
       header: t("common.property"),
       cell: (r) => {
         const property = r.propertyId ? propertyById.get(r.propertyId) : undefined;
-        const label = property ? `${property.name} — ${property.address}` : r.propertyName ?? t("common.notProvided");
+        const label = property
+          ? `${property.name} — ${property.address}`
+          : (r.propertyName ?? t("common.notProvided"));
         return <span>{label}</span>;
       },
     },
     { key: "phone", header: t("common.phone"), cell: (r) => r.phone },
     { key: "email", header: t("common.email"), cell: (r) => r.email },
-    { key: "nid", header: t("common.nationalId"), cell: (r) => <span className="font-mono text-xs">{r.nationalId}</span> },
+    {
+      key: "nid",
+      header: t("common.nationalId"),
+      cell: (r) => <span className="font-mono text-xs">{r.nationalId}</span>,
+    },
     { key: "created", header: t("common.createdAt"), cell: (r) => formatDate(r.createdAt) },
   ];
 
   if (!auth.isStaff) {
-    return <div className="rounded-xl border border-border bg-card p-8 text-center text-muted-foreground">{t("common.adminOnly")}</div>;
+    return (
+      <div className="rounded-xl border border-border bg-card p-8 text-center text-muted-foreground">
+        {t("common.adminOnly")}
+      </div>
+    );
   }
 
   return (
     <div>
       <PageHeader
         title={t("nav.tenants")}
-        actions={<Button onClick={() => setCreating(true)}><Plus className="me-1 h-4 w-4" />{t("common.add")}</Button>}
+        actions={
+          <Button onClick={() => setCreating(true)}>
+            <Plus className="me-1 h-4 w-4" />
+            {t("common.add")}
+          </Button>
+        }
       />
       <div className="mb-4">
-        <Input placeholder={t("common.search")} value={search} onChange={(e) => setSearch(e.target.value)} className="max-w-sm" />
+        <Input
+          placeholder={t("common.search")}
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="max-w-sm"
+        />
       </div>
       <DataTable
         columns={columns}
@@ -229,7 +316,12 @@ function TenantsPage() {
 
       <TenantDialog
         open={creating || !!editing}
-        onOpenChange={(v) => { if (!v) { setCreating(false); setEditing(null); } }}
+        onOpenChange={(v) => {
+          if (!v) {
+            setCreating(false);
+            setEditing(null);
+          }
+        }}
         tenant={editing}
         properties={properties.data ?? []}
         submitting={upsert.isPending}
@@ -248,12 +340,25 @@ function TenantsPage() {
   );
 }
 
-function TenantDialog({ open, onOpenChange, tenant, properties, onSubmit, submitting }: {
+function TenantDialog({
+  open,
+  onOpenChange,
+  tenant,
+  properties,
+  onSubmit,
+  submitting,
+}: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   tenant: Tenant | null;
   properties: PropertyDto[];
-  onSubmit: (vals: { propertyId: number; fullName: string; phone: string; email: string; nationalId: string }) => void;
+  onSubmit: (vals: {
+    propertyId: number;
+    fullName: string;
+    phone: string;
+    email: string;
+    nationalId: string;
+  }) => void;
   submitting?: boolean;
 }) {
   const { t } = useTranslation();
@@ -269,7 +374,9 @@ function TenantDialog({ open, onOpenChange, tenant, properties, onSubmit, submit
     <FormDialog
       key={key}
       open={open}
-      onOpenChange={(v) => { if (!v) onOpenChange(false); }}
+      onOpenChange={(v) => {
+        if (!v) onOpenChange(false);
+      }}
       title={tenant ? t("common.edit") : t("common.add")}
       submitting={submitting}
       size="lg"

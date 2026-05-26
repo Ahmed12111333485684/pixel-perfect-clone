@@ -194,7 +194,12 @@ export interface OwnerStats {
 }
 
 export type PropertyStatus = "Pending" | "Approved" | "Rejected" | "Sold";
-export interface Amenity { id: number; name: string; description?: string; createdAt: string; }
+export interface Amenity {
+  id: number;
+  name: string;
+  description?: string;
+  createdAt: string;
+}
 export interface PropertyDto {
   id: number;
   ownerId: number;
@@ -208,7 +213,7 @@ export interface PropertyDto {
   salePrice?: number | null;
   rentPrice?: number | null;
   deedNumber?: string | null;
-  details?: Record<string, any> | null;
+  details?: Record<string, unknown> | null;
   status: PropertyStatus;
   createdAt: string;
   amenities?: Amenity[];
@@ -237,13 +242,25 @@ export interface Tenant {
 }
 export type ContractStatus = "Active" | "Expired" | "Terminated" | "Pending";
 export interface Contract {
-  id: number; propertyId: number; tenantId: number; deedNumber: string;
-  startDate: string; endDate: string; monthlyRent: number; status: ContractStatus; createdAt: string;
+  id: number;
+  propertyId: number;
+  tenantId: number;
+  deedNumber: string;
+  startDate: string;
+  endDate: string;
+  monthlyRent: number;
+  status: ContractStatus;
+  createdAt: string;
 }
 export type PaymentStatusT = "Pending" | "Paid" | "Overdue";
 export interface Payment {
-  id: number; contractId: number; dueDate: string; paidDate?: string | null;
-  amount: number; status: PaymentStatusT; createdAt: string;
+  id: number;
+  contractId: number;
+  dueDate: string;
+  paidDate?: string | null;
+  amount: number;
+  status: PaymentStatusT;
+  createdAt: string;
 }
 export interface EmployeeProductivityRecord {
   id: number;
@@ -277,18 +294,36 @@ export interface EmployeeProductivityUpsertDto {
   inspectionCount: number;
   contentWritingCount: number;
 }
-export interface Buyer { id: number; fullName: string; phone: string; email: string; nationalId: string; createdAt: string; }
+export interface Buyer {
+  id: number;
+  fullName: string;
+  phone: string;
+  email: string;
+  nationalId: string;
+  createdAt: string;
+}
 export interface Sale {
-  id: number; propertyId: number; buyerClientId: number; salePrice: number;
-  deedNumber: string; soldAt: string; createdAt: string;
+  id: number;
+  propertyId: number;
+  buyerClientId: number;
+  salePrice: number;
+  deedNumber: string;
+  soldAt: string;
+  createdAt: string;
 }
 
 export type LeadIntent = "Buy" | "Rent" | "Sell" | "LetOut";
 export type LeadStatus = "New" | "Contacted" | "Qualified" | "ClosedLost" | "ClosedWon";
 export interface LeadImage {
-  id: number; leadId: number; originalFileName: string; mimeType: string;
-  sizeBytes: number; sortOrder: number; isPrimary: boolean;
-  fileUrl?: string; createdAt: string;
+  id: number;
+  leadId: number;
+  originalFileName: string;
+  mimeType: string;
+  sizeBytes: number;
+  sortOrder: number;
+  isPrimary: boolean;
+  fileUrl?: string;
+  createdAt: string;
 }
 export interface SubmitPartnerLeadDto {
   propertyName: string;

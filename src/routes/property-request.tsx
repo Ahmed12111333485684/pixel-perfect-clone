@@ -7,7 +7,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
 import { BrandLogo } from "@/components/BrandLogo";
 import { LanguageToggle } from "@/components/LanguageToggle";
@@ -20,9 +24,16 @@ export const Route = createFileRoute("/property-request")({
   head: () => ({
     meta: [
       { title: "Find your property — Estatly" },
-      { name: "description", content: "Looking for a property? Tell us what you're looking for and our team will help you find it." },
+      {
+        name: "description",
+        content:
+          "Looking for a property? Tell us what you're looking for and our team will help you find it.",
+      },
       { property: "og:title", content: "Find your property — Estatly" },
-      { property: "og:description", content: "Looking for a property? Tell us what you're looking for." },
+      {
+        property: "og:description",
+        content: "Looking for a property? Tell us what you're looking for.",
+      },
     ],
   }),
   component: PropertyRequestPage,
@@ -72,7 +83,9 @@ function PropertyRequestPage() {
           mobile: mobileNumber,
           nationality: formData.get("nationality") || undefined,
           profession: formData.get("profession") || undefined,
-          familyCount: formData.get("familyCount") ? String(formData.get("familyCount")) : undefined,
+          familyCount: formData.get("familyCount")
+            ? String(formData.get("familyCount"))
+            : undefined,
           requestDescription: formData.get("notes") || undefined,
           maxBudget: formData.get("maxBudget") ? String(formData.get("maxBudget")) : undefined,
           paymentType: formData.get("paymentType") || undefined,
@@ -101,17 +114,15 @@ function PropertyRequestPage() {
             <div className="mx-auto mb-4 grid h-14 w-14 place-items-center rounded-full bg-success/15 text-success">
               <CheckCircle2 className="h-7 w-7" />
             </div>
-            <h1 className="font-display text-3xl">{t("common.requestSubmitted") || "Request Submitted!"}</h1>
+            <h1 className="font-display text-3xl">
+              {t("common.requestSubmitted") || "Request Submitted!"}
+            </h1>
             <p className="mt-2 text-muted-foreground">
-              {t("common.requestSubmittedMessage") || "Thank you for your request. Our team will reach out to you shortly."}
+              {t("common.requestSubmittedMessage") ||
+                "Thank you for your request. Our team will reach out to you shortly."}
             </p>
             <p className="mt-1 font-medium text-foreground">{submitted.fullName}</p>
-            <Button
-              onClick={reset}
-              asChild
-              variant="outline"
-              className="mt-8"
-            >
+            <Button onClick={reset} asChild variant="outline" className="mt-8">
               <Link to="/">{t("common.home")}</Link>
             </Button>
           </div>
@@ -128,9 +139,12 @@ function PropertyRequestPage() {
       <div className="mx-auto max-w-2xl px-6 py-12">
         <div className="rounded-2xl border border-border bg-card p-8 shadow-elegant sm:p-10">
           <div>
-            <h1 className="font-display text-3xl">{t("propertyRequest.title") || "Looking for a Property?"}</h1>
+            <h1 className="font-display text-3xl">
+              {t("propertyRequest.title") || "Looking for a Property?"}
+            </h1>
             <p className="mt-2 text-muted-foreground">
-              {t("propertyRequest.subtitle") || "Tell us what you're looking for and we'll help you find the perfect property."}
+              {t("propertyRequest.subtitle") ||
+                "Tell us what you're looking for and we'll help you find the perfect property."}
             </p>
           </div>
 
@@ -205,7 +219,9 @@ function PropertyRequestPage() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="Rental">{t("requestType.Rental") || "Rental"}</SelectItem>
-                      <SelectItem value="Purchase">{t("requestType.Purchase") || "Purchase"}</SelectItem>
+                      <SelectItem value="Purchase">
+                        {t("requestType.Purchase") || "Purchase"}
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -291,18 +307,17 @@ function PropertyRequestPage() {
                 <Textarea
                   id="notes"
                   name="notes"
-                  placeholder={t("propertyRequest.notesPlaceholder") || "Tell us more about what you're looking for..."}
+                  placeholder={
+                    t("propertyRequest.notesPlaceholder") ||
+                    "Tell us more about what you're looking for..."
+                  }
                   className="mt-1"
                   rows={4}
                 />
               </div>
             </div>
 
-            <Button
-              type="submit"
-              disabled={loading}
-              className="w-full"
-            >
+            <Button type="submit" disabled={loading} className="w-full">
               {loading && <Loader2 className="me-2 h-4 w-4 animate-spin" />}
               {t("common.submit")}
             </Button>
@@ -311,7 +326,8 @@ function PropertyRequestPage() {
 
         <div className="mt-8 rounded-2xl border border-border bg-muted/40 p-6 text-center text-sm text-muted-foreground">
           <p>
-            {t("propertyRequest.privacy") || "Your information is safe with us and will only be used to help you find the perfect property."}
+            {t("propertyRequest.privacy") ||
+              "Your information is safe with us and will only be used to help you find the perfect property."}
           </p>
         </div>
       </div>
@@ -332,7 +348,11 @@ function Header() {
           <Button asChild variant="outline" size="sm">
             <Link to="/">{t("common.home")}</Link>
           </Button>
-          <Button asChild size="sm" className="bg-gold-gradient text-gold-foreground hover:opacity-95">
+          <Button
+            asChild
+            size="sm"
+            className="bg-gold-gradient text-gold-foreground hover:opacity-95"
+          >
             <Link to="/available-properties">{t("publicProperties.browse")}</Link>
           </Button>
         </div>

@@ -52,8 +52,16 @@
   --shadow-elegant: 0 10px 30px -12px color-mix(in oklab, var(--primary) 25%, transparent);
   --shadow-card: 0 1px 2px 0 oklch(0 0 0 / 0.04), 0 1px 3px 0 oklch(0 0 0 / 0.06);
   --shadow-gold: 0 8px 24px -10px color-mix(in oklab, var(--gold) 40%, transparent);
-  --gradient-hero: linear-gradient(135deg, var(--primary) 0%, color-mix(in oklab, var(--primary) 70%, var(--gold) 30%) 100%);
-  --gradient-gold: linear-gradient(135deg, var(--gold) 0%, color-mix(in oklab, var(--gold) 60%, white 40%) 100%);
+  --gradient-hero: linear-gradient(
+    135deg,
+    var(--primary) 0%,
+    color-mix(in oklab, var(--primary) 70%, var(--gold) 30%) 100%
+  );
+  --gradient-gold: linear-gradient(
+    135deg,
+    var(--gold) 0%,
+    color-mix(in oklab, var(--gold) 60%, white 40%) 100%
+  );
   --font-sans: "Inter", "Tajawal", ui-sans-serif, system-ui, sans-serif;
   --font-display: "Playfair Display", "Tajawal", ui-serif, Georgia, serif;
 }
@@ -153,14 +161,21 @@
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   }
 
-  h1, h2, h3, h4 {
+  h1,
+  h2,
+  h3,
+  h4 {
     font-family: var(--font-display);
     letter-spacing: -0.02em;
   }
 
   /* RTL-friendly logical properties helpers */
-  [dir="rtl"] .ltr-only { display: none; }
-  [dir="ltr"] .rtl-only { display: none; }
+  [dir="rtl"] .ltr-only {
+    display: none;
+  }
+  [dir="ltr"] .rtl-only {
+    display: none;
+  }
 }
 
 @layer utilities {

@@ -1,5 +1,10 @@
 import {
-  Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useTranslation } from "react-i18next";
@@ -18,7 +23,15 @@ interface FormDialogProps {
 }
 
 export function FormDialog({
-  open, onOpenChange, title, description, onSubmit, submitting, submitLabel, children, size = "default",
+  open,
+  onOpenChange,
+  title,
+  description,
+  onSubmit,
+  submitting,
+  submitLabel,
+  children,
+  size = "default",
 }: FormDialogProps) {
   const { t } = useTranslation();
   return (
@@ -37,7 +50,12 @@ export function FormDialog({
           </DialogHeader>
           <div className="space-y-4">{children}</div>
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={submitting}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              disabled={submitting}
+            >
               {t("common.cancel")}
             </Button>
             <Button type="submit" disabled={submitting}>
@@ -63,7 +81,14 @@ interface ConfirmDialogProps {
 }
 
 export function ConfirmDialog({
-  open, onOpenChange, title, description, confirmLabel, onConfirm, destructive, loading,
+  open,
+  onOpenChange,
+  title,
+  description,
+  confirmLabel,
+  onConfirm,
+  destructive,
+  loading,
 }: ConfirmDialogProps) {
   const { t } = useTranslation();
   return (

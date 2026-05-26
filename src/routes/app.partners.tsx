@@ -32,7 +32,11 @@ function PartnersPage() {
   const auth = useAuth();
   const qc = useQueryClient();
 
-  const list = useQuery({ queryKey: ["partners"], queryFn: fetchPartners, enabled: auth.hasRole("Admin") });
+  const list = useQuery({
+    queryKey: ["partners"],
+    queryFn: fetchPartners,
+    enabled: auth.hasRole("Admin"),
+  });
 
   const [editing, setEditing] = useState<Partner | null>(null);
   const [creating, setCreating] = useState(false);
@@ -41,14 +45,26 @@ function PartnersPage() {
   const [search, setSearch] = useState("");
 
   const upsert = useMutation({
-    mutationFn: async (vals: { id?: string; fullName: string; phone: string; email?: string; nationalId?: string; falLicenseNumber?: string; commercialRegistrationNumber?: string; location?: string; notes?: string; photo?: File | null }) => {
+    mutationFn: async (vals: {
+      id?: string;
+      fullName: string;
+      phone: string;
+      email?: string;
+      nationalId?: string;
+      falLicenseNumber?: string;
+      commercialRegistrationNumber?: string;
+      location?: string;
+      notes?: string;
+      photo?: File | null;
+    }) => {
       const formData = new FormData();
       formData.append("fullName", vals.fullName);
       formData.append("phone", vals.phone);
       if (vals.email) formData.append("email", vals.email);
       if (vals.nationalId) formData.append("nationalId", vals.nationalId);
       if (vals.falLicenseNumber) formData.append("falLicenseNumber", vals.falLicenseNumber);
-      if (vals.commercialRegistrationNumber) formData.append("commercialRegistrationNumber", vals.commercialRegistrationNumber);
+      if (vals.commercialRegistrationNumber)
+        formData.append("commercialRegistrationNumber", vals.commercialRegistrationNumber);
       if (vals.location) formData.append("location", vals.location);
       if (vals.notes) formData.append("notes", vals.notes);
       if (vals.photo) formData.append("photo", vals.photo);
@@ -91,43 +107,64 @@ function PartnersPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
-  if (!auth.hasRole("Admin")) {
-    return (
-      <div className="rounded-xl border border-border bg-card p-8 text-center text-muted-foreground">
-        {t("common.adminOnly")}
-      </div>
-    );
-  }
-
   const cols: Column<Partner>[] = [
     {
       key: "photo",
       header: t("common.photo"),
       className: "w-20",
-      cell: (r) => r.photoUrl ? (
-        <div className="h-12 w-12 overflow-hidden rounded-lg border border-border bg-muted">
-          <MediaPreview src={resolveApiAssetUrl(r.photoUrl)} alt={r.fullName} className="h-full w-full object-cover" />
-        </div>
-      ) : (
-        <div className="flex h-12 w-12 items-center justify-center rounded-lg border border-dashed border-border text-muted-foreground">
-          <ImagePlus className="h-4 w-4" />
-        </div>
-      ),
+      cell: (r) =>
+        r.photoUrl ? (
+          <div className="h-12 w-12 overflow-hidden rounded-lg border border-border bg-muted">
+            <MediaPreview
+              src={resolveApiAssetUrl(r.photoUrl)}
+              alt={r.fullName}
+              className="h-full w-full object-cover"
+            />
+          </div>
+        ) : (
+          <div className="flex h-12 w-12 items-center justify-center rounded-lg border border-dashed border-border text-muted-foreground">
+            <ImagePlus className="h-4 w-4" />
+          </div>
+        ),
     },
-    { key: "name", header: t("common.fullName"), cell: (r) => <span className="font-medium">{r.fullName}</span> },
+    {
+      key: "name",
+      header: t("common.fullName"),
+      cell: (r) => <span className="font-medium">{r.fullName}</span>,
+    },
     { key: "phone", header: t("common.phone"), cell: (r) => r.phone ?? "—" },
-    { key: "falLicenseNumber", header: t("common.falLicenseNumber"), cell: (r) => r.falLicenseNumber ?? "—" },
-    { key: "commercialRegistrationNumber", header: t("common.commercialRegistrationNumber"), cell: (r) => r.commercialRegistrationNumber ?? "—" },
+    {
+      key: "falLicenseNumber",
+      header: t("common.falLicenseNumber"),
+      cell: (r) => r.falLicenseNumber ?? "—",
+    },
+    {
+      key: "commercialRegistrationNumber",
+      header: t("common.commercialRegistrationNumber"),
+      cell: (r) => r.commercialRegistrationNumber ?? "—",
+    },
     { key: "location", header: t("common.partnerLocation"), cell: (r) => r.location ?? "—" },
     { key: "email", header: t("common.email"), cell: (r) => r.email ?? "—" },
-    { key: "nid", header: t("common.nationalId"), cell: (r) => <span className="font-mono text-xs">{r.nationalId ?? "—"}</span> },
+    {
+      key: "nid",
+      header: t("common.nationalId"),
+      cell: (r) => <span className="font-mono text-xs">{r.nationalId ?? "—"}</span>,
+    },
     { key: "created", header: t("common.createdAt"), cell: (r) => formatDate(r.createdAt) },
     {
       key: "account",
       header: "",
       className: "w-12",
       cell: (r) => (
-        <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); setAccountFor(r); }} title={t("common.account")}>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={(e) => {
+            e.stopPropagation();
+            setAccountFor(r);
+          }}
+          title={t("common.account")}
+        >
           <KeyRound className="h-4 w-4" />
         </Button>
       ),
@@ -139,16 +176,24 @@ function PartnersPage() {
     const lower = search.toLowerCase();
     return (list.data ?? []).filter((p) => {
       return (
-        p.fullName.toLowerCase().includes(lower)
-        || (p.phone ?? "").toLowerCase().includes(lower)
-        || (p.falLicenseNumber ?? "").toLowerCase().includes(lower)
-        || (p.commercialRegistrationNumber ?? "").toLowerCase().includes(lower)
-        || (p.location ?? "").toLowerCase().includes(lower)
-        || (p.email ?? "").toLowerCase().includes(lower)
-        || (p.nationalId ?? "").toLowerCase().includes(lower)
+        p.fullName.toLowerCase().includes(lower) ||
+        (p.phone ?? "").toLowerCase().includes(lower) ||
+        (p.falLicenseNumber ?? "").toLowerCase().includes(lower) ||
+        (p.commercialRegistrationNumber ?? "").toLowerCase().includes(lower) ||
+        (p.location ?? "").toLowerCase().includes(lower) ||
+        (p.email ?? "").toLowerCase().includes(lower) ||
+        (p.nationalId ?? "").toLowerCase().includes(lower)
       );
     });
   }, [list.data, search]);
+
+  if (!auth.hasRole("Admin")) {
+    return (
+      <div className="rounded-xl border border-border bg-card p-8 text-center text-muted-foreground">
+        {t("common.adminOnly")}
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -182,7 +227,12 @@ function PartnersPage() {
 
       <PartnerDialog
         open={creating || !!editing}
-        onOpenChange={(v) => { if (!v) { setCreating(false); setEditing(null); } }}
+        onOpenChange={(v) => {
+          if (!v) {
+            setCreating(false);
+            setEditing(null);
+          }
+        }}
         partner={editing}
         submitting={upsert.isPending}
         onSubmit={(vals) => upsert.mutate({ ...vals, id: editing?.id })}
@@ -207,11 +257,27 @@ function PartnersPage() {
   );
 }
 
-function PartnerDialog({ open, onOpenChange, partner, onSubmit, submitting }: {
+function PartnerDialog({
+  open,
+  onOpenChange,
+  partner,
+  onSubmit,
+  submitting,
+}: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   partner: Partner | null;
-  onSubmit: (vals: { fullName: string; phone: string; email?: string; nationalId?: string; falLicenseNumber?: string; commercialRegistrationNumber?: string; location?: string; notes?: string; photo?: File | null }) => void;
+  onSubmit: (vals: {
+    fullName: string;
+    phone: string;
+    email?: string;
+    nationalId?: string;
+    falLicenseNumber?: string;
+    commercialRegistrationNumber?: string;
+    location?: string;
+    notes?: string;
+    photo?: File | null;
+  }) => void;
   submitting?: boolean;
 }) {
   const { t } = useTranslation();
@@ -234,27 +300,63 @@ function PartnerDialog({ open, onOpenChange, partner, onSubmit, submitting }: {
           email: String(fd.get("email") ?? "") || undefined,
           nationalId: String(fd.get("nationalId") ?? "") || undefined,
           falLicenseNumber: String(fd.get("falLicenseNumber") ?? "") || undefined,
-          commercialRegistrationNumber: String(fd.get("commercialRegistrationNumber") ?? "") || undefined,
+          commercialRegistrationNumber:
+            String(fd.get("commercialRegistrationNumber") ?? "") || undefined,
           location: String(fd.get("location") ?? "") || undefined,
           notes: String(fd.get("notes") ?? "") || undefined,
           photo: photoInput?.files?.[0] ?? null,
         });
       }}
     >
-      <FormField id="fullName" label={t("common.fullName")} defaultValue={partner?.fullName} required />
-      <FormField id="phone" label={t("common.phone")} defaultValue={partner?.phone ?? ""} required />
-      <FormField id="email" label={t("common.email")} type="email" defaultValue={partner?.email ?? ""} />
-      <FormField id="nationalId" label={t("common.nationalId")} defaultValue={partner?.nationalId ?? ""} />
-      <FormField id="falLicenseNumber" label={t("common.falLicenseNumber")} defaultValue={partner?.falLicenseNumber ?? ""} />
-      <FormField id="commercialRegistrationNumber" label={t("common.commercialRegistrationNumber")} defaultValue={partner?.commercialRegistrationNumber ?? ""} />
-      <FormField id="location" label={t("common.partnerLocation")} defaultValue={partner?.location ?? ""} />
+      <FormField
+        id="fullName"
+        label={t("common.fullName")}
+        defaultValue={partner?.fullName}
+        required
+      />
+      <FormField
+        id="phone"
+        label={t("common.phone")}
+        defaultValue={partner?.phone ?? ""}
+        required
+      />
+      <FormField
+        id="email"
+        label={t("common.email")}
+        type="email"
+        defaultValue={partner?.email ?? ""}
+      />
+      <FormField
+        id="nationalId"
+        label={t("common.nationalId")}
+        defaultValue={partner?.nationalId ?? ""}
+      />
+      <FormField
+        id="falLicenseNumber"
+        label={t("common.falLicenseNumber")}
+        defaultValue={partner?.falLicenseNumber ?? ""}
+      />
+      <FormField
+        id="commercialRegistrationNumber"
+        label={t("common.commercialRegistrationNumber")}
+        defaultValue={partner?.commercialRegistrationNumber ?? ""}
+      />
+      <FormField
+        id="location"
+        label={t("common.partnerLocation")}
+        defaultValue={partner?.location ?? ""}
+      />
       <div className="space-y-2">
         <Label htmlFor="photo">{t("common.photo")}</Label>
         <Input id="photo" name="photo" type="file" accept="image/*" />
         {partner?.photoUrl && (
           <div className="flex items-center gap-3 rounded-lg border border-border bg-muted/40 p-3">
             <div className="h-16 w-16 overflow-hidden rounded-md border border-border bg-background">
-              <MediaPreview src={resolveApiAssetUrl(partner.photoUrl)} alt={partner.fullName} className="h-full w-full object-cover" />
+              <MediaPreview
+                src={resolveApiAssetUrl(partner.photoUrl)}
+                alt={partner.fullName}
+                className="h-full w-full object-cover"
+              />
             </div>
             <div className="text-sm text-muted-foreground">{t("common.photo")}</div>
           </div>
@@ -265,7 +367,12 @@ function PartnerDialog({ open, onOpenChange, partner, onSubmit, submitting }: {
   );
 }
 
-function PartnerAccountDialog({ partner, onOpenChange, onSubmit, submitting }: {
+function PartnerAccountDialog({
+  partner,
+  onOpenChange,
+  onSubmit,
+  submitting,
+}: {
   partner: Partner | null;
   onOpenChange: (v: boolean) => void;
   onSubmit: (v: { username: string; password: string }) => void;
@@ -273,7 +380,7 @@ function PartnerAccountDialog({ partner, onOpenChange, onSubmit, submitting }: {
 }) {
   const { t } = useTranslation();
   return (
-      <FormDialog
+    <FormDialog
       open={!!partner}
       onOpenChange={onOpenChange}
       title={`${t("common.add")} — ${partner?.fullName ?? ""}`}
@@ -294,7 +401,13 @@ function PartnerAccountDialog({ partner, onOpenChange, onSubmit, submitting }: {
   );
 }
 
-function FormField({ id, label, defaultValue, type = "text", required = false }: {
+function FormField({
+  id,
+  label,
+  defaultValue,
+  type = "text",
+  required = false,
+}: {
   id: string;
   label: string;
   defaultValue?: string;

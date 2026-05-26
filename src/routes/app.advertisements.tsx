@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { api, type Advertisement, type PropertyDto } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
@@ -10,7 +10,13 @@ import { FormDialog, ConfirmDialog } from "@/components/FormDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Plus, X } from "lucide-react";
 import { toast } from "sonner";
@@ -27,7 +33,13 @@ interface AdvertisementsSearchResult {
   items: Advertisement[];
 }
 
-const STATUS_VALUES = ["تمت الازالة", "تم الطلب", "تم التركيب", "في انتظار التركيب", "انتهي الاعلان"] as const;
+const STATUS_VALUES = [
+  "تمت الازالة",
+  "تم الطلب",
+  "تم التركيب",
+  "في انتظار التركيب",
+  "انتهي الاعلان",
+] as const;
 const PROPERTY_TYPE_VALUES = ["ايجار", "بيع"] as const;
 const AD_TYPE_VALUES = ["لوحة", "استكر", "لوحة(بار)"] as const;
 const INSTALLATION_TYPE_VALUES = ["جداري", "ارضي", "تثبيت سور", "استكر"] as const;
@@ -106,7 +118,9 @@ function buildAdvertisementPayload(fd: FormData, original?: Advertisement | null
       return;
     }
 
-    const originalValue = normalizeValue(original?.[key as AdvertisementFieldKey] as string | null | undefined);
+    const originalValue = normalizeValue(
+      original?.[key as AdvertisementFieldKey] as string | null | undefined,
+    );
     if (!original || value !== originalValue) payload[key] = value;
   });
 
@@ -128,31 +142,41 @@ function AdvertisementsPage() {
   const [status, setStatus] = useState<string>("all");
   const [page, setPage] = useState(1);
   const [pageSize] = useState(20);
-  const [sortBy] = useState<string>("createdAt");
-  const [sortDir] = useState<"asc" | "desc">("desc");
   const [creating, setCreating] = useState(false);
   const [selected, setSelected] = useState<Advertisement | null>(null);
   const [deleting, setDeleting] = useState<Advertisement | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [deletingRecord, setDeletingRecord] = useState(false);
 
-  const hasAccess = auth.hasRole("Admin")
-    || auth.isPartner
-    || auth.user?.screenPermissions.includes("/app/advertisements");
+  const hasAccess =
+    auth.hasRole("Admin") ||
+    auth.isPartner ||
+    auth.user?.screenPermissions.includes("/app/advertisements");
   const canManage = auth.isStaff || auth.isPartner;
 
-  const advertisements = useQuery({
-    queryKey: ["advertisements", { q, status, page, pageSize, sortBy, sortDir }],
-    queryFn: () => api<AdvertisementsSearchResult>("/api/advertisements", {
-      query: {
-        q: q || undefined,
-        status: status !== "all" ? status : undefined,
-        page,
-        pageSize,
-        sortBy: sortBy || undefined,
-        sortDir: sortDir || undefined,
-      },
-    }),
+  const advertisements = useQuery<Advertisement[]>({
+    queryKey: ["advertisements"],
+    queryFn: async () => {
+      const fetchPage = (pageNumber: number) =>
+        api<AdvertisementsSearchResult>("/api/advertisements", {
+          query: {
+            page: pageNumber,
+            pageSize: 100,
+            sortBy: "createdAt",
+            sortDir: "desc",
+          },
+        });
+
+      const firstPage = await fetchPage(1);
+      const totalPages = Math.max(1, Math.ceil((firstPage.total ?? 0) / 100));
+      if (totalPages === 1) return firstPage.items ?? [];
+
+      const extraPages = await Promise.all(
+        Array.from({ length: totalPages - 1 }, (_, index) => fetchPage(index + 2)),
+      );
+
+      return [...(firstPage.items ?? []), ...extraPages.flatMap((result) => result.items ?? [])];
+    },
     enabled: hasAccess,
   });
 
@@ -167,6 +191,47 @@ function AdvertisementsPage() {
     setStatus("all");
     setPage(1);
   };
+
+  const filteredAdvertisements = useMemo(() => {
+    const lowerSearch = q.trim().toLowerCase();
+    return (advertisements.data ?? []).filter((advertisement) => {
+      const propertyDeed =
+        properties.data?.find((p) => p.id === advertisement.propertyId)?.deedNumber ?? "";
+      const searchMatch =
+        !lowerSearch ||
+        [
+          advertisement.code,
+          advertisement.status,
+          advertisement.adNumber,
+          advertisement.propertyCodeOrFallback,
+          advertisement.propertyType,
+          advertisement.location,
+          String(advertisement.quantity),
+          String(advertisement.locationChangeCount),
+          advertisement.adType,
+          advertisement.installationType,
+          advertisement.officeName,
+          advertisement.phoneNumber,
+          String(advertisement.boardPrice ?? ""),
+          String(advertisement.remainingAmount ?? ""),
+          advertisement.notes,
+          propertyDeed,
+        ].some((value) => (value ?? "").toLowerCase().includes(lowerSearch));
+      const statusMatch = status === "all" || advertisement.status === status;
+      return searchMatch && statusMatch;
+    });
+  }, [advertisements.data, q, status]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredAdvertisements.length / pageSize));
+
+  useEffect(() => {
+    setPage((current) => Math.min(current, totalPages));
+  }, [totalPages]);
+
+  const visibleAdvertisements = useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return filteredAdvertisements.slice(start, start + pageSize);
+  }, [filteredAdvertisements, page, pageSize]);
 
   const handleCreate = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -196,7 +261,10 @@ function AdvertisementsPage() {
         setSelected(null);
         return;
       }
-      await api<Advertisement>(`/api/advertisements/${selected.id}`, { method: "PUT", body: payload });
+      await api<Advertisement>(`/api/advertisements/${selected.id}`, {
+        method: "PUT",
+        body: payload,
+      });
       toast.success(t("common.updated"));
       setSelected(null);
       qc.invalidateQueries({ queryKey: ["advertisements"] });
@@ -274,12 +342,12 @@ function AdvertisementsPage() {
     {
       key: "visitDate",
       header: t("advertisements.visitDate"),
-      cell: (row) => row.visitDate ? formatDate(row.visitDate) : "-",
+      cell: (row) => (row.visitDate ? formatDate(row.visitDate) : "-"),
     },
     {
       key: "expiryDate",
       header: t("advertisements.expiryDate"),
-      cell: (row) => row.expiryDate ? formatDate(row.expiryDate) : "-",
+      cell: (row) => (row.expiryDate ? formatDate(row.expiryDate) : "-"),
     },
     {
       key: "boardPrice",
@@ -306,28 +374,30 @@ function AdvertisementsPage() {
     );
   }
 
-  const totalPages = Math.ceil((advertisements.data?.total ?? 0) / pageSize);
-
   return (
     <div>
       <PageHeader
         title={t("advertisements.pageTitle")}
         subtitle={t("advertisements.pageSubtitle")}
-        actions={canManage ? (
-          <Button onClick={() => setCreating(true)}>
-            <Plus className="me-1 h-4 w-4" />
-            {t("common.add")}
-          </Button>
-        ) : undefined}
+        actions={
+          canManage ? (
+            <Button onClick={() => setCreating(true)}>
+              <Plus className="me-1 h-4 w-4" />
+              {t("common.add")}
+            </Button>
+          ) : undefined
+        }
       />
 
       <div className="mb-6 space-y-4 rounded-xl border border-border bg-card p-4">
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <div>
-            <Label htmlFor="q" className="text-xs font-medium">{t("common.search")}</Label>
+            <Label htmlFor="q" className="text-xs font-medium">
+              {t("common.search")}
+            </Label>
             <Input
               id="q"
-              placeholder={t("advertisements.code")}
+              placeholder={t("common.search")}
               value={q}
               onChange={(e) => {
                 setQ(e.target.value);
@@ -338,7 +408,9 @@ function AdvertisementsPage() {
           </div>
 
           <div>
-            <Label htmlFor="status" className="text-xs font-medium">{t("advertisements.status")}</Label>
+            <Label htmlFor="status" className="text-xs font-medium">
+              {t("advertisements.status")}
+            </Label>
             <Select
               value={status}
               onValueChange={(value) => {
@@ -352,7 +424,9 @@ function AdvertisementsPage() {
               <SelectContent>
                 <SelectItem value="all">{t("common.all")}</SelectItem>
                 {STATUS_VALUES.map((value) => (
-                  <SelectItem key={value} value={value}>{value}</SelectItem>
+                  <SelectItem key={value} value={value}>
+                    {value}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -369,7 +443,7 @@ function AdvertisementsPage() {
 
       <DataTable
         columns={columns}
-        rows={advertisements.data?.items ?? []}
+        rows={visibleAdvertisements}
         loading={advertisements.isLoading}
         error={advertisements.error}
         rowKey={(row) => row.id}
@@ -378,12 +452,13 @@ function AdvertisementsPage() {
         onRowClick={(row) => setSelected(row)}
       />
 
-      {(advertisements.data?.total ?? 0) > 0 && (
+      {filteredAdvertisements.length > 0 && (
         <div className="mt-4 flex items-center justify-between">
           <div className="text-sm text-muted-foreground">
             {t("common.skip", { defaultValue: "Showing" })} {(page - 1) * pageSize + 1}
             {" - "}
-            {Math.min(page * pageSize, advertisements.data?.total ?? 0)} {t("common.of", { defaultValue: "of" })} {advertisements.data?.total}
+            {Math.min(page * pageSize, filteredAdvertisements.length)}{" "}
+            {t("common.of", { defaultValue: "of" })} {filteredAdvertisements.length}
           </div>
           <div className="flex gap-2">
             <Button
@@ -432,10 +507,14 @@ function AdvertisementsPage() {
         submitting={submitting}
         title={canManage ? t("common.edit") : t("common.details")}
         submitLabel={canManage ? t("common.save") : t("common.close")}
-        onSubmit={canManage ? handleUpdate : (e) => {
-          e.preventDefault();
-          setSelected(null);
-        }}
+        onSubmit={
+          canManage
+            ? handleUpdate
+            : (e) => {
+                e.preventDefault();
+                setSelected(null);
+              }
+        }
       />
 
       <ConfirmDialog
@@ -491,16 +570,30 @@ function AdvertisementDialog({
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2">
           <Label htmlFor="code">{t("advertisements.code")}</Label>
-          <Input id="code" name="code" defaultValue={advertisement?.code ?? ""} required readOnly={readOnly} />
+          <Input
+            id="code"
+            name="code"
+            defaultValue={advertisement?.code ?? ""}
+            required
+            readOnly={readOnly}
+          />
         </div>
 
         <div className="space-y-2">
           <Label htmlFor="status">{t("advertisements.status")}</Label>
-          <Select name="status" defaultValue={advertisement?.status ?? STATUS_VALUES[0]} disabled={readOnly}>
-            <SelectTrigger id="status"><SelectValue /></SelectTrigger>
+          <Select
+            name="status"
+            defaultValue={advertisement?.status ?? STATUS_VALUES[0]}
+            disabled={readOnly}
+          >
+            <SelectTrigger id="status">
+              <SelectValue />
+            </SelectTrigger>
             <SelectContent>
               {STATUS_VALUES.map((value) => (
-                <SelectItem key={value} value={value}>{value}</SelectItem>
+                <SelectItem key={value} value={value}>
+                  {value}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -512,7 +605,9 @@ function AdvertisementDialog({
             id="visitDate"
             name="visitDate"
             type="date"
-            defaultValue={advertisement?.visitDate ? String(advertisement.visitDate).slice(0, 10) : ""}
+            defaultValue={
+              advertisement?.visitDate ? String(advertisement.visitDate).slice(0, 10) : ""
+            }
             readOnly={readOnly}
           />
         </div>
@@ -523,23 +618,38 @@ function AdvertisementDialog({
             id="expiryDate"
             name="expiryDate"
             type="date"
-            defaultValue={advertisement?.expiryDate ? String(advertisement.expiryDate).slice(0, 10) : ""}
+            defaultValue={
+              advertisement?.expiryDate ? String(advertisement.expiryDate).slice(0, 10) : ""
+            }
             readOnly={readOnly}
           />
         </div>
 
         <div className="space-y-2">
           <Label htmlFor="adNumber">{t("advertisements.adNumber")}</Label>
-          <Input id="adNumber" name="adNumber" defaultValue={advertisement?.adNumber ?? ""} readOnly={readOnly} />
+          <Input
+            id="adNumber"
+            name="adNumber"
+            defaultValue={advertisement?.adNumber ?? ""}
+            readOnly={readOnly}
+          />
         </div>
 
         <div className="space-y-2">
           <Label htmlFor="propertyType">{t("advertisements.propertyType")}</Label>
-          <Select name="propertyType" defaultValue={advertisement?.propertyType ?? PROPERTY_TYPE_VALUES[0]} disabled={readOnly}>
-            <SelectTrigger id="propertyType"><SelectValue /></SelectTrigger>
+          <Select
+            name="propertyType"
+            defaultValue={advertisement?.propertyType ?? PROPERTY_TYPE_VALUES[0]}
+            disabled={readOnly}
+          >
+            <SelectTrigger id="propertyType">
+              <SelectValue />
+            </SelectTrigger>
             <SelectContent>
               {PROPERTY_TYPE_VALUES.map((value) => (
-                <SelectItem key={value} value={value}>{value}</SelectItem>
+                <SelectItem key={value} value={value}>
+                  {value}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -547,12 +657,24 @@ function AdvertisementDialog({
 
         <div className="space-y-2 sm:col-span-2">
           <Label htmlFor="location">{t("advertisements.location")}</Label>
-          <Input id="location" name="location" defaultValue={advertisement?.location ?? ""} readOnly={readOnly} />
+          <Input
+            id="location"
+            name="location"
+            defaultValue={advertisement?.location ?? ""}
+            readOnly={readOnly}
+          />
         </div>
 
         <div className="space-y-2">
           <Label htmlFor="quantity">{t("advertisements.quantity")}</Label>
-          <Input id="quantity" name="quantity" type="number" min={1} defaultValue={advertisement?.quantity ?? 1} readOnly={readOnly} />
+          <Input
+            id="quantity"
+            name="quantity"
+            type="number"
+            min={1}
+            defaultValue={advertisement?.quantity ?? 1}
+            readOnly={readOnly}
+          />
         </div>
 
         <div className="space-y-2">
@@ -574,7 +696,9 @@ function AdvertisementDialog({
             defaultValue={advertisement?.propertyId ? String(advertisement.propertyId) : "none"}
             disabled={readOnly}
           >
-            <SelectTrigger id="propertyId"><SelectValue /></SelectTrigger>
+            <SelectTrigger id="propertyId">
+              <SelectValue />
+            </SelectTrigger>
             <SelectContent>
               <SelectItem value="none">لا يوجد</SelectItem>
               {properties.map((property) => (
@@ -588,11 +712,19 @@ function AdvertisementDialog({
 
         <div className="space-y-2">
           <Label htmlFor="adType">{t("advertisements.adType")}</Label>
-          <Select name="adType" defaultValue={advertisement?.adType ?? AD_TYPE_VALUES[0]} disabled={readOnly}>
-            <SelectTrigger id="adType"><SelectValue /></SelectTrigger>
+          <Select
+            name="adType"
+            defaultValue={advertisement?.adType ?? AD_TYPE_VALUES[0]}
+            disabled={readOnly}
+          >
+            <SelectTrigger id="adType">
+              <SelectValue />
+            </SelectTrigger>
             <SelectContent>
               {AD_TYPE_VALUES.map((value) => (
-                <SelectItem key={value} value={value}>{value}</SelectItem>
+                <SelectItem key={value} value={value}>
+                  {value}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -600,11 +732,19 @@ function AdvertisementDialog({
 
         <div className="space-y-2">
           <Label htmlFor="installationType">{t("advertisements.installationType")}</Label>
-          <Select name="installationType" defaultValue={advertisement?.installationType ?? INSTALLATION_TYPE_VALUES[0]} disabled={readOnly}>
-            <SelectTrigger id="installationType"><SelectValue /></SelectTrigger>
+          <Select
+            name="installationType"
+            defaultValue={advertisement?.installationType ?? INSTALLATION_TYPE_VALUES[0]}
+            disabled={readOnly}
+          >
+            <SelectTrigger id="installationType">
+              <SelectValue />
+            </SelectTrigger>
             <SelectContent>
               {INSTALLATION_TYPE_VALUES.map((value) => (
-                <SelectItem key={value} value={value}>{value}</SelectItem>
+                <SelectItem key={value} value={value}>
+                  {value}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -612,27 +752,59 @@ function AdvertisementDialog({
 
         <div className="space-y-2 sm:col-span-2">
           <Label htmlFor="officeName">{t("advertisements.officeName")}</Label>
-          <Input id="officeName" name="officeName" defaultValue={advertisement?.officeName ?? ""} readOnly={readOnly} />
+          <Input
+            id="officeName"
+            name="officeName"
+            defaultValue={advertisement?.officeName ?? ""}
+            readOnly={readOnly}
+          />
         </div>
 
         <div className="space-y-2">
           <Label htmlFor="phoneNumber">{t("advertisements.phoneNumber")}</Label>
-          <Input id="phoneNumber" name="phoneNumber" defaultValue={advertisement?.phoneNumber ?? ""} readOnly={readOnly} />
+          <Input
+            id="phoneNumber"
+            name="phoneNumber"
+            defaultValue={advertisement?.phoneNumber ?? ""}
+            readOnly={readOnly}
+          />
         </div>
 
         <div className="space-y-2">
           <Label htmlFor="boardPrice">{t("advertisements.boardPrice")}</Label>
-          <Input id="boardPrice" name="boardPrice" type="number" step="0.01" min={0} defaultValue={advertisement?.boardPrice ?? ""} readOnly={readOnly} />
+          <Input
+            id="boardPrice"
+            name="boardPrice"
+            type="number"
+            step="0.01"
+            min={0}
+            defaultValue={advertisement?.boardPrice ?? ""}
+            readOnly={readOnly}
+          />
         </div>
 
         <div className="space-y-2">
           <Label htmlFor="remainingAmount">{t("advertisements.remainingAmount")}</Label>
-          <Input id="remainingAmount" name="remainingAmount" type="number" step="0.01" min={0} defaultValue={advertisement?.remainingAmount ?? ""} readOnly={readOnly} />
+          <Input
+            id="remainingAmount"
+            name="remainingAmount"
+            type="number"
+            step="0.01"
+            min={0}
+            defaultValue={advertisement?.remainingAmount ?? ""}
+            readOnly={readOnly}
+          />
         </div>
 
         <div className="space-y-2 sm:col-span-2">
           <Label htmlFor="notes">{t("advertisements.notes")}</Label>
-          <Textarea id="notes" name="notes" defaultValue={advertisement?.notes ?? ""} rows={4} readOnly={readOnly} />
+          <Textarea
+            id="notes"
+            name="notes"
+            defaultValue={advertisement?.notes ?? ""}
+            rows={4}
+            readOnly={readOnly}
+          />
         </div>
       </div>
     </FormDialog>

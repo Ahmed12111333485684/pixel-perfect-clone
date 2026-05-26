@@ -9,7 +9,13 @@ import { DataTable, type Column } from "@/components/DataTable";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { FormDialog, ConfirmDialog } from "@/components/FormDialog";
 import { Plus } from "lucide-react";
 import { toast } from "sonner";
@@ -25,9 +31,19 @@ function ContractsPage() {
   const auth = useAuth();
   const qc = useQueryClient();
 
-  const list = useQuery({ queryKey: ["contracts"], queryFn: () => api<Contract[]>("/api/contracts") });
-  const properties = useQuery({ queryKey: ["properties"], queryFn: () => api<PropertyDto[]>("/api/properties") });
-  const tenants = useQuery({ queryKey: ["tenants"], queryFn: () => api<Tenant[]>("/api/tenants"), enabled: auth.isStaff });
+  const list = useQuery({
+    queryKey: ["contracts"],
+    queryFn: () => api<Contract[]>("/api/contracts"),
+  });
+  const properties = useQuery({
+    queryKey: ["properties"],
+    queryFn: () => api<PropertyDto[]>("/api/properties"),
+  });
+  const tenants = useQuery({
+    queryKey: ["tenants"],
+    queryFn: () => api<Tenant[]>("/api/tenants"),
+    enabled: auth.isStaff,
+  });
 
   const [creating, setCreating] = useState(false);
   const [creatingTenant, setCreatingTenant] = useState(false);
@@ -40,12 +56,21 @@ function ContractsPage() {
       if (vals.id) await api(`/api/contracts/${vals.id}`, { method: "PUT", body: vals });
       else await api("/api/contracts", { method: "POST", body: vals });
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["contracts"] }); toast.success(t("common.success")); setCreating(false); setEditing(null); },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["contracts"] });
+      toast.success(t("common.success"));
+      setCreating(false);
+      setEditing(null);
+    },
     onError: (e: Error) => toast.error(e.message),
   });
   const del = useMutation({
     mutationFn: (id: number) => api(`/api/contracts/${id}`, { method: "DELETE" }),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["contracts"] }); toast.success(t("common.deleted")); setDeleting(null); },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["contracts"] });
+      toast.success(t("common.deleted"));
+      setDeleting(null);
+    },
     onError: (e: Error) => toast.error(e.message),
   });
 
@@ -71,13 +96,33 @@ function ContractsPage() {
   );
 
   const cols: Column<Contract>[] = [
-    { key: "deed", header: t("common.deedNumber"), cell: (r) => <span className="font-mono text-xs">{r.deedNumber}</span> },
-    { key: "prop", header: t("nav.properties"), cell: (r) => propertyLabelById.get(r.propertyId) ?? `#${r.propertyId}` },
-    { key: "tenant", header: t("nav.tenants"), cell: (r) => tenantLabelById.get(r.tenantId) ?? `#${r.tenantId}` },
+    {
+      key: "deed",
+      header: t("common.deedNumber"),
+      cell: (r) => <span className="font-mono text-xs">{r.deedNumber}</span>,
+    },
+    {
+      key: "prop",
+      header: t("nav.properties"),
+      cell: (r) => propertyLabelById.get(r.propertyId) ?? `#${r.propertyId}`,
+    },
+    {
+      key: "tenant",
+      header: t("nav.tenants"),
+      cell: (r) => tenantLabelById.get(r.tenantId) ?? `#${r.tenantId}`,
+    },
     { key: "rent", header: t("common.monthlyRent"), cell: (r) => formatMoney(r.monthlyRent) },
     { key: "start", header: t("common.startDate"), cell: (r) => formatDate(r.startDate) },
     { key: "end", header: t("common.endDate"), cell: (r) => formatDate(r.endDate) },
-    { key: "status", header: t("common.status"), cell: (r) => <StatusBadge tone={contractStatusTone(r.status)}>{t(`contractStatus.${r.status}`)}</StatusBadge> },
+    {
+      key: "status",
+      header: t("common.status"),
+      cell: (r) => (
+        <StatusBadge tone={contractStatusTone(r.status)}>
+          {t(`contractStatus.${r.status}`)}
+        </StatusBadge>
+      ),
+    },
   ];
 
   const filteredContracts = useMemo(() => {
@@ -85,8 +130,12 @@ function ContractsPage() {
     const lowerSearch = search.toLowerCase();
     return (list.data ?? []).filter((contract) => {
       const deedMatch = contract.deedNumber.toLowerCase().includes(lowerSearch);
-      const propMatch = (propertyLabelById.get(contract.propertyId) ?? "").toLowerCase().includes(lowerSearch);
-      const tenantMatch = (tenantLabelById.get(contract.tenantId) ?? "").toLowerCase().includes(lowerSearch);
+      const propMatch = (propertyLabelById.get(contract.propertyId) ?? "")
+        .toLowerCase()
+        .includes(lowerSearch);
+      const tenantMatch = (tenantLabelById.get(contract.tenantId) ?? "")
+        .toLowerCase()
+        .includes(lowerSearch);
       return deedMatch || propMatch || tenantMatch;
     });
   }, [list.data, search, propertyLabelById, tenantLabelById]);
@@ -95,11 +144,18 @@ function ContractsPage() {
     <div>
       <PageHeader
         title={t("nav.contracts")}
-        actions={auth.isStaff && <Button onClick={() => setCreating(true)}><Plus className="me-1 h-4 w-4" />{t("common.add")}</Button>}
+        actions={
+          auth.isStaff && (
+            <Button onClick={() => setCreating(true)}>
+              <Plus className="me-1 h-4 w-4" />
+              {t("common.add")}
+            </Button>
+          )
+        }
       />
       <div className="mb-4">
         <Input
-          placeholder={t("common.search")}
+          placeholder={`${t("common.search")} (رقم الصك، عقود، عقار)`}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="max-w-sm"
@@ -116,7 +172,12 @@ function ContractsPage() {
       />
       <ContractDialog
         open={creating || !!editing}
-        onOpenChange={(v) => { if (!v) { setCreating(false); setEditing(null); } }}
+        onOpenChange={(v) => {
+          if (!v) {
+            setCreating(false);
+            setEditing(null);
+          }
+        }}
         contract={editing}
         properties={properties.data ?? []}
         tenants={tenants.data ?? []}
@@ -159,11 +220,31 @@ function ContractsPage() {
   );
 }
 
-function ContractDialog({ open, onOpenChange, contract, properties, tenants, onAddTenant, onSubmit, submitting }: {
-  open: boolean; onOpenChange: (v: boolean) => void; contract: Contract | null;
-  properties: PropertyDto[]; tenants: Tenant[];
+function ContractDialog({
+  open,
+  onOpenChange,
+  contract,
+  properties,
+  tenants,
+  onAddTenant,
+  onSubmit,
+  submitting,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  contract: Contract | null;
+  properties: PropertyDto[];
+  tenants: Tenant[];
   onAddTenant: () => void;
-  onSubmit: (v: { propertyId: number; tenantId: number; deedNumber: string; startDate: string; endDate: string; monthlyRent: number; status: ContractStatus }) => void;
+  onSubmit: (v: {
+    propertyId: number;
+    tenantId: number;
+    deedNumber: string;
+    startDate: string;
+    endDate: string;
+    monthlyRent: number;
+    status: ContractStatus;
+  }) => void;
   submitting?: boolean;
 }) {
   const { t } = useTranslation();
@@ -213,9 +294,18 @@ function ContractDialog({ open, onOpenChange, contract, properties, tenants, onA
     setEndYear(end.year);
     setEndMonth(end.month);
     setEndDay(end.day);
-  }, [contract?.id, contract?.propertyId, contract?.tenantId, contract?.status, contract?.startDate, contract?.endDate, open]);
+  }, [
+    contract?.id,
+    contract?.propertyId,
+    contract?.tenantId,
+    contract?.status,
+    contract?.startDate,
+    contract?.endDate,
+    open,
+  ]);
 
-  const sanitizeDigits = (value: string, maxLength: number) => value.replace(/\D/g, "").slice(0, maxLength);
+  const sanitizeDigits = (value: string, maxLength: number) =>
+    value.replace(/\D/g, "").slice(0, maxLength);
 
   const clampMonth = (value: string) => {
     if (!value) return value;
@@ -297,7 +387,9 @@ function ContractDialog({ open, onOpenChange, contract, properties, tenants, onA
         <div className="space-y-2">
           <Label>{t("nav.properties")}</Label>
           <Select value={propertyId} onValueChange={setPropertyId}>
-            <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
+            <SelectTrigger>
+              <SelectValue placeholder="—" />
+            </SelectTrigger>
             <SelectContent>
               {properties.map((property) => (
                 <SelectItem key={property.id} value={String(property.id)}>
@@ -310,12 +402,21 @@ function ContractDialog({ open, onOpenChange, contract, properties, tenants, onA
         <div className="space-y-2">
           <div className="flex items-center justify-between gap-2">
             <Label>{t("nav.tenants")}</Label>
-            <Button type="button" variant="ghost" size="sm" onClick={onAddTenant} className="h-7 px-2 text-xs">
-              <Plus className="me-1 h-3 w-3" />{t("common.add")}
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={onAddTenant}
+              className="h-7 px-2 text-xs"
+            >
+              <Plus className="me-1 h-3 w-3" />
+              {t("common.add")}
             </Button>
           </div>
           <Select value={tenantId} onValueChange={setTenantId}>
-            <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
+            <SelectTrigger>
+              <SelectValue placeholder="—" />
+            </SelectTrigger>
             <SelectContent>
               {tenants.map((tenant) => (
                 <SelectItem key={tenant.id} value={String(tenant.id)}>
@@ -327,8 +428,26 @@ function ContractDialog({ open, onOpenChange, contract, properties, tenants, onA
         </div>
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
-        <div className="space-y-2"><Label htmlFor="deedNumber">{t("common.deedNumber")}</Label><Input id="deedNumber" name="deedNumber" defaultValue={contract?.deedNumber ?? ""} required /></div>
-        <div className="space-y-2"><Label htmlFor="monthlyRent">{t("common.monthlyRent")}</Label><Input id="monthlyRent" name="monthlyRent" type="number" step="0.01" defaultValue={contract?.monthlyRent ?? ""} required /></div>
+        <div className="space-y-2">
+          <Label htmlFor="deedNumber">{t("common.deedNumber")}</Label>
+          <Input
+            id="deedNumber"
+            name="deedNumber"
+            defaultValue={contract?.deedNumber ?? ""}
+            required
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="monthlyRent">{t("common.monthlyRent")}</Label>
+          <Input
+            id="monthlyRent"
+            name="monthlyRent"
+            type="number"
+            step="0.01"
+            defaultValue={contract?.monthlyRent ?? ""}
+            required
+          />
+        </div>
         <div className="space-y-2">
           <Label htmlFor="startDate">{t("common.startDate")}</Label>
           <input type="hidden" id="startDate" name="startDate" value={startDate} />
@@ -446,9 +565,15 @@ function ContractDialog({ open, onOpenChange, contract, properties, tenants, onA
       <div className="space-y-2">
         <Label>{t("common.status")}</Label>
         <Select value={status} onValueChange={(v) => setStatus(v as ContractStatus)}>
-          <SelectTrigger><SelectValue /></SelectTrigger>
+          <SelectTrigger>
+            <SelectValue />
+          </SelectTrigger>
           <SelectContent>
-            {STATUSES.map((s) => <SelectItem key={s} value={s}>{t(`contractStatus.${s}`)}</SelectItem>)}
+            {STATUSES.map((s) => (
+              <SelectItem key={s} value={s}>
+                {t(`contractStatus.${s}`)}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
       </div>

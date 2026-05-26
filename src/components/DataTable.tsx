@@ -1,4 +1,11 @@
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Pencil, Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -23,7 +30,14 @@ interface DataTableProps<T> {
 }
 
 export function DataTable<T>({
-  columns, rows, loading, error, rowKey, onEdit, onDelete, onRowClick,
+  columns,
+  rows,
+  loading,
+  error,
+  rowKey,
+  onEdit,
+  onDelete,
+  onRowClick,
 }: DataTableProps<T>) {
   const { t } = useTranslation();
   if (loading) return <LoadingBlock />;
@@ -39,9 +53,13 @@ export function DataTable<T>({
           <TableHeader>
             <TableRow className="bg-muted/50">
               {columns.map((c) => (
-                <TableHead key={c.key} className={c.className}>{c.header}</TableHead>
+                <TableHead key={c.key} className={c.className}>
+                  {c.header}
+                </TableHead>
               ))}
-              {showActions && <TableHead className="w-24 text-end">{t("common.actions")}</TableHead>}
+              {showActions && (
+                <TableHead className="w-24 text-end">{t("common.actions")}</TableHead>
+              )}
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -52,7 +70,9 @@ export function DataTable<T>({
                 onClick={onRowClick ? () => onRowClick(row) : undefined}
               >
                 {columns.map((c) => (
-                  <TableCell key={c.key} className={c.className}>{c.cell(row)}</TableCell>
+                  <TableCell key={c.key} className={c.className}>
+                    {c.cell(row)}
+                  </TableCell>
                 ))}
                 {showActions && (
                   <TableCell className="text-end" onClick={(e) => e.stopPropagation()}>
@@ -63,7 +83,12 @@ export function DataTable<T>({
                         </Button>
                       )}
                       {onDelete && (
-                        <Button variant="ghost" size="icon" onClick={() => onDelete(row)} className="text-destructive hover:text-destructive">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => onDelete(row)}
+                          className="text-destructive hover:text-destructive"
+                        >
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       )}

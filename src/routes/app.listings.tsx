@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+﻿import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { memo, useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -62,6 +62,7 @@ const COMMERCIAL_FIELDS = [
 
 type CommercialFieldKey = (typeof COMMERCIAL_FIELDS)[number];
 
+
 type BrokerageContractFormValue = {
   id: string;
   brokerageContract: string;
@@ -108,11 +109,6 @@ const DEAL_THROUGH_OPTIONS = [
 
 function normalizeValue(value: string | null | undefined) {
   return (value ?? "").trim();
-}
-
-function isTruthyValue(value: string | null | undefined) {
-  const normalized = normalizeValue(value).toLowerCase();
-  return normalized.length > 0 && !["false", "0", "no", "off"].includes(normalized);
 }
 
 function isPublished(value: string | null | undefined) {
@@ -189,6 +185,7 @@ function CommercialListingsPage() {
   const qc = useQueryClient();
 
   const [q, setQ] = useState("");
+  const [deedQ, setDeedQ] = useState("");
   const [status, setStatus] = useState<string>("all");
   const [page, setPage] = useState(1);
   const [pageSize] = useState(20);
@@ -200,43 +197,46 @@ function CommercialListingsPage() {
   const [submitting, setSubmitting] = useState(false);
   const [deletingRecord, setDeletingRecord] = useState(false);
 
-  const hasAccess = auth.hasRole("Admin")
-    || auth.isPartner
-    || auth.user?.screenPermissions.includes("/app/listings");
+  const hasAccess = auth.hasRole("Admin") || auth.isPartner || auth.user?.screenPermissions.includes("/app/listings");
   const canManage = auth.isStaff || auth.isPartner;
 
-  const listings = useQuery({
-    queryKey: ["listings", { q, status, page, pageSize, sortBy, sortDir }],
-    queryFn: () => api<CommercialListingSearchResult>("/api/listings", {
-      query: {
-        q: q || undefined,
-        status: status !== "all" ? status : undefined,
-        page,
-        pageSize,
-        sortBy: sortBy || undefined,
-        sortDir: sortDir || undefined,
-      },
-    }),
+  // Aggregate all listing pages so we can search locally (including deed number)
+  const listings = useQuery<CommercialListing[]>({
+    queryKey: ["commercial-listings"],
+    queryFn: async () => {
+      const fetchPage = (pageNumber: number) =>
+        api<CommercialListingSearchResult>("/api/listings", {
+          query: {
+            page: pageNumber,
+            pageSize: 100,
+            sortBy: sortBy || undefined,
+            sortDir: sortDir || undefined,
+          },
+        });
+
+      const firstPage = await fetchPage(1);
+      const totalPages = Math.max(1, Math.ceil((firstPage.total ?? 0) / 100));
+      if (totalPages === 1) return firstPage.items ?? [];
+
+      const extraPages = await Promise.all(
+        Array.from({ length: totalPages - 1 }, (_, index) => fetchPage(index + 2)),
+      );
+
+      return [...(firstPage.items ?? []), ...extraPages.flatMap((r) => r.items ?? [])];
+    },
     enabled: hasAccess,
   });
 
-  const partners = useQuery({
-    queryKey: ["partners", "lookup"],
-    queryFn: fetchPartners,
-    enabled: hasAccess,
-  });
+  const partners = useQuery({ queryKey: ["partners", "lookup"], queryFn: fetchPartners, enabled: hasAccess });
 
   const handleReset = () => {
     setQ("");
+    setDeedQ("");
     setStatus("all");
     setPage(1);
   };
 
-  const handleCreate = async (
-    e: React.FormEvent<HTMLFormElement>,
-    publishing: PublishingState,
-    contracts: BrokerageContractFormValue[],
-  ) => {
+  const handleCreate = async (e: React.FormEvent<HTMLFormElement>, publishing: PublishingState, contracts: BrokerageContractFormValue[]) => {
     e.preventDefault();
     setSubmitting(true);
     try {
@@ -245,7 +245,7 @@ function CommercialListingsPage() {
       await api<CommercialListing>("/api/listings", { method: "POST", body: payload });
       toast.success(t("common.created"));
       setCreating(false);
-      qc.invalidateQueries({ queryKey: ["listings"] });
+      qc.invalidateQueries({ queryKey: ["commercial-listings"] });
     } catch (error) {
       toast.error(t("common.error"));
     } finally {
@@ -253,11 +253,7 @@ function CommercialListingsPage() {
     }
   };
 
-  const handleUpdate = async (
-    e: React.FormEvent<HTMLFormElement>,
-    publishing: PublishingState,
-    contracts: BrokerageContractFormValue[],
-  ) => {
+  const handleUpdate = async (e: React.FormEvent<HTMLFormElement>, publishing: PublishingState, contracts: BrokerageContractFormValue[]) => {
     e.preventDefault();
     if (!selected) return;
     setSubmitting(true);
@@ -271,7 +267,7 @@ function CommercialListingsPage() {
       await api<CommercialListing>(`/api/listings/${selected.id}`, { method: "PUT", body: payload });
       toast.success(t("common.updated"));
       setSelected(null);
-      qc.invalidateQueries({ queryKey: ["listings"] });
+      qc.invalidateQueries({ queryKey: ["commercial-listings"] });
     } catch (error) {
       toast.error(t("common.error"));
     } finally {
@@ -286,7 +282,7 @@ function CommercialListingsPage() {
       await api(`/api/listings/${deleting.id}`, { method: "DELETE" });
       toast.success(t("common.deleted"));
       setDeleting(null);
-      qc.invalidateQueries({ queryKey: ["listings"] });
+      qc.invalidateQueries({ queryKey: ["commercial-listings"] });
     } catch (error) {
       toast.error(t("common.error"));
     } finally {
@@ -312,93 +308,25 @@ function CommercialListingsPage() {
   };
 
   const columns: Column<CommercialListing>[] = [
-    {
-      key: "adNumber",
-      header: t("commercialListings.adNumber"),
-      cell: (r) => r.adNumber || t("common.notProvided"),
-    },
-    {
-      key: "contactDate",
-      header: t("commercialListings.contactDate"),
-      cell: (r) => r.contactDate || t("common.notProvided"),
-    },
-    {
-      key: "propertyStatus",
-      header: t("commercialListings.propertyStatus"),
-      cell: (r) => (
-        <StatusBadge tone={statusTone(r.propertyStatus)}>{statusLabel(r.propertyStatus)}</StatusBadge>
-      ),
-    },
-    {
-      key: "listingType",
-      header: t("commercialListings.listingType"),
-      cell: (r) => {
-        const normalized = normalizeValue(r.listingType);
-        if (!normalized) return t("common.notProvided");
-        return t(`listingType.${normalized}` as const, { defaultValue: normalized });
-      },
-    },
-    {
-      key: "dealThrough",
-      header: t("commercialListings.dealThrough"),
-      cell: (r) => {
+    { key: "adNumber", header: t("commercialListings.adNumber"), cell: (r) => r.adNumber || t("common.notProvided") },
+    { key: "contactDate", header: t("commercialListings.contactDate"), cell: (r) => r.contactDate || t("common.notProvided") },
+    { key: "propertyStatus", header: t("commercialListings.propertyStatus"), cell: (r) => <StatusBadge tone={statusTone(r.propertyStatus)}>{statusLabel(r.propertyStatus)}</StatusBadge> },
+    { key: "dealThrough", header: t("commercialListings.dealThrough"), cell: (r) => {
         const normalized = normalizeValue(r.dealThrough);
         if (!normalized) return t("common.notProvided");
         if (normalized === DEAL_THROUGH_OWNER) return t("commercialListings.dealThroughOwner");
         if (normalized === DEAL_THROUGH_OFFICE) return t("commercialListings.dealThroughOffice");
         return r.dealThrough || t("common.notProvided");
-      },
-    },
-    {
-      key: "brokerageContractsCount",
-      header: t("commercialListings.brokerageContracts"),
-      cell: (r) => {
-        const count = r.brokerageContracts?.length ?? 0;
-        return count > 0 ? `${count}` : t("common.notProvided");
-      },
-    },
-    {
-      key: "ownerName",
-      header: t("commercialListings.ownerName"),
-      cell: (r) => <span className="font-medium">{r.ownerName || t("common.notProvided")}</span>,
-    },
-    {
-      key: "deedNumber",
-      header: t("commercialListings.deedNumber"),
-      cell: (r) => (
-        r.deedNumber ? <span className="font-mono text-sm">{r.deedNumber}</span> : t("common.notProvided")
-      ),
-    },
-    {
-      key: "mobile1",
-      header: t("commercialListings.mobile1"),
-      cell: (r) => r.mobile1 || t("common.notProvided"),
-    },
-    {
-      key: "propertyType",
-      header: t("commercialListings.propertyType"),
-      cell: (r) => r.propertyType || t("common.notProvided"),
-    },
-    {
-      key: "rentAmount",
-      header: t("commercialListings.price"),
-      cell: (r) => r.rentAmount || t("common.notProvided"),
-    },
-    {
-      key: "paymentType",
-      header: t("commercialListings.paymentType"),
-      cell: (r) => r.paymentType || t("common.notProvided"),
-    },
-    {
-      key: "location",
-      header: t("commercialListings.location"),
-      cell: (r) => r.location || t("common.notProvided"),
-    },
-    {
-      key: "employee",
-      header: t("common.employee"),
-      cell: (r) => r.employee || t("common.notProvided"),
-    },
+      } },
+    { key: "brokerageContractsCount", header: t("commercialListings.brokerageContracts"), cell: (r) => { const count = r.brokerageContracts?.length ?? 0; return count > 0 ? `${count}` : t("common.notProvided"); } },
+    { key: "ownerName", header: t("commercialListings.ownerName"), cell: (r) => <span className="font-medium">{r.ownerName || t("common.notProvided")}</span> },
+    { key: "deedNumber", header: t("commercialListings.deedNumber"), cell: (r) => (r.deedNumber ? <span className="font-mono text-sm">{r.deedNumber}</span> : t("common.notProvided")) },
+    { key: "mobile1", header: t("commercialListings.mobile1"), cell: (r) => r.mobile1 || t("common.notProvided") },
+    { key: "propertyType", header: t("commercialListings.propertyType"), cell: (r) => r.propertyType || t("common.notProvided") },
+    { key: "rentAmount", header: t("commercialListings.rentAmount"), cell: (r) => r.rentAmount || t("common.notProvided") },
+    { key: "paymentType", header: t("commercialListings.paymentType"), cell: (r) => r.paymentType || t("common.notProvided") },
+    { key: "location", header: t("commercialListings.location"), cell: (r) => r.location || t("common.notProvided") },
+    { key: "employee", header: t("common.employee"), cell: (r) => r.employee || t("common.notProvided") },
   ];
 
   if (!hasAccess) {
@@ -409,19 +337,48 @@ function CommercialListingsPage() {
     );
   }
 
-  const totalPages = Math.ceil((listings.data?.total ?? 0) / pageSize);
+  // Client-side filtering so `رقم الصك` (deedNumber) is searchable
+  const filteredListings = useMemo(() => {
+    const lower = q.trim().toLowerCase();
+    const deedLower = deedQ.trim().toLowerCase();
+    const items = listings.data ?? [];
+    return items.filter((record) => {
+      const qMatch =
+        !lower ||
+        [record.ownerName, record.adNumber, record.deedNumber, record.location, record.propertyType, record.propertyStatus]
+          .some((v) => (v ?? "").toLowerCase().includes(lower));
+
+      const deedMatch = !deedLower || (record.deedNumber ?? "").toLowerCase().includes(deedLower);
+
+      const statusMatch = status === "all" || record.propertyStatus === status;
+      return qMatch && deedMatch && statusMatch;
+    });
+  }, [listings.data, q, deedQ, status]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredListings.length / pageSize));
+
+  useEffect(() => {
+    setPage((current) => Math.min(current, totalPages));
+  }, [totalPages]);
+
+  const visibleListings = useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return filteredListings.slice(start, start + pageSize);
+  }, [filteredListings, page, pageSize]);
 
   return (
     <div>
       <PageHeader
         title={t("commercialListings.pageTitle")}
         subtitle={t("commercialListings.pageSubtitle")}
-        actions={canManage ? (
-          <Button onClick={() => setCreating(true)}>
-            <Plus className="me-1 h-4 w-4" />
-            {t("common.add")}
-          </Button>
-        ) : undefined}
+        actions={
+          canManage ? (
+            <Button onClick={() => setCreating(true)}>
+              <Plus className="me-1 h-4 w-4" />
+              {t("common.add")}
+            </Button>
+          ) : undefined
+        }
       />
 
       <div className="mb-6 space-y-4 rounded-xl border border-border bg-card p-4">
@@ -432,10 +389,25 @@ function CommercialListingsPage() {
             </Label>
             <Input
               id="q"
-              placeholder={t("commercialListings.ownerName")}
+              placeholder={t("common.search")}
               value={q}
               onChange={(e) => {
                 setQ(e.target.value);
+                setPage(1);
+              }}
+              className="mt-1"
+            />
+          </div>
+
+          <div className="sm:col-span-2 lg:col-span-1">
+            <Label htmlFor="deedQ" className="text-xs font-medium">{t("commercialListings.deedNumber")}</Label>
+            <Input
+              id="deedQ"
+              name="deedQ"
+              placeholder={t("commercialListings.deedNumber")}
+              value={deedQ}
+              onChange={(e) => {
+                setDeedQ(e.target.value);
                 setPage(1);
               }}
               className="mt-1"
@@ -478,7 +450,7 @@ function CommercialListingsPage() {
 
       <DataTable
         columns={columns}
-        rows={listings.data?.items ?? []}
+        rows={visibleListings}
         loading={listings.isLoading}
         error={listings.error}
         rowKey={(r) => r.id}
@@ -487,31 +459,21 @@ function CommercialListingsPage() {
         onRowClick={(row) => setSelected(row)}
       />
 
-      {(listings.data?.total ?? 0) > 0 && (
+      {filteredListings.length > 0 && (
         <div className="mt-4 flex items-center justify-between">
           <div className="text-sm text-muted-foreground">
             {t("common.skip", { defaultValue: "Showing" })} {(page - 1) * pageSize + 1}
             {" - "}
-            {Math.min(page * pageSize, listings.data?.total ?? 0)} {t("common.of", { defaultValue: "of" })} {listings.data?.total}
+            {Math.min(page * pageSize, filteredListings.length)} {t("common.of", { defaultValue: "of" })} {filteredListings.length}
           </div>
           <div className="flex gap-2">
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              disabled={page === 1}
-            >
+            <Button size="sm" variant="outline" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1}>
               {t("common.previous")}
             </Button>
             <div className="flex items-center gap-2">
               <span className="text-sm">{page}</span>
             </div>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-              disabled={page >= totalPages}
-            >
+            <Button size="sm" variant="outline" onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page >= totalPages}>
               {t("common.next")}
             </Button>
           </div>
@@ -594,24 +556,22 @@ function CommercialListingDialog({
   const [propertyStatus, setPropertyStatus] = useState<string>(listing?.propertyStatus ?? STATUS_AVAILABLE);
   const [listingType, setListingType] = useState<string>(listing?.listingType ?? "Rental");
   const [dealThrough, setDealThrough] = useState<string>(listing?.dealThrough ?? DEAL_THROUGH_OWNER);
-  const [hasKey, setHasKey] = useState<boolean>(isTruthyValue(listing?.hasKey));
+  const [hasKey, setHasKey] = useState<boolean>(Boolean(listing?.hasKey));
   const [contracts, setContracts] = useState<BrokerageContractFormValue[]>(() => {
-    const initialContracts = listing?.brokerageContracts?.length ? listing.brokerageContracts : [null];
-    return initialContracts.map((contract) => contract ? {
+    const initialContracts = listing?.brokerageContracts?.length ? listing?.brokerageContracts : [null];
+    return initialContracts.map((contract) => (contract ? {
       id: makeContractId(),
       brokerageContract: contract.brokerageContract ?? "",
       licenseNumber: contract.licenseNumber ?? "",
       contractExpiry: contract.contractExpiry ?? "",
-    } : emptyBrokerageContract());
+    } : emptyBrokerageContract()));
   });
 
   const partnerOptions = useMemo(() => partners
     .filter((partner) => partner.fullName.trim().length > 0)
     .sort((a, b) => a.fullName.localeCompare(b.fullName)), [partners]);
 
-  const hasCurrentBrokerInPartners = broker
-    ? partnerOptions.some((partner) => partner.fullName === broker)
-    : true;
+  const hasCurrentBrokerInPartners = broker ? partnerOptions.some((partner) => partner.fullName === broker) : true;
 
   const updateContract = useCallback((id: string, field: keyof Omit<BrokerageContractFormValue, "id">, value: string) => {
     setContracts((current) => current.map((item) => (item.id === id ? { ...item, [field]: value } : item)));
@@ -635,17 +595,15 @@ function CommercialListingDialog({
       setPropertyStatus(listing?.propertyStatus ?? STATUS_AVAILABLE);
       setListingType(listing?.listingType ?? "Rental");
       setDealThrough(listing?.dealThrough ?? DEAL_THROUGH_OWNER);
-      setHasKey(isTruthyValue(listing?.hasKey));
-      setContracts(
-        listing?.brokerageContracts?.length
-          ? listing.brokerageContracts.map((contract) => ({
-            id: makeContractId(),
-            brokerageContract: contract.brokerageContract ?? "",
-            licenseNumber: contract.licenseNumber ?? "",
-            contractExpiry: contract.contractExpiry ?? "",
-          }))
-          : [emptyBrokerageContract()],
-      );
+      setHasKey(Boolean(listing?.hasKey));
+      setContracts(listing?.brokerageContracts?.length
+        ? listing.brokerageContracts.map((contract) => ({
+          id: makeContractId(),
+          brokerageContract: contract.brokerageContract ?? "",
+          licenseNumber: contract.licenseNumber ?? "",
+          contractExpiry: contract.contractExpiry ?? "",
+        }))
+        : [emptyBrokerageContract()]);
     }
   }, [listing, open]);
 
@@ -665,27 +623,21 @@ function CommercialListingDialog({
           <TextField id="adNumber" label={t("commercialListings.adNumber")} defaultValue={listing?.adNumber} readOnly={readOnly} />
           <TextField id="contactDate" label={t("commercialListings.contactDate")} defaultValue={listing?.contactDate} readOnly={readOnly} />
           <div className="space-y-2">
-            <Label htmlFor="propertyStatus" className="text-xs font-medium">
-              {t("commercialListings.propertyStatus")}
-            </Label>
+            <Label htmlFor="propertyStatus" className="text-xs font-medium">{t("commercialListings.propertyStatus")}</Label>
             <Select value={propertyStatus} onValueChange={setPropertyStatus} disabled={readOnly}>
               <SelectTrigger id="propertyStatus" className="mt-1">
                 <SelectValue placeholder={t("commercialListings.propertyStatus")} />
               </SelectTrigger>
               <SelectContent>
                 {PROPERTY_STATUS_OPTIONS.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {t(option.labelKey)}
-                  </SelectItem>
+                  <SelectItem key={option.value} value={option.value}>{t(option.labelKey)}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
             <input type="hidden" name="propertyStatus" value={propertyStatus} />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="listingType" className="text-xs font-medium">
-              {t("commercialListings.listingType")}
-            </Label>
+            <Label htmlFor="listingType" className="text-xs font-medium">{t("commercialListings.listingType")}</Label>
             <Select value={listingType} onValueChange={setListingType} disabled={readOnly}>
               <SelectTrigger id="listingType" className="mt-1">
                 <SelectValue placeholder={t("commercialListings.listingType")} />
@@ -697,29 +649,9 @@ function CommercialListingDialog({
             </Select>
             <input type="hidden" name="listingType" value={listingType} />
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="dealThrough" className="text-xs font-medium">
-              {t("commercialListings.dealThrough")}
-            </Label>
-            <Select value={dealThrough} onValueChange={setDealThrough} disabled={readOnly}>
-              <SelectTrigger id="dealThrough" className="mt-1">
-                <SelectValue placeholder={t("commercialListings.dealThrough")} />
-              </SelectTrigger>
-              <SelectContent>
-                {DEAL_THROUGH_OPTIONS.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {t(option.labelKey)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <input type="hidden" name="dealThrough" value={dealThrough} />
-          </div>
           <TextField id="employee" label={t("common.employee")} defaultValue={listing?.employee} readOnly={readOnly} />
           <div className="space-y-2">
-            <Label htmlFor="broker" className="text-xs font-medium">
-              {t("commercialListings.broker")}
-            </Label>
+            <Label htmlFor="broker" className="text-xs font-medium">{t("commercialListings.broker")}</Label>
             <Select value={broker || "none"} onValueChange={(value) => setBroker(value === "none" ? "" : value)} disabled={readOnly}>
               <SelectTrigger id="broker" className="mt-1">
                 <SelectValue placeholder={partnersLoading ? "Loading partners..." : "Select partner"} />
@@ -727,13 +659,9 @@ function CommercialListingDialog({
               <SelectContent>
                 <SelectItem value="none">{t("common.notProvided")}</SelectItem>
                 {partnerOptions.map((partner) => (
-                  <SelectItem key={partner.id} value={partner.fullName}>
-                    {partner.fullName}
-                  </SelectItem>
+                  <SelectItem key={partner.id} value={partner.fullName}>{partner.fullName}</SelectItem>
                 ))}
-                {broker && !hasCurrentBrokerInPartners && (
-                  <SelectItem value={broker}>{broker}</SelectItem>
-                )}
+                {broker && !hasCurrentBrokerInPartners && <SelectItem value={broker}>{broker}</SelectItem>}
               </SelectContent>
             </Select>
             <input type="hidden" name="broker" value={broker} />
@@ -745,12 +673,7 @@ function CommercialListingDialog({
         <div className="flex items-center justify-between gap-3">
           <Label className="text-sm font-medium">{t("commercialListings.brokerageContracts")}</Label>
           {!readOnly && (
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={addContract}
-            >
+            <Button type="button" variant="outline" size="sm" onClick={addContract}>
               <Plus className="me-1 h-4 w-4" />
               {t("commercialListings.addBrokerageContract")}
             </Button>
@@ -758,15 +681,7 @@ function CommercialListingDialog({
         </div>
         <div className="space-y-4">
           {contracts.map((contract, index) => (
-            <BrokerageContractRow
-              key={contract.id}
-              contract={contract}
-              index={index}
-              readOnly={readOnly}
-              onChange={updateContract}
-              onRemove={removeContract}
-              t={t}
-            />
+            <BrokerageContractRow key={contract.id} contract={contract} index={index} readOnly={readOnly} onChange={updateContract} onRemove={removeContract} t={t} />
           ))}
         </div>
       </div>
@@ -787,33 +702,15 @@ function CommercialListingDialog({
 
       <div className="space-y-4 rounded-lg border border-border bg-muted/30 p-4">
         <div className="grid gap-4 sm:grid-cols-2">
-          <TextareaField
-            id="otherDetails"
-            label={t("commercialListings.otherDetails")}
-            defaultValue={listing?.otherDetails}
-            readOnly={readOnly}
-            className="sm:col-span-2"
-          />
-          <TextField
-            id="rentAmount"
-            label={listingType === "Sale" ? t("commercialListings.salePrice") : t("commercialListings.rentAmount")}
-            defaultValue={listing?.rentAmount}
-            readOnly={readOnly}
-          />
+          <TextareaField id="otherDetails" label={t("commercialListings.otherDetails")} defaultValue={listing?.otherDetails} readOnly={readOnly} className="sm:col-span-2" />
+          <TextField id="rentAmount" label={listingType === "Sale" ? t("commercialListings.salePrice") : t("commercialListings.rentAmount")} defaultValue={listing?.rentAmount} readOnly={readOnly} />
           <TextField id="paymentType" label={t("commercialListings.paymentType")} defaultValue={listing?.paymentType} readOnly={readOnly} />
           <TextField id="location" label={t("commercialListings.location")} defaultValue={listing?.location} readOnly={readOnly} />
           <TextField id="coordinates" label={t("commercialListings.coordinates")} defaultValue={listing?.coordinates} readOnly={readOnly} />
           <div className="flex items-center gap-3 rounded-lg border border-border bg-background px-3 py-3">
-            <Checkbox
-              id="hasKey"
-              checked={hasKey}
-              onCheckedChange={(checked) => setHasKey(checked === true)}
-              disabled={readOnly}
-            />
+            <Checkbox id="hasKey" checked={hasKey} onCheckedChange={(checked) => setHasKey(checked === true)} disabled={readOnly} />
             <div className="space-y-1">
-              <Label htmlFor="hasKey" className="text-sm font-medium">
-                {t("commercialListings.hasKey")}
-              </Label>
+              <Label htmlFor="hasKey" className="text-sm font-medium">{t("commercialListings.hasKey")}</Label>
             </div>
             <input type="hidden" name="hasKey" value={String(hasKey)} />
           </div>
@@ -825,14 +722,7 @@ function CommercialListingDialog({
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {PUBLISHING_CHANNELS.map((channel) => (
             <label key={channel.key} className="flex items-center gap-2 text-sm">
-              <Checkbox
-                checked={!!publishing[channel.key]}
-                onCheckedChange={(checked) => {
-                  if (readOnly) return;
-                  setPublishing((prev) => ({ ...prev, [channel.key]: checked === true }));
-                }}
-                disabled={readOnly}
-              />
+              <Checkbox checked={!!publishing[channel.key]} onCheckedChange={(checked) => { if (readOnly) return; setPublishing((prev) => ({ ...prev, [channel.key]: checked === true })); }} disabled={readOnly} />
               <span>{t(channel.labelKey)}</span>
             </label>
           ))}
@@ -846,91 +736,31 @@ function CommercialListingDialog({
   );
 }
 
-function TextField({
-  id,
-  label,
-  defaultValue,
-  readOnly,
-}: {
-  id: string;
-  label: string;
-  defaultValue?: string | null;
-  readOnly: boolean;
-}) {
+function TextField({ id, label, defaultValue, readOnly }: { id: string; label: string; defaultValue?: string | null; readOnly: boolean; }) {
   return (
     <div className="space-y-2">
-      <Label htmlFor={id} className="text-xs font-medium">
-        {label}
-      </Label>
-      <Input
-        id={id}
-        name={id}
-        defaultValue={defaultValue ?? ""}
-        readOnly={readOnly}
-        disabled={readOnly}
-        className="mt-1"
-      />
+      <Label htmlFor={id} className="text-xs font-medium">{label}</Label>
+      <Input id={id} name={id} defaultValue={defaultValue ?? ""} readOnly={readOnly} disabled={readOnly} className="mt-1" />
     </div>
   );
 }
 
-function TextareaField({
-  id,
-  label,
-  defaultValue,
-  readOnly,
-  className,
-}: {
-  id: string;
-  label: string;
-  defaultValue?: string | null;
-  readOnly: boolean;
-  className?: string;
-}) {
+function TextareaField({ id, label, defaultValue, readOnly, className }: { id: string; label: string; defaultValue?: string | null; readOnly: boolean; className?: string; }) {
   return (
     <div className={className ? `space-y-2 ${className}` : "space-y-2"}>
-      <Label htmlFor={id} className="text-xs font-medium">
-        {label}
-      </Label>
-      <Textarea
-        id={id}
-        name={id}
-        defaultValue={defaultValue ?? ""}
-        readOnly={readOnly}
-        disabled={readOnly}
-        rows={3}
-        className="mt-1"
-      />
+      <Label htmlFor={id} className="text-xs font-medium">{label}</Label>
+      <Textarea id={id} name={id} defaultValue={defaultValue ?? ""} readOnly={readOnly} disabled={readOnly} rows={3} className="mt-1" />
     </div>
   );
 }
 
-const BrokerageContractRow = memo(function BrokerageContractRow({
-  contract,
-  index,
-  readOnly,
-  onChange,
-  onRemove,
-  t,
-}: {
-  contract: BrokerageContractFormValue;
-  index: number;
-  readOnly: boolean;
-  onChange: (id: string, field: keyof Omit<BrokerageContractFormValue, "id">, value: string) => void;
-  onRemove: (id: string) => void;
-  t: (key: string) => string;
-}) {
+const BrokerageContractRow = memo(function BrokerageContractRow({ contract, index, readOnly, onChange, onRemove, t }: { contract: BrokerageContractFormValue; index: number; readOnly: boolean; onChange: (id: string, field: keyof Omit<BrokerageContractFormValue, "id">, value: string) => void; onRemove: (id: string) => void; t: (key: string) => string; }) {
   return (
     <div className="rounded-lg border border-border bg-card p-4 shadow-sm">
       <div className="mb-3 flex items-center justify-between gap-3">
         <span className="text-xs font-medium text-muted-foreground">{t("commercialListings.brokerageContracts")} {index + 1}</span>
         {!readOnly && (
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={() => onRemove(contract.id)}
-          >
+          <Button type="button" variant="ghost" size="sm" onClick={() => onRemove(contract.id)}>
             <X className="me-1 h-4 w-4" />
             {t("common.delete")}
           </Button>
@@ -938,43 +768,16 @@ const BrokerageContractRow = memo(function BrokerageContractRow({
       </div>
       <div className="grid gap-4 sm:grid-cols-3">
         <div className="space-y-2">
-          <Label htmlFor={`brokerageContract-${contract.id}`} className="text-xs font-medium">
-            {t("commercialListings.brokerageContract")}
-          </Label>
-          <Input
-            id={`brokerageContract-${contract.id}`}
-            value={contract.brokerageContract}
-            onChange={(event) => onChange(contract.id, "brokerageContract", event.target.value)}
-            readOnly={readOnly}
-            disabled={readOnly}
-            className="mt-1"
-          />
+          <Label htmlFor={`brokerageContract-${contract.id}`} className="text-xs font-medium">{t("commercialListings.brokerageContract")}</Label>
+          <Input id={`brokerageContract-${contract.id}`} value={contract.brokerageContract} onChange={(event) => onChange(contract.id, "brokerageContract", event.target.value)} readOnly={readOnly} disabled={readOnly} className="mt-1" />
         </div>
         <div className="space-y-2">
-          <Label htmlFor={`licenseNumber-${contract.id}`} className="text-xs font-medium">
-            {t("commercialListings.licenseNumber")}
-          </Label>
-          <Input
-            id={`licenseNumber-${contract.id}`}
-            value={contract.licenseNumber}
-            onChange={(event) => onChange(contract.id, "licenseNumber", event.target.value)}
-            readOnly={readOnly}
-            disabled={readOnly}
-            className="mt-1"
-          />
+          <Label htmlFor={`licenseNumber-${contract.id}`} className="text-xs font-medium">{t("commercialListings.licenseNumber")}</Label>
+          <Input id={`licenseNumber-${contract.id}`} value={contract.licenseNumber} onChange={(event) => onChange(contract.id, "licenseNumber", event.target.value)} readOnly={readOnly} disabled={readOnly} className="mt-1" />
         </div>
         <div className="space-y-2">
-          <Label htmlFor={`contractExpiry-${contract.id}`} className="text-xs font-medium">
-            {t("commercialListings.contractExpiry")}
-          </Label>
-          <Input
-            id={`contractExpiry-${contract.id}`}
-            value={contract.contractExpiry}
-            onChange={(event) => onChange(contract.id, "contractExpiry", event.target.value)}
-            readOnly={readOnly}
-            disabled={readOnly}
-            className="mt-1"
-          />
+          <Label htmlFor={`contractExpiry-${contract.id}`} className="text-xs font-medium">{t("commercialListings.contractExpiry")}</Label>
+          <Input id={`contractExpiry-${contract.id}`} value={contract.contractExpiry} onChange={(event) => onChange(contract.id, "contractExpiry", event.target.value)} readOnly={readOnly} disabled={readOnly} className="mt-1" />
         </div>
       </div>
     </div>

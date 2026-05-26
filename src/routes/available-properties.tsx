@@ -12,13 +12,27 @@ import { PublicFooter } from "@/components/PublicFooter";
 import { MediaPreview } from "@/components/MediaPreview";
 import { formatDate, formatMoney } from "@/lib/format";
 import { localizePropertyType } from "@/lib/property-types";
-import { Building2, MapPin, Sparkles, Home, BadgeDollarSign, ImagePlus, ChevronLeft, ChevronRight, X, ZoomIn } from "lucide-react";
+import {
+  Building2,
+  MapPin,
+  Sparkles,
+  Home,
+  BadgeDollarSign,
+  ImagePlus,
+  ChevronLeft,
+  ChevronRight,
+  X,
+  ZoomIn,
+} from "lucide-react";
 
 export const Route = createFileRoute("/available-properties")({
   head: () => ({
     meta: [
       { title: "Available Properties — Estatly" },
-      { name: "description", content: "Browse available properties with their sale and rent prices." },
+      {
+        name: "description",
+        content: "Browse available properties with their sale and rent prices.",
+      },
     ],
   }),
   component: AvailablePropertiesPage,
@@ -41,10 +55,20 @@ function AvailablePropertiesPage() {
             <Button asChild variant="outline" size="sm">
               <Link to="/">{t("publicProperties.home")}</Link>
             </Button>
-            <Button asChild size="sm" className="bg-gold-gradient text-gold-foreground hover:opacity-95">
-              <Link to="/property-request">{t("landing.findProperty") || "Find Your Property"}</Link>
+            <Button
+              asChild
+              size="sm"
+              className="bg-gold-gradient text-gold-foreground hover:opacity-95"
+            >
+              <Link to="/property-request">
+                {t("landing.findProperty") || "Find Your Property"}
+              </Link>
             </Button>
-            <Button asChild size="sm" className="bg-gold-gradient text-gold-foreground hover:opacity-95">
+            <Button
+              asChild
+              size="sm"
+              className="bg-gold-gradient text-gold-foreground hover:opacity-95"
+            >
               <Link to="/list-property">{t("publicProperties.listYourProperty")}</Link>
             </Button>
           </div>
@@ -52,10 +76,7 @@ function AvailablePropertiesPage() {
       </header>
 
       <section className="mx-auto max-w-7xl px-6 py-12">
-        <PageHeader
-          title={t("publicProperties.title")}
-          subtitle={t("publicProperties.subtitle")}
-        />
+        <PageHeader title={t("publicProperties.title")} subtitle={t("publicProperties.subtitle")} />
 
         {list.data && list.data.length > 0 ? (
           <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
@@ -85,7 +106,7 @@ function PropertyCard({ property }: { property: PublicProperty }) {
   // Do not use `primaryImageUrl` fallback — only show images returned in `property.images`.
   const images = (property.images?.length ? property.images : [])
     .slice()
-    .sort((a, b) => (a.sortOrder - b.sortOrder) || (a.id - b.id));
+    .sort((a, b) => a.sortOrder - b.sortOrder || a.id - b.id);
   const [activeIndex, setActiveIndex] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const activeImage = images[activeIndex];
@@ -121,7 +142,10 @@ function PropertyCard({ property }: { property: PublicProperty }) {
                 <button
                   type="button"
                   aria-label={t("publicProperties.previousImage")}
-                  onClick={(e) => { e.stopPropagation(); goPrev(); }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    goPrev();
+                  }}
                   className="absolute start-3 top-1/2 z-10 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full bg-black/45 text-white backdrop-blur transition hover:bg-black/60 rtl:rotate-180"
                 >
                   <ChevronLeft className="h-5 w-5" />
@@ -129,7 +153,10 @@ function PropertyCard({ property }: { property: PublicProperty }) {
                 <button
                   type="button"
                   aria-label={t("publicProperties.nextImage")}
-                  onClick={(e) => { e.stopPropagation(); goNext(); }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    goNext();
+                  }}
                   className="absolute end-3 top-1/2 z-10 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-full bg-black/45 text-white backdrop-blur transition hover:bg-black/60 rtl:rotate-180"
                 >
                   <ChevronRight className="h-5 w-5" />
@@ -140,7 +167,10 @@ function PropertyCard({ property }: { property: PublicProperty }) {
                       key={`${image.id}-${index}`}
                       type="button"
                       aria-label={t("publicProperties.goToImage", { index: index + 1 })}
-                      onClick={(e) => { e.stopPropagation(); setActiveIndex(index); }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setActiveIndex(index);
+                      }}
                       className={`h-2.5 w-2.5 rounded-full transition ${index === activeIndex ? "bg-white" : "bg-white/45 hover:bg-white/70"}`}
                     />
                   ))}
@@ -158,13 +188,13 @@ function PropertyCard({ property }: { property: PublicProperty }) {
         )}
       </div>
       <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <div className="flex items-center gap-2 text-xs uppercase tracking-wide text-muted-foreground">
-                      <Building2 className="h-3.5 w-3.5" />
-              {t("publicProperties.propertyNumber", { id: property.id })}
-                    </div>
-                    <h2 className="mt-2 text-xl font-semibold">{property.name}</h2>
-                  </div>
+        <div>
+          <div className="flex items-center gap-2 text-xs uppercase tracking-wide text-muted-foreground">
+            <Building2 className="h-3.5 w-3.5" />
+            {t("publicProperties.propertyNumber", { id: property.id })}
+          </div>
+          <h2 className="mt-2 text-xl font-semibold">{property.name}</h2>
+        </div>
       </div>
 
       <div className="mt-4 space-y-2 text-sm text-muted-foreground">
@@ -174,7 +204,7 @@ function PropertyCard({ property }: { property: PublicProperty }) {
         </div>
         <div className="flex items-center gap-2">
           <Home className="h-4 w-4 text-gold" />
-            <span>{localizePropertyType(t, property.type)}</span>
+          <span>{localizePropertyType(t, property.type)}</span>
         </div>
         <div className="flex items-center gap-2">
           <Sparkles className="h-4 w-4 text-gold" />
@@ -189,16 +219,24 @@ function PropertyCard({ property }: { property: PublicProperty }) {
 
       <div className="mt-5 flex flex-wrap gap-2">
         {(property.amenities ?? []).slice(0, 4).map((amenity) => (
-          <Badge key={amenity.id} variant="outline">{amenity.name}</Badge>
+          <Badge key={amenity.id} variant="outline">
+            {amenity.name}
+          </Badge>
         ))}
         {(property.amenities?.length ?? 0) > 4 && (
-          <Badge variant="outline">{t("publicProperties.moreAmenities", { count: property.amenities!.length - 4 })}</Badge>
+          <Badge variant="outline">
+            {t("publicProperties.moreAmenities", { count: property.amenities!.length - 4 })}
+          </Badge>
         )}
       </div>
 
       {lightboxOpen && activeImage && (
         <ImageLightbox
-          images={images.map((i) => ({ url: resolveApiAssetUrl(i.url), alt: i.originalFileName || property.name, fileName: i.originalFileName }))}
+          images={images.map((i) => ({
+            url: resolveApiAssetUrl(i.url),
+            alt: i.originalFileName || property.name,
+            fileName: i.originalFileName,
+          }))}
           index={activeIndex}
           onIndexChange={setActiveIndex}
           onClose={() => setLightboxOpen(false)}
@@ -249,7 +287,10 @@ function ImageLightbox({
     >
       <button
         type="button"
-        onClick={(e) => { e.stopPropagation(); onClose(); }}
+        onClick={(e) => {
+          e.stopPropagation();
+          onClose();
+        }}
         className="absolute end-4 top-4 grid h-10 w-10 place-items-center rounded-full bg-white/10 text-white transition hover:bg-white/20"
         aria-label={t("common.close", { defaultValue: "Close" })}
       >
@@ -260,7 +301,10 @@ function ImageLightbox({
         <>
           <button
             type="button"
-            onClick={(e) => { e.stopPropagation(); onIndexChange((index - 1 + images.length) % images.length); }}
+            onClick={(e) => {
+              e.stopPropagation();
+              onIndexChange((index - 1 + images.length) % images.length);
+            }}
             className="absolute start-4 top-1/2 grid h-12 w-12 -translate-y-1/2 place-items-center rounded-full bg-white/10 text-white transition hover:bg-white/20 rtl:rotate-180"
             aria-label={t("common.previous", { defaultValue: "Previous" })}
           >
@@ -268,7 +312,10 @@ function ImageLightbox({
           </button>
           <button
             type="button"
-            onClick={(e) => { e.stopPropagation(); onIndexChange((index + 1) % images.length); }}
+            onClick={(e) => {
+              e.stopPropagation();
+              onIndexChange((index + 1) % images.length);
+            }}
             className="absolute end-4 top-1/2 grid h-12 w-12 -translate-y-1/2 place-items-center rounded-full bg-white/10 text-white transition hover:bg-white/20 rtl:rotate-180"
             aria-label={t("common.next", { defaultValue: "Next" })}
           >
@@ -277,7 +324,10 @@ function ImageLightbox({
         </>
       )}
 
-      <figure className="flex max-h-full max-w-6xl flex-col items-center" onClick={(e) => e.stopPropagation()}>
+      <figure
+        className="flex max-h-full max-w-6xl flex-col items-center"
+        onClick={(e) => e.stopPropagation()}
+      >
         <MediaPreview
           src={current.url}
           alt={current.alt}
@@ -302,7 +352,9 @@ function PriceCard({ label, value }: { label: string; value?: number | null }) {
         <BadgeDollarSign className="h-3.5 w-3.5" />
         {label}
       </div>
-      <div className="mt-2 text-lg font-semibold">{typeof value === "number" && value > 0 ? formatMoney(value) : "—"}</div>
+      <div className="mt-2 text-lg font-semibold">
+        {typeof value === "number" && value > 0 ? formatMoney(value) : "—"}
+      </div>
     </div>
   );
 }

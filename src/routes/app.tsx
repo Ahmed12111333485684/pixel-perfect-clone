@@ -8,8 +8,11 @@ import { BrandLogo } from "@/components/BrandLogo";
 import { LanguageToggle } from "@/components/LanguageToggle";
 import { Button } from "@/components/ui/button";
 import {
-  DropdownMenu, DropdownMenuContent, DropdownMenuItem,
-  DropdownMenuSeparator, DropdownMenuTrigger,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { getVisibleNavItems, isCurrentPathAccessible } from "@/lib/navigation";
 import type { AppNavItem } from "@/lib/navigation";
@@ -43,7 +46,11 @@ export function AppLayout() {
 
       document.querySelectorAll<HTMLElement>('[data-state="open"]').forEach((node) => {
         const className = typeof node.className === "string" ? node.className : "";
-        if (className.includes("fixed") && className.includes("inset-0") && className.includes("z-50")) {
+        if (
+          className.includes("fixed") &&
+          className.includes("inset-0") &&
+          className.includes("z-50")
+        ) {
           node.remove();
         }
       });
@@ -55,7 +62,11 @@ export function AppLayout() {
   }, [pathname]);
 
   const visible = getVisibleNavItems(auth.user?.role, auth.user?.screenPermissions ?? []);
-  const canViewCurrentScreen = isCurrentPathAccessible(pathname, auth.user?.role, auth.user?.screenPermissions ?? []);
+  const canViewCurrentScreen = isCurrentPathAccessible(
+    pathname,
+    auth.user?.role,
+    auth.user?.screenPermissions ?? [],
+  );
 
   const toggleParent = (parentTo: string) => {
     const newExpanded = new Set(expandedParents);
@@ -161,9 +172,16 @@ export function AppLayout() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-48">
-              <div className="px-2 py-1.5 text-xs text-muted-foreground">{auth.user?.role ? t(`role.${auth.user.role}`) : ""}</div>
+              <div className="px-2 py-1.5 text-xs text-muted-foreground">
+                {auth.user?.role ? t(`role.${auth.user.role}`) : ""}
+              </div>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => { auth.logout(); window.location.href = "/login"; }}>
+              <DropdownMenuItem
+                onClick={() => {
+                  auth.logout();
+                  window.location.href = "/login";
+                }}
+              >
                 <LogOut className="me-2 h-4 w-4" />
                 {t("nav.signOut")}
               </DropdownMenuItem>
@@ -183,7 +201,9 @@ export function AppLayout() {
                   key={navItem.to}
                   to={navItem.to}
                   className={`shrink-0 rounded-md px-3 py-1.5 text-xs font-medium transition ${
-                    isActive ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"
+                    isActive
+                      ? "bg-primary text-primary-foreground"
+                      : "text-muted-foreground hover:bg-muted"
                   }`}
                 >
                   {t(navItem.label)}

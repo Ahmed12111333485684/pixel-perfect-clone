@@ -1,4 +1,11 @@
-export const PROPERTY_TYPES = ["Apartment", "Villa", "Office", "Land", "Shop", "Warehouse"] as const;
+export const PROPERTY_TYPES = [
+  "Apartment",
+  "Villa",
+  "Office",
+  "Land",
+  "Shop",
+  "Warehouse",
+] as const;
 
 export type PropertyType = (typeof PROPERTY_TYPES)[number];
 

@@ -11,7 +11,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { FormDialog, ConfirmDialog } from "@/components/FormDialog";
 import { Plus, KeyRound } from "lucide-react";
 import { toast } from "sonner";
@@ -31,7 +37,9 @@ function flattenNav(items: AppNavItem[]): AppNavItem[] {
   return out;
 }
 
-const EMPLOYEE_SCREEN_OPTIONS = flattenNav(APP_NAV_ITEMS).filter((item) => !item.adminOnly && !item.partnerOnly);
+const EMPLOYEE_SCREEN_OPTIONS = flattenNav(APP_NAV_ITEMS).filter(
+  (item) => !item.adminOnly && !item.partnerOnly,
+);
 
 export const Route = createFileRoute("/app/users")({
   beforeLoad: () => {
@@ -58,7 +66,13 @@ function UsersPage() {
   const [resetting, setResetting] = useState<UserDto | null>(null);
 
   const upsert = useMutation({
-    mutationFn: async (vals: { id?: number; username: string; password?: string; role: Role; screenPermissions?: string[] }) => {
+    mutationFn: async (vals: {
+      id?: number;
+      username: string;
+      password?: string;
+      role: Role;
+      screenPermissions?: string[];
+    }) => {
       if (vals.id) {
         const body: Record<string, unknown> = { username: vals.username, role: vals.role };
         if (vals.password) body.password = vals.password;
@@ -71,7 +85,15 @@ function UsersPage() {
         throw new Error(t("common.usePartnersPageForPartnerAccounts"));
       }
 
-      await api("/api/users", { method: "POST", body: { username: vals.username, password: vals.password, role: vals.role, ...(vals.role === "Employee" ? { screenPermissions: vals.screenPermissions ?? [] } : {}) } });
+      await api("/api/users", {
+        method: "POST",
+        body: {
+          username: vals.username,
+          password: vals.password,
+          role: vals.role,
+          ...(vals.role === "Employee" ? { screenPermissions: vals.screenPermissions ?? [] } : {}),
+        },
+      });
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["users"] });
@@ -94,7 +116,10 @@ function UsersPage() {
 
   const reset = useMutation({
     mutationFn: (vals: { id: number; password: string }) =>
-      api(`/api/users/${vals.id}/reset-password`, { method: "POST", body: { password: vals.password } }),
+      api(`/api/users/${vals.id}/reset-password`, {
+        method: "POST",
+        body: { password: vals.password },
+      }),
     onSuccess: () => {
       toast.success(t("common.success"));
       setResetting(null);
@@ -111,23 +136,34 @@ function UsersPage() {
   }
 
   const cols: Column<UserDto>[] = [
-    { key: "username", header: t("common.username"), cell: (r) => <span className="font-medium">{r.username}</span> },
+    {
+      key: "username",
+      header: t("common.username"),
+      cell: (r) => <span className="font-medium">{r.username}</span>,
+    },
     {
       key: "role",
       header: t("common.role"),
-      cell: (r) => <StatusBadge tone={r.role === "Admin" ? "destructive" : r.role === "Employee" ? "info" : "neutral"}>{t(`role.${r.role}`)}</StatusBadge>,
+      cell: (r) => (
+        <StatusBadge
+          tone={r.role === "Admin" ? "destructive" : r.role === "Employee" ? "info" : "neutral"}
+        >
+          {t(`role.${r.role}`)}
+        </StatusBadge>
+      ),
     },
     {
       key: "owner",
       header: t("common.owner"),
-      cell: (r) => r.ownerFullName ? (
-        <div className="flex flex-col">
-          <span className="font-medium">{r.ownerFullName}</span>
-          <span className="text-xs text-muted-foreground">#{r.ownerId}</span>
-        </div>
-      ) : (
-        <span className="text-muted-foreground">—</span>
-      ),
+      cell: (r) =>
+        r.ownerFullName ? (
+          <div className="flex flex-col">
+            <span className="font-medium">{r.ownerFullName}</span>
+            <span className="text-xs text-muted-foreground">#{r.ownerId}</span>
+          </div>
+        ) : (
+          <span className="text-muted-foreground">—</span>
+        ),
     },
     { key: "created", header: t("common.createdAt"), cell: (r) => formatDate(r.createdAt) },
     {
@@ -135,7 +171,15 @@ function UsersPage() {
       header: "",
       className: "w-12",
       cell: (r) => (
-        <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); setResetting(r); }} title={t("common.resetPassword")}>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={(e) => {
+            e.stopPropagation();
+            setResetting(r);
+          }}
+          title={t("common.resetPassword")}
+        >
           <KeyRound className="h-4 w-4" />
         </Button>
       ),
@@ -165,7 +209,12 @@ function UsersPage() {
 
       <UserDialog
         open={creating || !!editing}
-        onOpenChange={(v) => { if (!v) { setCreating(false); setEditing(null); } }}
+        onOpenChange={(v) => {
+          if (!v) {
+            setCreating(false);
+            setEditing(null);
+          }
+        }}
         user={editing}
         submitting={upsert.isPending}
         onSubmit={(vals) => upsert.mutate({ ...vals, id: editing?.id })}
@@ -190,16 +239,29 @@ function UsersPage() {
   );
 }
 
-function UserDialog({ open, onOpenChange, user, onSubmit, submitting }: {
+function UserDialog({
+  open,
+  onOpenChange,
+  user,
+  onSubmit,
+  submitting,
+}: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   user: UserDto | null;
-  onSubmit: (vals: { username: string; password?: string; role: Role; screenPermissions?: string[] }) => void;
+  onSubmit: (vals: {
+    username: string;
+    password?: string;
+    role: Role;
+    screenPermissions?: string[];
+  }) => void;
   submitting?: boolean;
 }) {
   const { t } = useTranslation();
   const [role, setRole] = useState<Role>(user?.role ?? "Admin");
-  const [screenPermissions, setScreenPermissions] = useState<string[]>(user?.screenPermissions ?? []);
+  const [screenPermissions, setScreenPermissions] = useState<string[]>(
+    user?.screenPermissions ?? [],
+  );
   const key = `${user?.id ?? "new"}-${open}`;
 
   useEffect(() => {
@@ -224,7 +286,9 @@ function UserDialog({ open, onOpenChange, user, onSubmit, submitting }: {
     <FormDialog
       key={key}
       open={open}
-      onOpenChange={(v) => { if (!v) onOpenChange(false); }}
+      onOpenChange={(v) => {
+        if (!v) onOpenChange(false);
+      }}
       title={user ? t("common.edit") : t("common.add")}
       submitting={submitting}
       size="lg"
@@ -250,7 +314,8 @@ function UserDialog({ open, onOpenChange, user, onSubmit, submitting }: {
       </div>
       <div className="space-y-2">
         <Label htmlFor="password">
-          {t("common.password")} {user && <span className="text-xs text-muted-foreground">({t("common.optional")})</span>}
+          {t("common.password")}{" "}
+          {user && <span className="text-xs text-muted-foreground">({t("common.optional")})</span>}
         </Label>
         <Input id="password" name="password" type="password" required={!user} />
       </div>
@@ -262,7 +327,10 @@ function UserDialog({ open, onOpenChange, user, onSubmit, submitting }: {
           </div>
           <div className="grid gap-2 sm:grid-cols-2">
             {EMPLOYEE_SCREEN_OPTIONS.map((item) => (
-              <label key={item.to} className="flex items-start gap-3 rounded-md border border-border bg-background px-3 py-2 text-sm">
+              <label
+                key={item.to}
+                className="flex items-start gap-3 rounded-md border border-border bg-background px-3 py-2 text-sm"
+              >
                 <Checkbox
                   checked={screenPermissions.includes(item.to)}
                   onCheckedChange={(checked) => toggleScreenPermission(item.to, checked === true)}
@@ -278,16 +346,25 @@ function UserDialog({ open, onOpenChange, user, onSubmit, submitting }: {
       )}
       <div className="space-y-2">
         <Label>{t("common.role")}</Label>
-        <Select value={role} onValueChange={(v) => {
-          const nextRole = v as Role;
-          setRole(nextRole);
-          if (nextRole === "Employee" && screenPermissions.length === 0) {
+        <Select
+          value={role}
+          onValueChange={(v) => {
+            const nextRole = v as Role;
+            setRole(nextRole);
+            if (nextRole === "Employee" && screenPermissions.length === 0) {
               setScreenPermissions(["/app", "/app/employee-productivity"]);
             }
-        }}>
-          <SelectTrigger><SelectValue /></SelectTrigger>
+          }}
+        >
+          <SelectTrigger>
+            <SelectValue />
+          </SelectTrigger>
           <SelectContent>
-            {ROLES.map((r) => <SelectItem key={r} value={r}>{t(`role.${r}`)}</SelectItem>)}
+            {ROLES.map((r) => (
+              <SelectItem key={r} value={r}>
+                {t(`role.${r}`)}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
       </div>
@@ -295,7 +372,12 @@ function UserDialog({ open, onOpenChange, user, onSubmit, submitting }: {
   );
 }
 
-function ResetPasswordDialog({ user, onOpenChange, onSubmit, submitting }: {
+function ResetPasswordDialog({
+  user,
+  onOpenChange,
+  onSubmit,
+  submitting,
+}: {
   user: UserDto | null;
   onOpenChange: (v: boolean) => void;
   onSubmit: (password: string) => void;

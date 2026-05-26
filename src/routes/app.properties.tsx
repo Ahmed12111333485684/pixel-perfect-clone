@@ -2,7 +2,15 @@ import { createFileRoute, Outlet, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { api, resolveApiAssetUrl, type PropertyDto, type PropertyImage, type Owner, type Amenity, type PropertyStatus } from "@/lib/api";
+import {
+  api,
+  resolveApiAssetUrl,
+  type PropertyDto,
+  type PropertyImage,
+  type Owner,
+  type Amenity,
+  type PropertyStatus,
+} from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { PageHeader, StatusBadge } from "@/components/PageHeader";
 import { DataTable, type Column } from "@/components/DataTable";
@@ -13,7 +21,11 @@ import { Checkbox } from "@/components/ui/checkbox";
 import PropertyDetailsForm from "@/components/PropertyDetailsForm";
 import { MediaPreview } from "@/components/MediaPreview";
 import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
 import { FormDialog, ConfirmDialog } from "@/components/FormDialog";
 import { Plus } from "lucide-react";
@@ -23,7 +35,7 @@ import { PROPERTY_TYPES, localizePropertyType } from "@/lib/property-types";
 
 const STATUSES: PropertyStatus[] = ["Pending", "Approved", "Rejected", "Sold"];
 
-function createCustomDetailKey(details: Record<string, any>) {
+function createCustomDetailKey(details: Record<string, unknown>) {
   let index = 1;
   while (Object.prototype.hasOwnProperty.call(details, `custom_field_${index}`)) {
     index += 1;
@@ -40,13 +52,19 @@ function PropertiesPage() {
   const auth = useAuth();
   const qc = useQueryClient();
 
-  const list = useQuery({ queryKey: ["properties"], queryFn: () => api<PropertyDto[]>("/api/properties") });
+  const list = useQuery({
+    queryKey: ["properties"],
+    queryFn: () => api<PropertyDto[]>("/api/properties"),
+  });
   const owners = useQuery({
     queryKey: ["owners"],
     queryFn: () => api<Owner[]>("/api/owners"),
     enabled: auth.isStaff,
   });
-  const amenities = useQuery({ queryKey: ["amenities"], queryFn: () => api<Amenity[]>("/api/amenities") });
+  const amenities = useQuery({
+    queryKey: ["amenities"],
+    queryFn: () => api<Amenity[]>("/api/amenities"),
+  });
 
   const propertyImageQueries = useQueries({
     queries: (list.data ?? []).map((property) => ({
@@ -76,13 +94,64 @@ function PropertiesPage() {
   const [search, setSearch] = useState("");
 
   const upsert = useMutation({
-    mutationFn: async (vals: { id?: number; ownerId: number; name: string; address: string; type: string; region?: string | null; city?: string | null; district?: string | null; listingType: "Rental" | "Sale"; salePrice?: number | null; rentPrice?: number | null; deedNumber?: string | null; details?: Record<string, any> | null; amenityIds: number[]; files?: File[]; status?: PropertyStatus }) => {
+    mutationFn: async (vals: {
+      id?: number;
+      ownerId: number;
+      name: string;
+      address: string;
+      type: string;
+      region?: string | null;
+      city?: string | null;
+      district?: string | null;
+      listingType: "Rental" | "Sale";
+      salePrice?: number | null;
+      rentPrice?: number | null;
+      deedNumber?: string | null;
+      details?: Record<string, unknown> | null;
+      amenityIds: number[];
+      files?: File[];
+      status?: PropertyStatus;
+    }) => {
       let propertyId: number;
       if (vals.id) {
         propertyId = vals.id;
-        await api(`/api/properties/${vals.id}`, { method: "PUT", body: { ownerId: vals.ownerId, name: vals.name, address: vals.address, type: vals.type, region: vals.region, city: vals.city, district: vals.district, listingType: vals.listingType, salePrice: vals.salePrice, rentPrice: vals.rentPrice, deedNumber: vals.deedNumber, details: vals.details, amenityIds: vals.amenityIds } });
+        await api(`/api/properties/${vals.id}`, {
+          method: "PUT",
+          body: {
+            ownerId: vals.ownerId,
+            name: vals.name,
+            address: vals.address,
+            type: vals.type,
+            region: vals.region,
+            city: vals.city,
+            district: vals.district,
+            listingType: vals.listingType,
+            salePrice: vals.salePrice,
+            rentPrice: vals.rentPrice,
+            deedNumber: vals.deedNumber,
+            details: vals.details,
+            amenityIds: vals.amenityIds,
+          },
+        });
       } else {
-        const response = await api<{ id: number }>("/api/properties", { method: "POST", body: { ownerId: vals.ownerId, name: vals.name, address: vals.address, type: vals.type, region: vals.region, city: vals.city, district: vals.district, listingType: vals.listingType, salePrice: vals.salePrice, rentPrice: vals.rentPrice, deedNumber: vals.deedNumber, details: vals.details, amenityIds: vals.amenityIds } });
+        const response = await api<{ id: number }>("/api/properties", {
+          method: "POST",
+          body: {
+            ownerId: vals.ownerId,
+            name: vals.name,
+            address: vals.address,
+            type: vals.type,
+            region: vals.region,
+            city: vals.city,
+            district: vals.district,
+            listingType: vals.listingType,
+            salePrice: vals.salePrice,
+            rentPrice: vals.rentPrice,
+            deedNumber: vals.deedNumber,
+            details: vals.details,
+            amenityIds: vals.amenityIds,
+          },
+        });
         propertyId = response.id;
       }
       // Upload files if any
@@ -95,12 +164,10 @@ function PropertiesPage() {
       }
       // If a status was provided (admin flow), call the status endpoint
       if (vals.status !== undefined && vals.status !== null) {
-        try {
-          await api(`/api/properties/${propertyId}/status`, { method: "PUT", body: { status: vals.status } });
-        } catch (e) {
-          // Rethrow so caller sees error and toast shows it
-          throw e;
-        }
+        await api(`/api/properties/${propertyId}/status`, {
+          method: "PUT",
+          body: { status: vals.status },
+        });
       }
 
       return { propertyId };
@@ -110,13 +177,13 @@ function PropertiesPage() {
       qc.invalidateQueries({ queryKey: ["property-images-preview"] });
       qc.invalidateQueries({ queryKey: ["property-images", propertyId] });
       qc.invalidateQueries({ queryKey: ["property", propertyId] });
-      
+
       if (!auth.isStaff && !vars.id) {
         toast.success(t("property.submittedForReview"));
       } else {
         toast.success(t("common.success"));
       }
-      
+
       setCreating(false);
       setEditing(null);
     },
@@ -125,20 +192,30 @@ function PropertiesPage() {
 
   const del = useMutation({
     mutationFn: (id: number) => api(`/api/properties/${id}`, { method: "DELETE" }),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["properties"] }); toast.success(t("common.deleted")); setDeleting(null); },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["properties"] });
+      toast.success(t("common.deleted"));
+      setDeleting(null);
+    },
     onError: (e: Error) => toast.error(e.message),
   });
 
   const updateStatus = useMutation({
     mutationFn: ({ id, status }: { id: number; status: PropertyStatus }) =>
       api(`/api/properties/${id}/status`, { method: "PUT", body: { status } }),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["properties"] }); toast.success(t("common.updated")); setStatusOf(null); },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["properties"] });
+      toast.success(t("common.updated"));
+      setStatusOf(null);
+    },
     onError: (e: Error) => toast.error(e.message),
   });
 
   const cols: Column<PropertyDto>[] = [
     {
-      key: "image", header: t("common.images"), className: "w-20",
+      key: "image",
+      header: t("common.images"),
+      className: "w-20",
       cell: (r) => {
         const src = propertyThumbnailById.get(r.id);
         if (!src) {
@@ -154,17 +231,28 @@ function PropertiesPage() {
         );
       },
     },
-    { key: "name", header: t("common.name"), cell: (r) => <span className="font-medium">{r.name}</span> },
-    { key: "address", header: t("common.address"), cell: (r) => <span className="text-muted-foreground">{r.address}</span> },
+    {
+      key: "name",
+      header: t("common.name"),
+      cell: (r) => <span className="font-medium">{r.name}</span>,
+    },
+    {
+      key: "address",
+      header: t("common.address"),
+      cell: (r) => <span className="text-muted-foreground">{r.address}</span>,
+    },
     { key: "type", header: t("common.type"), cell: (r) => localizePropertyType(t, r.type) },
     {
-      key: "status", header: t("common.status"),
+      key: "status",
+      header: t("common.status"),
       cell: (r) => (
-        <StatusBadge tone={propertyStatusTone(r.status)}>{t(`propertyStatus.${r.status}`)}</StatusBadge>
+        <StatusBadge tone={propertyStatusTone(r.status)}>
+          {t(`propertyStatus.${r.status}`)}
+        </StatusBadge>
       ),
     },
     { key: "owner", header: t("nav.owners"), cell: (r) => `#${r.ownerId}` },
-    
+
     { key: "created", header: t("common.createdAt"), cell: (r) => formatDate(r.createdAt) },
   ];
 
@@ -175,7 +263,8 @@ function PropertiesPage() {
       const nameMatch = property.name.toLowerCase().includes(lowerSearch);
       const addressMatch = property.address.toLowerCase().includes(lowerSearch);
       const typeMatch = property.type.toLowerCase().includes(lowerSearch);
-      return nameMatch || addressMatch || typeMatch;
+      const deedMatch = (property.deedNumber ?? "").toLowerCase().includes(lowerSearch);
+      return nameMatch || addressMatch || typeMatch || deedMatch;
     });
   }, [list.data, search]);
 
@@ -187,7 +276,8 @@ function PropertiesPage() {
         title={t("nav.properties")}
         actions={
           <Button onClick={() => setCreating(true)}>
-            <Plus className="me-1 h-4 w-4" />{t("common.add")}
+            <Plus className="me-1 h-4 w-4" />
+            {t("common.add")}
           </Button>
         }
       />
@@ -213,16 +303,31 @@ function PropertiesPage() {
       />
 
       <PropertyDialog
-        key={`${editing?.id ?? "new"}-${(creating || !!editing) ? "open" : "closed"}`}
+        key={`${editing?.id ?? "new"}-${creating || !!editing ? "open" : "closed"}`}
         open={creating || !!editing}
-        onOpenChange={(v) => { if (!v) { setCreating(false); setEditing(null); } }}
+        onOpenChange={(v) => {
+          if (!v) {
+            setCreating(false);
+            setEditing(null);
+          }
+        }}
         property={editing}
         owners={owners.data ?? []}
         amenities={amenities.data ?? []}
         defaultOwnerId={!auth.isStaff ? auth.user?.ownerId : undefined}
         canPickOwner={auth.isStaff}
         submitting={upsert.isPending}
-        onSubmit={(vals) => upsert.mutate({ ...vals, id: editing?.id, region: vals.region, city: vals.city, district: vals.district, listingType: vals.listingType, deedNumber: vals.deedNumber })}
+        onSubmit={(vals) =>
+          upsert.mutate({
+            ...vals,
+            id: editing?.id,
+            region: vals.region,
+            city: vals.city,
+            district: vals.district,
+            listingType: vals.listingType,
+            deedNumber: vals.deedNumber,
+          })
+        }
       />
 
       <ConfirmDialog
@@ -248,11 +353,40 @@ function PropertiesPage() {
 }
 
 function PropertyDialog({
-  open, onOpenChange, property, owners, amenities, defaultOwnerId, canPickOwner, onSubmit, submitting,
+  open,
+  onOpenChange,
+  property,
+  owners,
+  amenities,
+  defaultOwnerId,
+  canPickOwner,
+  onSubmit,
+  submitting,
 }: {
-  open: boolean; onOpenChange: (v: boolean) => void; property: PropertyDto | null;
-  owners: Owner[]; amenities: Amenity[]; defaultOwnerId?: number; canPickOwner: boolean;
-  onSubmit: (v: { ownerId: number; name: string; address: string; type: string; region?: string | null; city?: string | null; district?: string | null; listingType: "Rental" | "Sale"; salePrice?: number | null; rentPrice?: number | null; deedNumber?: string | null; details?: Record<string, any> | null; amenityIds: number[]; files?: File[]; status?: PropertyStatus }) => void;
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  property: PropertyDto | null;
+  owners: Owner[];
+  amenities: Amenity[];
+  defaultOwnerId?: number;
+  canPickOwner: boolean;
+  onSubmit: (v: {
+    ownerId: number;
+    name: string;
+    address: string;
+    type: string;
+    region?: string | null;
+    city?: string | null;
+    district?: string | null;
+    listingType: "Rental" | "Sale";
+    salePrice?: number | null;
+    rentPrice?: number | null;
+    deedNumber?: string | null;
+    details?: Record<string, unknown> | null;
+    amenityIds: number[];
+    files?: File[];
+    status?: PropertyStatus;
+  }) => void;
   submitting?: boolean;
 }) {
   const { t } = useTranslation();
@@ -263,10 +397,14 @@ function PropertyDialog({
   const [region, setRegion] = useState<string>(property?.region ?? "");
   const [city, setCity] = useState<string>(property?.city ?? "");
   const [district, setDistrict] = useState<string>(property?.district ?? "");
-  const [listingType, setListingType] = useState<"Rental" | "Sale">(property?.listingType ?? "Rental");
+  const [listingType, setListingType] = useState<"Rental" | "Sale">(
+    property?.listingType ?? "Rental",
+  );
   const [deedNumber, setDeedNumber] = useState<string>(property?.deedNumber ?? "");
-  const [details, setDetails] = useState<Record<string, any>>(property?.details ?? {});
-  const [picked, setPicked] = useState<Set<number>>(new Set(property?.amenities?.map((a) => a.id) ?? []));
+  const [details, setDetails] = useState<Record<string, unknown>>(property?.details ?? {});
+  const [picked, setPicked] = useState<Set<number>>(
+    new Set(property?.amenities?.map((a) => a.id) ?? []),
+  );
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
 
   useEffect(() => {
@@ -283,7 +421,20 @@ function PropertyDialog({
     setDetails(property?.details ?? {});
     setPicked(new Set(property?.amenities?.map((amenity) => amenity.id) ?? []));
     setSelectedFiles([]);
-  }, [open, property?.id, property?.ownerId, property?.type, property?.region, property?.city, property?.district, property?.listingType, property?.deedNumber, property?.amenities, property?.details, defaultOwnerId]);
+  }, [
+    open,
+    property?.id,
+    property?.ownerId,
+    property?.type,
+    property?.region,
+    property?.city,
+    property?.district,
+    property?.listingType,
+    property?.deedNumber,
+    property?.amenities,
+    property?.details,
+    defaultOwnerId,
+  ]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
@@ -301,11 +452,11 @@ function PropertyDialog({
       title={property ? t("common.edit") : t("common.add")}
       submitting={submitting}
       size="lg"
-            onSubmit={(e) => {
+      onSubmit={(e) => {
         e.preventDefault();
         const fd = new FormData(e.currentTarget);
         const oid = canPickOwner ? Number(ownerId) : (defaultOwnerId ?? Number(ownerId));
-              onSubmit({
+        onSubmit({
           ownerId: oid,
           name: String(fd.get("name") ?? ""),
           address: String(fd.get("address") ?? ""),
@@ -328,9 +479,15 @@ function PropertyDialog({
         <div className="space-y-2">
           <Label>{t("nav.owners")}</Label>
           <Select value={ownerId} onValueChange={setOwnerId}>
-            <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
+            <SelectTrigger>
+              <SelectValue placeholder="—" />
+            </SelectTrigger>
             <SelectContent>
-              {owners.map((o) => <SelectItem key={o.id} value={String(o.id)}>{o.fullName}</SelectItem>)}
+              {owners.map((o) => (
+                <SelectItem key={o.id} value={String(o.id)}>
+                  {o.fullName}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
@@ -339,9 +496,15 @@ function PropertyDialog({
         <div className="space-y-2">
           <Label>{t("common.status")}</Label>
           <Select value={status} onValueChange={(v) => setStatus(v as PropertyStatus)}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
             <SelectContent>
-              {STATUSES.map((s) => <SelectItem key={s} value={s}>{t(`propertyStatus.${s}`)}</SelectItem>)}
+              {STATUSES.map((s) => (
+                <SelectItem key={s} value={s}>
+                  {t(`propertyStatus.${s}`)}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
@@ -354,9 +517,15 @@ function PropertyDialog({
         <div className="space-y-2">
           <Label>{t("common.type")}</Label>
           <Select value={type} onValueChange={setType}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
             <SelectContent>
-              {PROPERTY_TYPES.map((p) => <SelectItem key={p} value={p}>{localizePropertyType(t, p)}</SelectItem>)}
+              {PROPERTY_TYPES.map((p) => (
+                <SelectItem key={p} value={p}>
+                  {localizePropertyType(t, p)}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
@@ -368,7 +537,12 @@ function PropertyDialog({
       <div className="grid gap-4 sm:grid-cols-3">
         <div className="space-y-2">
           <Label htmlFor="region">{t("common.region")}</Label>
-          <Input id="region" name="region" value={region} onChange={(e) => setRegion(e.target.value)} />
+          <Input
+            id="region"
+            name="region"
+            value={region}
+            onChange={(e) => setRegion(e.target.value)}
+          />
         </div>
         <div className="space-y-2">
           <Label htmlFor="city">{t("common.city")}</Label>
@@ -376,14 +550,21 @@ function PropertyDialog({
         </div>
         <div className="space-y-2">
           <Label htmlFor="district">{t("common.district")}</Label>
-          <Input id="district" name="district" value={district} onChange={(e) => setDistrict(e.target.value)} />
+          <Input
+            id="district"
+            name="district"
+            value={district}
+            onChange={(e) => setDistrict(e.target.value)}
+          />
         </div>
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2">
           <Label>{t("common.listingType")}</Label>
           <Select value={listingType} onValueChange={(v) => setListingType(v as "Rental" | "Sale")}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
             <SelectContent>
               <SelectItem value="Rental">{t("common.forRent")}</SelectItem>
               <SelectItem value="Sale">{t("common.forSale")}</SelectItem>
@@ -395,17 +576,36 @@ function PropertyDialog({
         {listingType === "Sale" ? (
           <div className="space-y-2">
             <Label htmlFor="salePrice">{t("common.salePrice")}</Label>
-            <Input id="salePrice" name="salePrice" type="number" step="0.01" min="0" defaultValue={property?.salePrice ?? ""} />
+            <Input
+              id="salePrice"
+              name="salePrice"
+              type="number"
+              step="0.01"
+              min="0"
+              defaultValue={property?.salePrice ?? ""}
+            />
           </div>
         ) : (
           <div className="space-y-2">
             <Label htmlFor="rentPrice">{t("common.monthlyRent")}</Label>
-            <Input id="rentPrice" name="rentPrice" type="number" step="0.01" min="0" defaultValue={property?.rentPrice ?? ""} />
+            <Input
+              id="rentPrice"
+              name="rentPrice"
+              type="number"
+              step="0.01"
+              min="0"
+              defaultValue={property?.rentPrice ?? ""}
+            />
           </div>
         )}
         <div className="space-y-2">
           <Label htmlFor="deedNumber">{t("common.deedNumber")}</Label>
-          <Input id="deedNumber" name="deedNumber" value={deedNumber} onChange={(e) => setDeedNumber(e.target.value)} />
+          <Input
+            id="deedNumber"
+            name="deedNumber"
+            value={deedNumber}
+            onChange={(e) => setDeedNumber(e.target.value)}
+          />
         </div>
       </div>
       <div className="space-y-2">
@@ -413,22 +613,25 @@ function PropertyDialog({
         <div className="grid max-h-48 grid-cols-2 gap-2 overflow-y-auto rounded-md border border-border p-3 sm:grid-cols-3">
           {amenities.length === 0 ? (
             <span className="text-xs text-muted-foreground">{t("common.empty")}</span>
-          ) : amenities.map((a) => {
-            const checked = picked.has(a.id);
-            return (
+          ) : (
+            amenities.map((a) => {
+              const checked = picked.has(a.id);
+              return (
                 <label key={a.id} className="flex items-center gap-2 text-sm">
                   <Checkbox
                     checked={checked}
                     onCheckedChange={(v) => {
                       const next = new Set(picked);
-                      if (v) next.add(a.id); else next.delete(a.id);
+                      if (v) next.add(a.id);
+                      else next.delete(a.id);
                       setPicked(next);
                     }}
                   />
                   {a.name}
                 </label>
-            );
-          })}
+              );
+            })
+          )}
         </div>
       </div>
       <div className="space-y-2">
@@ -452,15 +655,27 @@ function PropertyDialog({
           <Label>{t("common.details")}</Label>
         </div>
 
-        <PropertyDetailsForm type={type} value={details} onChange={setDetails} mode={property ? "edit" : "create"} />
+        <PropertyDetailsForm
+          type={type}
+          value={details}
+          onChange={setDetails}
+          mode={property ? "edit" : "create"}
+        />
       </div>
     </FormDialog>
   );
 }
 
-function StatusDialog({ property, onOpenChange, onSubmit, submitting }: {
-  property: PropertyDto | null; onOpenChange: (v: boolean) => void;
-  onSubmit: (s: PropertyStatus) => void; submitting?: boolean;
+function StatusDialog({
+  property,
+  onOpenChange,
+  onSubmit,
+  submitting,
+}: {
+  property: PropertyDto | null;
+  onOpenChange: (v: boolean) => void;
+  onSubmit: (s: PropertyStatus) => void;
+  submitting?: boolean;
 }) {
   const { t } = useTranslation();
   const [val, setVal] = useState<PropertyStatus>(property?.status ?? "Pending");
@@ -476,12 +691,21 @@ function StatusDialog({ property, onOpenChange, onSubmit, submitting }: {
       onOpenChange={onOpenChange}
       title={t("common.status")}
       submitting={submitting}
-      onSubmit={(e) => { e.preventDefault(); onSubmit(val); }}
+      onSubmit={(e) => {
+        e.preventDefault();
+        onSubmit(val);
+      }}
     >
       <Select value={val} onValueChange={(v) => setVal(v as PropertyStatus)}>
-        <SelectTrigger><SelectValue /></SelectTrigger>
+        <SelectTrigger>
+          <SelectValue />
+        </SelectTrigger>
         <SelectContent>
-          {STATUSES.map((s) => <SelectItem key={s} value={s}>{t(`propertyStatus.${s}`)}</SelectItem>)}
+          {STATUSES.map((s) => (
+            <SelectItem key={s} value={s}>
+              {t(`propertyStatus.${s}`)}
+            </SelectItem>
+          ))}
         </SelectContent>
       </Select>
     </FormDialog>

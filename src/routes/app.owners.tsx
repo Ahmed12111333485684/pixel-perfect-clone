@@ -44,7 +44,8 @@ function OwnersPage() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["owners"] });
       toast.success(t("common.success"));
-      setEditing(null); setCreating(false);
+      setEditing(null);
+      setCreating(false);
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -73,10 +74,18 @@ function OwnersPage() {
   });
 
   const cols: Column<Owner>[] = [
-    { key: "name", header: t("common.fullName"), cell: (r) => <span className="font-medium">{r.fullName}</span> },
+    {
+      key: "name",
+      header: t("common.fullName"),
+      cell: (r) => <span className="font-medium">{r.fullName}</span>,
+    },
     { key: "phone", header: t("common.phone"), cell: (r) => r.phone },
     { key: "email", header: t("common.email"), cell: (r) => r.email },
-    { key: "nid", header: t("common.nationalId"), cell: (r) => <span className="font-mono text-xs">{r.nationalId}</span> },
+    {
+      key: "nid",
+      header: t("common.nationalId"),
+      cell: (r) => <span className="font-mono text-xs">{r.nationalId}</span>,
+    },
     { key: "created", header: t("common.createdAt"), cell: (r) => formatDate(r.createdAt) },
   ];
 
@@ -118,19 +127,39 @@ function OwnersPage() {
         columns={[
           ...cols,
           ...(auth.isStaff
-            ? [{
-                key: "actions2", header: "", className: "w-24",
-                cell: (r: Owner) => (
-                  <div className="flex items-center gap-1">
-                    <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); setStatsFor(r); }} title={t("common.stats")}>
-                      <BarChart3 className="h-4 w-4" />
-                    </Button>
-                    <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); setAccountFor(r); }} title={t("common.account")}>
-                      <KeyRound className="h-4 w-4" />
-                    </Button>
-                  </div>
-                ),
-              }]
+            ? [
+                {
+                  key: "actions2",
+                  header: "",
+                  className: "w-24",
+                  cell: (r: Owner) => (
+                    <div className="flex items-center gap-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setStatsFor(r);
+                        }}
+                        title={t("common.stats")}
+                      >
+                        <BarChart3 className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setAccountFor(r);
+                        }}
+                        title={t("common.account")}
+                      >
+                        <KeyRound className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ),
+                },
+              ]
             : []),
         ]}
         rows={filteredOwners}
@@ -143,7 +172,12 @@ function OwnersPage() {
 
       <OwnerDialog
         open={creating || !!editing}
-        onOpenChange={(v) => { if (!v) { setCreating(false); setEditing(null); } }}
+        onOpenChange={(v) => {
+          if (!v) {
+            setCreating(false);
+            setEditing(null);
+          }
+        }}
         owner={editing}
         submitting={upsert.isPending}
         onSubmit={(vals) => upsert.mutate({ ...vals, id: editing?.id })}
@@ -170,8 +204,16 @@ function OwnersPage() {
   );
 }
 
-function OwnerDialog({ open, onOpenChange, owner, onSubmit, submitting }: {
-  open: boolean; onOpenChange: (v: boolean) => void; owner: Owner | null;
+function OwnerDialog({
+  open,
+  onOpenChange,
+  owner,
+  onSubmit,
+  submitting,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  owner: Owner | null;
   onSubmit: (vals: { fullName: string; phone: string; email: string; nationalId: string }) => void;
   submitting?: boolean;
 }) {
@@ -206,9 +248,16 @@ function OwnerDialog({ open, onOpenChange, owner, onSubmit, submitting }: {
   );
 }
 
-function AccountDialog({ owner, onOpenChange, onSubmit, submitting }: {
-  owner: Owner | null; onOpenChange: (v: boolean) => void;
-  onSubmit: (v: { username: string; password: string }) => void; submitting?: boolean;
+function AccountDialog({
+  owner,
+  onOpenChange,
+  onSubmit,
+  submitting,
+}: {
+  owner: Owner | null;
+  onOpenChange: (v: boolean) => void;
+  onSubmit: (v: { username: string; password: string }) => void;
+  submitting?: boolean;
 }) {
   const { t } = useTranslation();
   return (
@@ -233,7 +282,13 @@ function AccountDialog({ owner, onOpenChange, onSubmit, submitting }: {
   );
 }
 
-function StatsDialog({ owner, onOpenChange }: { owner: Owner | null; onOpenChange: (v: boolean) => void }) {
+function StatsDialog({
+  owner,
+  onOpenChange,
+}: {
+  owner: Owner | null;
+  onOpenChange: (v: boolean) => void;
+}) {
   const { t } = useTranslation();
   const stats = useQuery({
     queryKey: ["owner-stats", owner?.id],
@@ -249,7 +304,10 @@ function StatsDialog({ owner, onOpenChange }: { owner: Owner | null; onOpenChang
       onOpenChange={onOpenChange}
       title={`${t("common.statistics")} — ${owner?.fullName ?? ""}`}
       submitLabel={t("common.close")}
-      onSubmit={(e) => { e.preventDefault(); onOpenChange(false); }}
+      onSubmit={(e) => {
+        e.preventDefault();
+        onOpenChange(false);
+      }}
     >
       {stats.isLoading ? (
         <div className="text-sm text-muted-foreground">{t("common.loading")}</div>
@@ -259,7 +317,9 @@ function StatsDialog({ owner, onOpenChange }: { owner: Owner | null; onOpenChang
         <div className="grid grid-cols-2 gap-3">
           {entries.map(([k, v]) => (
             <div key={k} className="rounded-lg border border-border bg-muted/30 p-3">
-              <div className="text-xs uppercase tracking-wide text-muted-foreground">{k.replace(/([A-Z])/g, " $1").trim()}</div>
+              <div className="text-xs uppercase tracking-wide text-muted-foreground">
+                {k.replace(/([A-Z])/g, " $1").trim()}
+              </div>
               <div className="mt-1 text-2xl font-semibold">{v as number}</div>
             </div>
           ))}
@@ -269,8 +329,18 @@ function StatsDialog({ owner, onOpenChange }: { owner: Owner | null; onOpenChang
   );
 }
 
-export function FormField({ id, label, type = "text", defaultValue, required = true }: {
-  id: string; label: string; type?: string; defaultValue?: string | number; required?: boolean;
+export function FormField({
+  id,
+  label,
+  type = "text",
+  defaultValue,
+  required = true,
+}: {
+  id: string;
+  label: string;
+  type?: string;
+  defaultValue?: string | number;
+  required?: boolean;
 }) {
   return (
     <div className="space-y-2">
@@ -280,7 +350,11 @@ export function FormField({ id, label, type = "text", defaultValue, required = t
   );
 }
 
-function TextareaField({ id, label, defaultValue }: {
+function TextareaField({
+  id,
+  label,
+  defaultValue,
+}: {
   id: string;
   label: string;
   defaultValue?: string;

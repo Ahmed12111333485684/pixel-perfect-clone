@@ -8,7 +8,11 @@ import { Label } from "@/components/ui/label";
 import { MediaPreview } from "@/components/MediaPreview";
 import { Textarea } from "@/components/ui/textarea";
 import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
 import { BrandLogo } from "@/components/BrandLogo";
 import { LanguageToggle } from "@/components/LanguageToggle";
@@ -23,7 +27,10 @@ export const Route = createFileRoute("/list-property")({
       { title: "List your property — Estatly" },
       { name: "description", content: "Submit your property to Estatly. Our team will reach out." },
       { property: "og:title", content: "List your property — Estatly" },
-      { property: "og:description", content: "Submit your property to Estatly. Our team will reach out." },
+      {
+        property: "og:description",
+        content: "Submit your property to Estatly. Our team will reach out.",
+      },
     ],
   }),
   component: LeadIntakePage,
@@ -48,7 +55,9 @@ function LeadIntakePage() {
   const [prefMonth, setPrefMonth] = useState("");
   const [prefDay, setPrefDay] = useState("");
   const [prefTime, setPrefTime] = useState("");
-  useEffect(() => { /* keep blank by default */ }, []);
+  useEffect(() => {
+    /* keep blank by default */
+  }, []);
 
   const reset = () => {
     setSubmitted(null);
@@ -140,7 +149,11 @@ function LeadIntakePage() {
           <p className="mt-2 text-muted-foreground">{t("lead.pageSubtitle")}</p>
         </div>
 
-        <form ref={formRef} onSubmit={onSubmit} className="space-y-6 rounded-2xl border border-border bg-card p-8 shadow-card">
+        <form
+          ref={formRef}
+          onSubmit={onSubmit}
+          className="space-y-6 rounded-2xl border border-border bg-card p-8 shadow-card"
+        >
           <Section title={t("common.details")}>
             <Field id="propertyName" label={t("lead.propertyName")} required />
             <Field id="propertyAddress" label={t("lead.propertyAddress")} required />
@@ -148,10 +161,14 @@ function LeadIntakePage() {
               <div className="space-y-2">
                 <Label>{t("lead.propertyType")}</Label>
                 <Select value={type} onValueChange={setType}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     {PROPERTY_TYPES.map((p) => (
-                      <SelectItem key={p} value={p}>{localizePropertyType(t, p)}</SelectItem>
+                      <SelectItem key={p} value={p}>
+                        {localizePropertyType(t, p)}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -159,10 +176,14 @@ function LeadIntakePage() {
               <div className="space-y-2">
                 <Label>{t("lead.intent")}</Label>
                 <Select value={intent} onValueChange={(v) => setIntent(v as LeadIntent)}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     {INTENTS.map((i) => (
-                      <SelectItem key={i} value={i}>{t(`intent.${i}`)}</SelectItem>
+                      <SelectItem key={i} value={i}>
+                        {t(`intent.${i}`)}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -170,10 +191,19 @@ function LeadIntakePage() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="listedPrice">
-                {intent === "Rent" || intent === "LetOut" ? t("common.monthlyRent") : t("common.salePrice")}
+                {intent === "Rent" || intent === "LetOut"
+                  ? t("common.monthlyRent")
+                  : t("common.salePrice")}
                 <span className="text-destructive"> *</span>
               </Label>
-              <Input id="listedPrice" name="listedPrice" type="number" step="0.01" min="0" required />
+              <Input
+                id="listedPrice"
+                name="listedPrice"
+                type="number"
+                step="0.01"
+                min="0"
+                required
+              />
             </div>
             <Field id="ownerNationalId" label={t("lead.ownerNationalId")} required />
           </Section>
@@ -185,18 +215,48 @@ function LeadIntakePage() {
               <Field id="email" label={t("lead.contactEmail")} required type="email" />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="preferredContactAt">{t("lead.preferredContactAt")} <span className="text-xs text-muted-foreground">({t("common.optional")})</span></Label>
-                <input type="hidden" id="preferredContactAt" name="preferredContactAt" value={(prefYear && prefMonth && prefDay) ? `${prefYear}-${prefMonth}-${prefDay}T${prefTime}` : ""} />
-                <div className="flex items-center gap-2">
-                  <div className="grid grid-cols-[1fr_auto_1fr_auto_1fr] items-center gap-2">
-                    <Input inputMode="numeric" placeholder="YYYY" value={prefYear} onChange={(e) => setPrefYear(e.target.value.replace(/\D/g, "").slice(0, 4))} maxLength={4} />
-                    <span className="text-muted-foreground">/</span>
-                    <Input inputMode="numeric" placeholder="MM" value={prefMonth} onChange={(e) => setPrefMonth(e.target.value.replace(/\D/g, "").slice(0, 2))} maxLength={2} />
-                    <span className="text-muted-foreground">/</span>
-                    <Input inputMode="numeric" placeholder="DD" value={prefDay} onChange={(e) => setPrefDay(e.target.value.replace(/\D/g, "").slice(0, 2))} maxLength={2} />
-                  </div>
-                  <Input type="time" value={prefTime} onChange={(e) => setPrefTime(e.target.value)} />
+              <Label htmlFor="preferredContactAt">
+                {t("lead.preferredContactAt")}{" "}
+                <span className="text-xs text-muted-foreground">({t("common.optional")})</span>
+              </Label>
+              <input
+                type="hidden"
+                id="preferredContactAt"
+                name="preferredContactAt"
+                value={
+                  prefYear && prefMonth && prefDay
+                    ? `${prefYear}-${prefMonth}-${prefDay}T${prefTime}`
+                    : ""
+                }
+              />
+              <div className="flex items-center gap-2">
+                <div className="grid grid-cols-[1fr_auto_1fr_auto_1fr] items-center gap-2">
+                  <Input
+                    inputMode="numeric"
+                    placeholder="YYYY"
+                    value={prefYear}
+                    onChange={(e) => setPrefYear(e.target.value.replace(/\D/g, "").slice(0, 4))}
+                    maxLength={4}
+                  />
+                  <span className="text-muted-foreground">/</span>
+                  <Input
+                    inputMode="numeric"
+                    placeholder="MM"
+                    value={prefMonth}
+                    onChange={(e) => setPrefMonth(e.target.value.replace(/\D/g, "").slice(0, 2))}
+                    maxLength={2}
+                  />
+                  <span className="text-muted-foreground">/</span>
+                  <Input
+                    inputMode="numeric"
+                    placeholder="DD"
+                    value={prefDay}
+                    onChange={(e) => setPrefDay(e.target.value.replace(/\D/g, "").slice(0, 2))}
+                    maxLength={2}
+                  />
                 </div>
+                <Input type="time" value={prefTime} onChange={(e) => setPrefTime(e.target.value)} />
+              </div>
             </div>
             <div className="space-y-2">
               <Label htmlFor="notes">{t("lead.notes")}</Label>
@@ -208,7 +268,12 @@ function LeadIntakePage() {
             <ImagePicker files={files} onChange={setFiles} />
           </Section>
 
-          <Button type="submit" className="w-full bg-gold-gradient text-gold-foreground hover:opacity-95" disabled={loading} size="lg">
+          <Button
+            type="submit"
+            className="w-full bg-gold-gradient text-gold-foreground hover:opacity-95"
+            disabled={loading}
+            size="lg"
+          >
             {loading && <Loader2 className="me-2 h-4 w-4 animate-spin" />}
             {loading ? t("common.submitting") : t("common.submit")}
           </Button>
@@ -254,10 +319,23 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   );
 }
 
-function Field({ id, label, required, type = "text" }: { id: string; label: string; required?: boolean; type?: string }) {
+function Field({
+  id,
+  label,
+  required,
+  type = "text",
+}: {
+  id: string;
+  label: string;
+  required?: boolean;
+  type?: string;
+}) {
   return (
     <div className="space-y-2">
-      <Label htmlFor={id}>{label}{required && <span className="text-destructive"> *</span>}</Label>
+      <Label htmlFor={id}>
+        {label}
+        {required && <span className="text-destructive"> *</span>}
+      </Label>
       <Input id={id} name={id} type={type} required={required} />
     </div>
   );
@@ -289,8 +367,17 @@ function ImagePicker({ files, onChange }: { files: File[]; onChange: (f: File[])
       {files.length > 0 && (
         <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
           {files.map((f, i) => (
-            <div key={i} className="group relative aspect-square overflow-hidden rounded-lg border border-border bg-muted">
-              <MediaPreview src={URL.createObjectURL(f)} alt={f.name} fileName={f.name} mimeType={f.type} className="h-full w-full object-cover" />
+            <div
+              key={i}
+              className="group relative aspect-square overflow-hidden rounded-lg border border-border bg-muted"
+            >
+              <MediaPreview
+                src={URL.createObjectURL(f)}
+                alt={f.name}
+                fileName={f.name}
+                mimeType={f.type}
+                className="h-full w-full object-cover"
+              />
               <button
                 type="button"
                 onClick={() => onChange(files.filter((_, idx) => idx !== i))}

@@ -8,7 +8,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { PageHeader } from "@/components/PageHeader";
 import { CheckCircle2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
@@ -20,7 +26,11 @@ export const Route = createFileRoute("/partner/submit-property")({
     const token = window.localStorage.getItem("estatly.token");
     if (!token) throw redirect({ to: "/login" });
   },
-  component: () => <AppLayout><PartnerSubmitPropertyPage /></AppLayout>,
+  component: () => (
+    <AppLayout>
+      <PartnerSubmitPropertyPage />
+    </AppLayout>
+  ),
 });
 
 const INTENTS: LeadIntent[] = ["Buy", "Rent", "Sell", "LetOut"];
@@ -85,7 +95,9 @@ function PartnerSubmitPropertyPage() {
             <CheckCircle2 className="h-7 w-7" />
           </div>
           <h1 className="font-display text-3xl">{t("lead.submitted")}</h1>
-          <p className="mt-2 text-muted-foreground">{submitted.propertyName} - #{submitted.id}</p>
+          <p className="mt-2 text-muted-foreground">
+            {submitted.propertyName} - #{submitted.id}
+          </p>
           <div className="mt-8 flex justify-center gap-3">
             <Button onClick={reset}>{t("lead.submitAnother")}</Button>
           </div>
@@ -97,7 +109,11 @@ function PartnerSubmitPropertyPage() {
   return (
     <div>
       <PageHeader title={t("nav.submitProperty")} subtitle={t("partner.submitPropertySubtitle")} />
-      <form ref={formRef} onSubmit={onSubmit} className="space-y-6 rounded-2xl border border-border bg-card p-8 shadow-card">
+      <form
+        ref={formRef}
+        onSubmit={onSubmit}
+        className="space-y-6 rounded-2xl border border-border bg-card p-8 shadow-card"
+      >
         <Field id="propertyName" label={t("lead.propertyName")} required />
         <Field id="address" label={t("lead.propertyAddress")} required />
 
@@ -105,18 +121,30 @@ function PartnerSubmitPropertyPage() {
           <div className="space-y-2">
             <Label>{t("lead.propertyType")}</Label>
             <Select value={type} onValueChange={setType}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
               <SelectContent>
-                {PROPERTY_TYPES.map((p) => <SelectItem key={p} value={p}>{localizePropertyType(t, p)}</SelectItem>)}
+                {PROPERTY_TYPES.map((p) => (
+                  <SelectItem key={p} value={p}>
+                    {localizePropertyType(t, p)}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
           <div className="space-y-2">
             <Label>{t("lead.intent")}</Label>
             <Select value={intent} onValueChange={(v) => setIntent(v as LeadIntent)}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
               <SelectContent>
-                {INTENTS.map((i) => <SelectItem key={i} value={i}>{t(`intent.${i}`)}</SelectItem>)}
+                {INTENTS.map((i) => (
+                  <SelectItem key={i} value={i}>
+                    {t(`intent.${i}`)}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
@@ -124,7 +152,9 @@ function PartnerSubmitPropertyPage() {
 
         <div className="space-y-2">
           <Label htmlFor="listedPrice">
-            {intent === "Rent" || intent === "LetOut" ? t("common.monthlyRent") : t("common.salePrice")}
+            {intent === "Rent" || intent === "LetOut"
+              ? t("common.monthlyRent")
+              : t("common.salePrice")}
           </Label>
           <Input id="listedPrice" name="listedPrice" type="number" step="0.01" min="0" required />
         </div>
@@ -146,7 +176,12 @@ function PartnerSubmitPropertyPage() {
           />
         </div>
 
-        <Button type="submit" className="w-full bg-gold-gradient text-gold-foreground hover:opacity-95" disabled={loading} size="lg">
+        <Button
+          type="submit"
+          className="w-full bg-gold-gradient text-gold-foreground hover:opacity-95"
+          disabled={loading}
+          size="lg"
+        >
           {loading && <Loader2 className="me-2 h-4 w-4 animate-spin" />}
           {loading ? t("common.submitting") : t("common.submit")}
         </Button>
@@ -155,10 +190,23 @@ function PartnerSubmitPropertyPage() {
   );
 }
 
-function Field({ id, label, required, type = "text" }: { id: string; label: string; required?: boolean; type?: string }) {
+function Field({
+  id,
+  label,
+  required,
+  type = "text",
+}: {
+  id: string;
+  label: string;
+  required?: boolean;
+  type?: string;
+}) {
   return (
     <div className="space-y-2">
-      <Label htmlFor={id}>{label}{required && <span className="text-destructive"> *</span>}</Label>
+      <Label htmlFor={id}>
+        {label}
+        {required && <span className="text-destructive"> *</span>}
+      </Label>
       <Input id={id} name={id} type={type} required={required} />
     </div>
   );

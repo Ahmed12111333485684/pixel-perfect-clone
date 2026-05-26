@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+﻿import { createFileRoute } from "@tanstack/react-router";
 import { Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
@@ -68,9 +68,7 @@ function buildResidentialPayload(fd: FormData, original?: ResidentialSeeker | nu
 
   RESIDENTIAL_FIELDS.forEach((key) => {
     const value = readFieldValue(fd, key);
-    const originalValue = normalizeValue(original?.[key as ResidentialFieldKey] as string | null | undefined);
-
-    if (!original || value !== originalValue) {
+    if (!original || value !== normalizeValue(original[key as ResidentialFieldKey] as string | null | undefined)) {
       payload[key] = value;
     }
   });
@@ -464,8 +462,8 @@ function ResidentialSeekerDialog({
   const { t } = useTranslation();
   const [listingType, setListingType] = useState(seeker?.listingType ?? "Rental");
   const maxBudgetLabel = listingType === "Rental"
-    ? t("residentialSeekers.rentAmount")
-    : t("residentialSeekers.salePrice");
+    ? t("residentialSeekers.maxRentalBudget")
+    : t("residentialSeekers.maxBudget");
 
   return (
     <FormDialog
@@ -518,7 +516,7 @@ function ResidentialSeekerDialog({
             onValueChange={setListingType}
             options={[
               { value: "Rental", label: t("listingType.Rental") },
-              { value: "Sale", label: t("requestType.Purchase") },
+              { value: "Sale", label: t("listingType.Sale") },
             ]}
           />
           <SelectField

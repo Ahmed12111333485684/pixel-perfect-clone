@@ -11,9 +11,16 @@ export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
       { title: "Estatly — Property Management for Owners & Agencies" },
-      { name: "description", content: "Manage owners, properties, leads, contracts, and payments — all in one elegant platform." },
+      {
+        name: "description",
+        content:
+          "Manage owners, properties, leads, contracts, and payments — all in one elegant platform.",
+      },
       { property: "og:title", content: "Estatly — Property Management" },
-      { property: "og:description", content: "Manage owners, properties, leads, contracts, and payments — all in one place." },
+      {
+        property: "og:description",
+        content: "Manage owners, properties, leads, contracts, and payments — all in one place.",
+      },
       { property: "og:image", content: heroImg },
     ],
   }),
@@ -48,7 +55,10 @@ function Landing() {
           style={{ backgroundImage: `url(${heroImg})` }}
           aria-hidden
         />
-        <div className="absolute inset-0 -z-10 bg-gradient-to-b from-primary/85 via-primary/70 to-primary/40" aria-hidden />
+        <div
+          className="absolute inset-0 -z-10 bg-gradient-to-b from-primary/85 via-primary/70 to-primary/40"
+          aria-hidden
+        />
         <div className="mx-auto flex max-w-7xl flex-col items-start gap-8 px-6 pb-24 pt-40 text-white md:pt-56">
           <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-medium backdrop-blur">
             <Sparkles className="h-3.5 w-3.5 text-gold" />
@@ -61,10 +71,19 @@ function Landing() {
             {t("landing.heroSubtitle")}
           </p>
           <div className="flex flex-wrap gap-3">
-            <Button asChild size="lg" className="bg-gold-gradient text-gold-foreground shadow-gold hover:opacity-95">
+            <Button
+              asChild
+              size="lg"
+              className="bg-gold-gradient text-gold-foreground shadow-gold hover:opacity-95"
+            >
               <Link to="/list-property">{t("landing.listProperty")}</Link>
             </Button>
-            <Button asChild size="lg" variant="outline" className="border-white/40 bg-white/15 text-white shadow-lg shadow-black/10 backdrop-blur hover:bg-white/25 hover:text-white">
+            <Button
+              asChild
+              size="lg"
+              variant="outline"
+              className="border-white/40 bg-white/15 text-white shadow-lg shadow-black/10 backdrop-blur hover:bg-white/25 hover:text-white"
+            >
               <Link to="/available-properties">{t("publicProperties.browse")}</Link>
             </Button>
             <Button
@@ -73,9 +92,16 @@ function Landing() {
               variant="outline"
               className="border-white/40 bg-white/15 text-white shadow-lg shadow-black/10 backdrop-blur hover:bg-white/25 hover:text-white"
             >
-              <Link to="/property-request">{t("landing.findProperty") || "Find Your Property"}</Link>
+              <Link to="/property-request">
+                {t("landing.findProperty") || "Find Your Property"}
+              </Link>
             </Button>
-            <Button asChild size="lg" variant="outline" className="border-white/40 bg-white/15 text-white shadow-lg shadow-black/10 backdrop-blur hover:bg-white/25 hover:text-white">
+            <Button
+              asChild
+              size="lg"
+              variant="outline"
+              className="border-white/40 bg-white/15 text-white shadow-lg shadow-black/10 backdrop-blur hover:bg-white/25 hover:text-white"
+            >
               <Link to="/login">{t("landing.backofficeSignIn")}</Link>
             </Button>
             <Button
@@ -99,7 +125,11 @@ function Landing() {
           {[
             { icon: ImagePlus, title: t("landing.feature1Title"), body: t("landing.feature1Body") },
             { icon: Building2, title: t("landing.feature2Title"), body: t("landing.feature2Body") },
-            { icon: ScrollText, title: t("landing.feature3Title"), body: t("landing.feature3Body") },
+            {
+              icon: ScrollText,
+              title: t("landing.feature3Title"),
+              body: t("landing.feature3Body"),
+            },
           ].map((f, i) => (
             <div
               key={i}

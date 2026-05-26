@@ -11,7 +11,11 @@ import { Input } from "@/components/ui/input";
 import { formatDateTime } from "@/lib/format";
 
 export const Route = createFileRoute("/partner/my-properties")({
-  component: () => <AppLayout><PartnerMyPropertiesPage /></AppLayout>,
+  component: () => (
+    <AppLayout>
+      <PartnerMyPropertiesPage />
+    </AppLayout>
+  ),
 });
 
 function PartnerMyPropertiesPage() {
@@ -36,27 +40,43 @@ function PartnerMyPropertiesPage() {
     enabled: auth.isPartner,
   });
 
-  if (!auth.isPartner) {
-    return (
-      <div className="rounded-xl border border-border bg-card p-8 text-center text-muted-foreground">
-        {t("common.noScreenAccess")}
-      </div>
-    );
-  }
-
   const cols: Column<CommercialListing>[] = [
-    { key: "adNumber", header: t("commercialListings.adNumber"), cell: (r) => <span className="font-medium">{r.adNumber ?? "-"}</span> },
-    { key: "ownerName", header: t("commercialListings.ownerName"), cell: (r) => r.ownerName ?? "-" },
-    { key: "deedNumber", header: t("commercialListings.deedNumber"), cell: (r) => r.deedNumber ? <span className="font-mono text-sm">{r.deedNumber}</span> : "-" },
-    { key: "propertyType", header: t("commercialListings.propertyType"), cell: (r) => r.propertyType ?? "-" },
+    {
+      key: "adNumber",
+      header: t("commercialListings.adNumber"),
+      cell: (r) => <span className="font-medium">{r.adNumber ?? "-"}</span>,
+    },
+    {
+      key: "ownerName",
+      header: t("commercialListings.ownerName"),
+      cell: (r) => r.ownerName ?? "-",
+    },
+    {
+      key: "deedNumber",
+      header: t("commercialListings.deedNumber"),
+      cell: (r) => (r.deedNumber ? <span className="font-mono text-sm">{r.deedNumber}</span> : "-"),
+    },
+    {
+      key: "propertyType",
+      header: t("commercialListings.propertyType"),
+      cell: (r) => r.propertyType ?? "-",
+    },
     { key: "location", header: t("commercialListings.location"), cell: (r) => r.location ?? "-" },
     {
       key: "status",
       header: t("common.status"),
       cell: (r) => <StatusBadge tone="neutral">{r.propertyStatus ?? "-"}</StatusBadge>,
     },
-    { key: "rentAmount", header: t("commercialListings.rentAmount"), cell: (r) => r.rentAmount ?? "-" },
-    { key: "updatedAt", header: t("common.updatedAt"), cell: (r) => formatDateTime(r.updatedAt ?? r.createdAt) },
+    {
+      key: "rentAmount",
+      header: t("commercialListings.rentAmount"),
+      cell: (r) => r.rentAmount ?? "-",
+    },
+    {
+      key: "updatedAt",
+      header: t("common.updatedAt"),
+      cell: (r) => formatDateTime(r.updatedAt ?? r.createdAt),
+    },
   ];
 
   const filtered = useMemo(() => {
@@ -64,15 +84,23 @@ function PartnerMyPropertiesPage() {
     const lower = search.toLowerCase();
     return (list.data ?? []).filter((record) => {
       return (
-        (record.adNumber ?? "").toLowerCase().includes(lower)
-        || (record.ownerName ?? "").toLowerCase().includes(lower)
-          || (record.deedNumber ?? "").toLowerCase().includes(lower)
-        || (record.location ?? "").toLowerCase().includes(lower)
-        || (record.propertyType ?? "").toLowerCase().includes(lower)
-        || (record.propertyStatus ?? "").toLowerCase().includes(lower)
+        (record.adNumber ?? "").toLowerCase().includes(lower) ||
+        (record.ownerName ?? "").toLowerCase().includes(lower) ||
+        (record.deedNumber ?? "").toLowerCase().includes(lower) ||
+        (record.location ?? "").toLowerCase().includes(lower) ||
+        (record.propertyType ?? "").toLowerCase().includes(lower) ||
+        (record.propertyStatus ?? "").toLowerCase().includes(lower)
       );
     });
   }, [list.data, search]);
+
+  if (!auth.isPartner) {
+    return (
+      <div className="rounded-xl border border-border bg-card p-8 text-center text-muted-foreground">
+        {t("common.noScreenAccess")}
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -85,7 +113,13 @@ function PartnerMyPropertiesPage() {
           className="max-w-sm"
         />
       </div>
-      <DataTable columns={cols} rows={filtered} loading={list.isLoading} error={list.error} rowKey={(r) => r.id} />
+      <DataTable
+        columns={cols}
+        rows={filtered}
+        loading={list.isLoading}
+        error={list.error}
+        rowKey={(r) => r.id}
+      />
     </div>
   );
 }

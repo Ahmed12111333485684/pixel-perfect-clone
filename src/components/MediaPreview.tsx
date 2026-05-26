@@ -10,7 +10,15 @@ type MediaPreviewProps = {
   controls?: boolean;
 };
 
-export function MediaPreview({ src, alt, fileName, mimeType, className, loading, controls = false }: MediaPreviewProps) {
+export function MediaPreview({
+  src,
+  alt,
+  fileName,
+  mimeType,
+  className,
+  loading,
+  controls = false,
+}: MediaPreviewProps) {
   if (isVideoAsset({ fileName, mimeType, url: src })) {
     return (
       <video

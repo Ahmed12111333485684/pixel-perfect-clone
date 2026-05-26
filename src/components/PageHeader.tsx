@@ -47,7 +47,10 @@ export function ErrorBlock({ message }: { message?: string }) {
   );
 }
 
-export function StatusBadge({ children, tone = "neutral" }: {
+export function StatusBadge({
+  children,
+  tone = "neutral",
+}: {
   children: React.ReactNode;
   tone?: "neutral" | "success" | "warning" | "destructive" | "info";
 }) {
@@ -59,7 +62,9 @@ export function StatusBadge({ children, tone = "neutral" }: {
     info: "bg-accent text-accent-foreground",
   };
   return (
-    <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${tones[tone]}`}>
+    <span
+      className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${tones[tone]}`}
+    >
       {children}
     </span>
   );

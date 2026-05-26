@@ -1,4 +1,19 @@
-import { BadgeDollarSign, Building2, ClipboardList, ContactRound, CreditCard, Inbox, LayoutDashboard, Megaphone, ScrollText, ShieldCheck, ShoppingBag, Sparkles, Users, Users2 } from "lucide-react";
+import {
+  BadgeDollarSign,
+  Building2,
+  ClipboardList,
+  ContactRound,
+  CreditCard,
+  Inbox,
+  LayoutDashboard,
+  Megaphone,
+  ScrollText,
+  ShieldCheck,
+  ShoppingBag,
+  Sparkles,
+  Users,
+  Users2,
+} from "lucide-react";
 import type { ComponentType } from "react";
 
 import type { Role } from "./api";
@@ -18,7 +33,12 @@ export interface AppNavItem {
 export const APP_NAV_ITEMS: AppNavItem[] = [
   { to: "/app", label: "nav.dashboard", icon: LayoutDashboard },
   { to: "/app/owners", label: "nav.owners", icon: Users, staffOnly: true },
-  { to: "/app/employee-productivity", label: "nav.productivity", icon: ClipboardList, employeeOnly: true },
+  {
+    to: "/app/employee-productivity",
+    label: "nav.productivity",
+    icon: ClipboardList,
+    employeeOnly: true,
+  },
   { to: "/app/partners", label: "nav.partners", icon: Users2, adminOnly: true },
   { to: "/app/properties", label: "nav.properties", icon: Building2 },
   { to: "/app/amenities", label: "nav.amenities", icon: Sparkles, staffOnly: true },
@@ -44,21 +64,25 @@ function normalizePath(pathname: string) {
 export function getNavItemForPathname(pathname: string): AppNavItem | undefined {
   const normalized = normalizePath(pathname);
   const flatItems: AppNavItem[] = [];
-  
+
   function flatten(items: AppNavItem[]) {
     for (const item of items) {
       flatItems.push(item);
       if (item.children) flatten(item.children);
     }
   }
-  
+
   flatten(APP_NAV_ITEMS);
   return [...flatItems]
     .sort((left, right) => right.to.length - left.to.length)
     .find((item) => normalized === item.to || normalized.startsWith(`${item.to}/`));
 }
 
-export function isNavItemVisible(item: AppNavItem, role?: Role | null, screenPermissions: string[] = []): boolean {
+export function isNavItemVisible(
+  item: AppNavItem,
+  role?: Role | null,
+  screenPermissions: string[] = [],
+): boolean {
   if (item.partnerOnly) return role === "Partner";
   if (item.employeeOnly) return role === "Employee";
   if (role === "Admin") return true;
@@ -66,7 +90,9 @@ export function isNavItemVisible(item: AppNavItem, role?: Role | null, screenPer
   if (role === "Employee") {
     if (item.isParent) {
       // Parent is visible if any child is visible
-      return item.children?.some((child) => isNavItemVisible(child, role, screenPermissions)) ?? false;
+      return (
+        item.children?.some((child) => isNavItemVisible(child, role, screenPermissions)) ?? false
+      );
     }
     return !item.adminOnly && screenPermissions.includes(item.to);
   }
@@ -79,11 +105,18 @@ export function isNavItemVisible(item: AppNavItem, role?: Role | null, screenPer
   return true;
 }
 
-export function getVisibleNavItems(role?: Role | null, screenPermissions: string[] = []): AppNavItem[] {
+export function getVisibleNavItems(
+  role?: Role | null,
+  screenPermissions: string[] = [],
+): AppNavItem[] {
   return APP_NAV_ITEMS.filter((item) => isNavItemVisible(item, role, screenPermissions));
 }
 
-export function isCurrentPathAccessible(pathname: string, role?: Role | null, screenPermissions: string[] = []): boolean {
+export function isCurrentPathAccessible(
+  pathname: string,
+  role?: Role | null,
+  screenPermissions: string[] = [],
+): boolean {
   if (role === "Admin") return true;
   const item = getNavItemForPathname(pathname);
   return !item || isNavItemVisible(item, role, screenPermissions);

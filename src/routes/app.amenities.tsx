@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { api, type Amenity } from "@/lib/api";
 import { PageHeader } from "@/components/PageHeader";
@@ -21,10 +21,14 @@ export const Route = createFileRoute("/app/amenities")({
 function AmenitiesPage() {
   const { t } = useTranslation();
   const qc = useQueryClient();
-  const list = useQuery({ queryKey: ["amenities"], queryFn: () => api<Amenity[]>("/api/amenities") });
+  const list = useQuery({
+    queryKey: ["amenities"],
+    queryFn: () => api<Amenity[]>("/api/amenities"),
+  });
   const [editing, setEditing] = useState<Amenity | null>(null);
   const [creating, setCreating] = useState(false);
   const [deleting, setDeleting] = useState<Amenity | null>(null);
+  const [search, setSearch] = useState("");
 
   const upsert = useMutation({
     mutationFn: async (vals: { id?: number; name: string; description?: string }) => {
@@ -37,7 +41,8 @@ function AmenitiesPage() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["amenities"] });
       toast.success(t("common.success"));
-      setEditing(null); setCreating(false);
+      setEditing(null);
+      setCreating(false);
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -53,20 +58,51 @@ function AmenitiesPage() {
   });
 
   const cols: Column<Amenity>[] = [
-    { key: "name", header: t("common.name"), cell: (r) => <span className="font-medium">{r.name}</span> },
-    { key: "desc", header: t("common.description"), cell: (r) => <span className="text-muted-foreground">{r.description ?? "—"}</span> },
+    {
+      key: "name",
+      header: t("common.name"),
+      cell: (r) => <span className="font-medium">{r.name}</span>,
+    },
+    {
+      key: "desc",
+      header: t("common.description"),
+      cell: (r) => <span className="text-muted-foreground">{r.description ?? "—"}</span>,
+    },
     { key: "created", header: t("common.createdAt"), cell: (r) => formatDate(r.createdAt) },
   ];
+
+  const filteredAmenities = useMemo(() => {
+    if (!search.trim()) return list.data ?? [];
+    const lowerSearch = search.toLowerCase();
+    return (list.data ?? []).filter((amenity) => {
+      const nameMatch = amenity.name.toLowerCase().includes(lowerSearch);
+      const descriptionMatch = (amenity.description ?? "").toLowerCase().includes(lowerSearch);
+      return nameMatch || descriptionMatch;
+    });
+  }, [list.data, search]);
 
   return (
     <div>
       <PageHeader
         title={t("nav.amenities")}
-        actions={<Button onClick={() => setCreating(true)}><Plus className="me-1 h-4 w-4" />{t("common.add")}</Button>}
+        actions={
+          <Button onClick={() => setCreating(true)}>
+            <Plus className="me-1 h-4 w-4" />
+            {t("common.add")}
+          </Button>
+        }
       />
+      <div className="mb-4">
+        <Input
+          placeholder={t("common.search")}
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="max-w-sm"
+        />
+      </div>
       <DataTable
         columns={cols}
-        rows={list.data}
+        rows={filteredAmenities}
         loading={list.isLoading}
         error={list.error}
         rowKey={(r) => r.id}
@@ -76,7 +112,12 @@ function AmenitiesPage() {
       <FormDialog
         key={`${editing?.id ?? "new"}-${creating ? "create" : "edit"}`}
         open={creating || !!editing}
-        onOpenChange={(v) => { if (!v) { setCreating(false); setEditing(null); } }}
+        onOpenChange={(v) => {
+          if (!v) {
+            setCreating(false);
+            setEditing(null);
+          }
+        }}
         title={editing ? t("common.edit") : t("common.add")}
         submitting={upsert.isPending}
         onSubmit={(e) => {
@@ -95,7 +136,12 @@ function AmenitiesPage() {
         </div>
         <div className="space-y-2">
           <Label htmlFor="description">{t("common.description")}</Label>
-          <Textarea id="description" name="description" defaultValue={editing?.description ?? ""} rows={3} />
+          <Textarea
+            id="description"
+            name="description"
+            defaultValue={editing?.description ?? ""}
+            rows={3}
+          />
         </div>
       </FormDialog>
       <ConfirmDialog

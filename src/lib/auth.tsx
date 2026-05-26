@@ -102,10 +102,19 @@ function normalizeRole(raw?: string | undefined | null): Role | undefined {
   return undefined;
 }
 
-function userFromToken(token: string, fallbackUsername?: string, fallbackRole?: Role, fallbackScreenPermissions: string[] = []): AuthUser | null {
+function userFromToken(
+  token: string,
+  fallbackUsername?: string,
+  fallbackRole?: Role,
+  fallbackScreenPermissions: string[] = [],
+): AuthUser | null {
   const payload = decodeJwt(token);
   if (!payload) return null;
-  const rawRole = Array.isArray(payload.role) ? String(payload.role[0]) : (typeof payload.role === "string" ? payload.role : undefined);
+  const rawRole = Array.isArray(payload.role)
+    ? String(payload.role[0])
+    : typeof payload.role === "string"
+      ? payload.role
+      : undefined;
   const normalized = normalizeRole(rawRole) ?? normalizeRole(fallbackRole as string) ?? undefined;
   const finalRole = normalized ?? (fallbackRole as Role | undefined) ?? "Partner";
   const tokenUsername = typeof payload.unique_name === "string" ? payload.unique_name.trim() : "";
@@ -121,7 +130,10 @@ function userFromToken(token: string, fallbackUsername?: string, fallbackRole?: 
   return {
     username,
     role: finalRole,
-    screenPermissions: parseScreenPermissions(payload.screen_permissions, fallbackScreenPermissions),
+    screenPermissions: parseScreenPermissions(
+      payload.screen_permissions,
+      fallbackScreenPermissions,
+    ),
     ownerId: Number.isNaN(ownerId) ? undefined : ownerId,
     partnerId,
     exp: payload.exp,
