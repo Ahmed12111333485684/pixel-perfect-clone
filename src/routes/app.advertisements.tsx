@@ -41,6 +41,7 @@ const ADVERTISEMENT_FIELDS = [
   "propertyType",
   "location",
   "quantity",
+  "locationChangeCount",
   "adType",
   "installationType",
   "officeName",
@@ -88,6 +89,13 @@ function buildAdvertisementPayload(fd: FormData, original?: Advertisement | null
       const parsed = parseOptionalNumber(value);
       const nextValue = parsed === undefined ? undefined : Number(parsed);
       if (!original || nextValue !== original.quantity) payload[key] = nextValue;
+      return;
+    }
+
+    if (key === "locationChangeCount") {
+      const parsed = parseOptionalNumber(value);
+      const nextValue = parsed === undefined ? undefined : Number(parsed);
+      if (!original || nextValue !== original.locationChangeCount) payload[key] = nextValue;
       return;
     }
 
@@ -257,6 +265,11 @@ function AdvertisementsPage() {
       key: "quantity",
       header: t("advertisements.quantity"),
       cell: (row) => row.quantity,
+    },
+    {
+      key: "locationChangeCount",
+      header: t("advertisements.locationChangeCount"),
+      cell: (row) => row.locationChangeCount,
     },
     {
       key: "visitDate",
@@ -540,6 +553,18 @@ function AdvertisementDialog({
         <div className="space-y-2">
           <Label htmlFor="quantity">{t("advertisements.quantity")}</Label>
           <Input id="quantity" name="quantity" type="number" min={1} defaultValue={advertisement?.quantity ?? 1} readOnly={readOnly} />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="locationChangeCount">{t("advertisements.locationChangeCount")}</Label>
+          <Input
+            id="locationChangeCount"
+            name="locationChangeCount"
+            type="number"
+            min={0}
+            defaultValue={advertisement?.locationChangeCount ?? 0}
+            readOnly={readOnly}
+          />
         </div>
 
         <div className="space-y-2">

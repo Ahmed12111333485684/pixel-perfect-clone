@@ -29,17 +29,9 @@ export const APP_NAV_ITEMS: AppNavItem[] = [
   { to: "/app/buyers", label: "nav.buyers", icon: ShoppingBag, staffOnly: true },
   { to: "/app/sales", label: "nav.sales", icon: BadgeDollarSign },
   { to: "/app/leads", label: "nav.leads", icon: Inbox, staffOnly: true },
-  {
-    to: "/app/listings",
-    label: "nav.listings",
-    icon: Building2,
-    isParent: true,
-      children: [
-        { to: "/app/commercial-listings", label: "nav.commercialListings", icon: Building2 },
-        { to: "/app/residential-seekers", label: "nav.residentialSeekers", icon: Users2 },
-      ],
-  },
-  
+  { to: "/app/listings", label: "nav.listings", icon: Building2 },
+  { to: "/app/residential-seekers", label: "nav.residentialSeekers", icon: Users2 },
+
   { to: "/app/users", label: "nav.users", icon: ShieldCheck, adminOnly: true },
   { to: "/partner/my-properties", label: "nav.myProperties", icon: Building2, partnerOnly: true },
   { to: "/partner/submit-property", label: "nav.submitProperty", icon: Inbox, partnerOnly: true },

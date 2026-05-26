@@ -16,7 +16,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Plus, X } from "lucide-react";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/app/commercial-listings")({
+export const Route = createFileRoute("/app/listings")({
   component: CommercialListingsPage,
 });
 
@@ -37,6 +37,7 @@ const DEAL_THROUGH_OFFICE = "المكتب";
 const COMMERCIAL_FIELDS = [
   "contactDate",
   "propertyStatus",
+  "listingType",
   "adNumber",
   "dealThrough",
   "employee",
@@ -107,6 +108,11 @@ const DEAL_THROUGH_OPTIONS = [
 
 function normalizeValue(value: string | null | undefined) {
   return (value ?? "").trim();
+}
+
+function isTruthyValue(value: string | null | undefined) {
+  const normalized = normalizeValue(value).toLowerCase();
+  return normalized.length > 0 && !["false", "0", "no", "off"].includes(normalized);
 }
 
 function isPublished(value: string | null | undefined) {
@@ -196,12 +202,12 @@ function CommercialListingsPage() {
 
   const hasAccess = auth.hasRole("Admin")
     || auth.isPartner
-    || auth.user?.screenPermissions.includes("/app/commercial-listings");
+    || auth.user?.screenPermissions.includes("/app/listings");
   const canManage = auth.isStaff || auth.isPartner;
 
   const listings = useQuery({
-    queryKey: ["commercial-listings", { q, status, page, pageSize, sortBy, sortDir }],
-    queryFn: () => api<CommercialListingSearchResult>("/api/commercial-listings", {
+    queryKey: ["listings", { q, status, page, pageSize, sortBy, sortDir }],
+    queryFn: () => api<CommercialListingSearchResult>("/api/listings", {
       query: {
         q: q || undefined,
         status: status !== "all" ? status : undefined,
@@ -236,10 +242,10 @@ function CommercialListingsPage() {
     try {
       const fd = new FormData(e.currentTarget);
       const payload = buildCommercialPayload(fd, publishing, contracts);
-      await api<CommercialListing>("/api/commercial-listings", { method: "POST", body: payload });
+      await api<CommercialListing>("/api/listings", { method: "POST", body: payload });
       toast.success(t("common.created"));
       setCreating(false);
-      qc.invalidateQueries({ queryKey: ["commercial-listings"] });
+      qc.invalidateQueries({ queryKey: ["listings"] });
     } catch (error) {
       toast.error(t("common.error"));
     } finally {
@@ -262,10 +268,10 @@ function CommercialListingsPage() {
         setSelected(null);
         return;
       }
-      await api<CommercialListing>(`/api/commercial-listings/${selected.id}`, { method: "PUT", body: payload });
+      await api<CommercialListing>(`/api/listings/${selected.id}`, { method: "PUT", body: payload });
       toast.success(t("common.updated"));
       setSelected(null);
-      qc.invalidateQueries({ queryKey: ["commercial-listings"] });
+      qc.invalidateQueries({ queryKey: ["listings"] });
     } catch (error) {
       toast.error(t("common.error"));
     } finally {
@@ -277,10 +283,10 @@ function CommercialListingsPage() {
     if (!deleting) return;
     setDeletingRecord(true);
     try {
-      await api(`/api/commercial-listings/${deleting.id}`, { method: "DELETE" });
+      await api(`/api/listings/${deleting.id}`, { method: "DELETE" });
       toast.success(t("common.deleted"));
       setDeleting(null);
-      qc.invalidateQueries({ queryKey: ["commercial-listings"] });
+      qc.invalidateQueries({ queryKey: ["listings"] });
     } catch (error) {
       toast.error(t("common.error"));
     } finally {
@@ -322,6 +328,15 @@ function CommercialListingsPage() {
       cell: (r) => (
         <StatusBadge tone={statusTone(r.propertyStatus)}>{statusLabel(r.propertyStatus)}</StatusBadge>
       ),
+    },
+    {
+      key: "listingType",
+      header: t("commercialListings.listingType"),
+      cell: (r) => {
+        const normalized = normalizeValue(r.listingType);
+        if (!normalized) return t("common.notProvided");
+        return t(`listingType.${normalized}` as const, { defaultValue: normalized });
+      },
     },
     {
       key: "dealThrough",
@@ -366,7 +381,7 @@ function CommercialListingsPage() {
     },
     {
       key: "rentAmount",
-      header: t("commercialListings.rentAmount"),
+      header: t("commercialListings.price"),
       cell: (r) => r.rentAmount || t("common.notProvided"),
     },
     {
@@ -577,7 +592,9 @@ function CommercialListingDialog({
   const [publishing, setPublishing] = useState<PublishingState>(() => buildPublishingState(listing));
   const [broker, setBroker] = useState<string>(listing?.broker ?? "");
   const [propertyStatus, setPropertyStatus] = useState<string>(listing?.propertyStatus ?? STATUS_AVAILABLE);
+  const [listingType, setListingType] = useState<string>(listing?.listingType ?? "Rental");
   const [dealThrough, setDealThrough] = useState<string>(listing?.dealThrough ?? DEAL_THROUGH_OWNER);
+  const [hasKey, setHasKey] = useState<boolean>(isTruthyValue(listing?.hasKey));
   const [contracts, setContracts] = useState<BrokerageContractFormValue[]>(() => {
     const initialContracts = listing?.brokerageContracts?.length ? listing.brokerageContracts : [null];
     return initialContracts.map((contract) => contract ? {
@@ -616,7 +633,9 @@ function CommercialListingDialog({
       setPublishing(buildPublishingState(listing));
       setBroker(listing?.broker ?? "");
       setPropertyStatus(listing?.propertyStatus ?? STATUS_AVAILABLE);
+      setListingType(listing?.listingType ?? "Rental");
       setDealThrough(listing?.dealThrough ?? DEAL_THROUGH_OWNER);
+      setHasKey(isTruthyValue(listing?.hasKey));
       setContracts(
         listing?.brokerageContracts?.length
           ? listing.brokerageContracts.map((contract) => ({
@@ -662,6 +681,21 @@ function CommercialListingDialog({
               </SelectContent>
             </Select>
             <input type="hidden" name="propertyStatus" value={propertyStatus} />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="listingType" className="text-xs font-medium">
+              {t("commercialListings.listingType")}
+            </Label>
+            <Select value={listingType} onValueChange={setListingType} disabled={readOnly}>
+              <SelectTrigger id="listingType" className="mt-1">
+                <SelectValue placeholder={t("commercialListings.listingType")} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Rental">{t("listingType.Rental")}</SelectItem>
+                <SelectItem value="Sale">{t("listingType.Sale")}</SelectItem>
+              </SelectContent>
+            </Select>
+            <input type="hidden" name="listingType" value={listingType} />
           </div>
           <div className="space-y-2">
             <Label htmlFor="dealThrough" className="text-xs font-medium">
@@ -760,11 +794,29 @@ function CommercialListingDialog({
             readOnly={readOnly}
             className="sm:col-span-2"
           />
-          <TextField id="rentAmount" label={t("commercialListings.rentAmount")} defaultValue={listing?.rentAmount} readOnly={readOnly} />
+          <TextField
+            id="rentAmount"
+            label={listingType === "Sale" ? t("commercialListings.salePrice") : t("commercialListings.rentAmount")}
+            defaultValue={listing?.rentAmount}
+            readOnly={readOnly}
+          />
           <TextField id="paymentType" label={t("commercialListings.paymentType")} defaultValue={listing?.paymentType} readOnly={readOnly} />
           <TextField id="location" label={t("commercialListings.location")} defaultValue={listing?.location} readOnly={readOnly} />
           <TextField id="coordinates" label={t("commercialListings.coordinates")} defaultValue={listing?.coordinates} readOnly={readOnly} />
-          <TextField id="hasKey" label={t("commercialListings.hasKey")} defaultValue={listing?.hasKey} readOnly={readOnly} />
+          <div className="flex items-center gap-3 rounded-lg border border-border bg-background px-3 py-3">
+            <Checkbox
+              id="hasKey"
+              checked={hasKey}
+              onCheckedChange={(checked) => setHasKey(checked === true)}
+              disabled={readOnly}
+            />
+            <div className="space-y-1">
+              <Label htmlFor="hasKey" className="text-sm font-medium">
+                {t("commercialListings.hasKey")}
+              </Label>
+            </div>
+            <input type="hidden" name="hasKey" value={String(hasKey)} />
+          </div>
         </div>
       </div>
 

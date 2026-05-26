@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState, useRef, type FormEvent } from "react";
 import { useTranslation } from "react-i18next";
-import { api, ApiError } from "@/lib/api";
+import { api, ApiError, type ResidentialSeeker } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,6 +14,7 @@ import { LanguageToggle } from "@/components/LanguageToggle";
 import { PublicFooter } from "@/components/PublicFooter";
 import { CheckCircle2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { PROPERTY_TYPES, localizePropertyType } from "@/lib/property-types";
 
 export const Route = createFileRoute("/property-request")({
   head: () => ({
@@ -28,7 +29,7 @@ export const Route = createFileRoute("/property-request")({
 });
 
 interface RequestSubmission {
-  id: string;
+  id: number;
   fullName: string;
 }
 
@@ -37,11 +38,13 @@ function PropertyRequestPage() {
   const [submitted, setSubmitted] = useState<RequestSubmission | null>(null);
   const [loading, setLoading] = useState(false);
   const [requestType, setRequestType] = useState<string>("Rental");
+  const [propertyType, setPropertyType] = useState<string>(PROPERTY_TYPES[0]);
   const formRef = useRef<HTMLFormElement>(null);
 
   const reset = () => {
     setSubmitted(null);
     setRequestType("Rental");
+    setPropertyType(PROPERTY_TYPES[0]);
     formRef.current?.reset();
   };
 
@@ -59,28 +62,27 @@ function PropertyRequestPage() {
 
     setLoading(true);
     try {
-      const result = await api("/api/requests/submit", {
+      const result = await api<ResidentialSeeker>("/api/residential-seekers/submit", {
         method: "POST",
         body: {
+          sourceChannel: "Public website",
+          listingType: requestType,
+          propertyType,
           fullName,
-          mobileNumber,
-          requestType,
-          requestDate: new Date(),
+          mobile: mobileNumber,
           nationality: formData.get("nationality") || undefined,
           profession: formData.get("profession") || undefined,
-          bedroomCount: formData.get("bedroomCount") ? parseInt(formData.get("bedroomCount") as string) : undefined,
-          maxBudget: formData.get("maxBudget") ? parseFloat(formData.get("maxBudget") as string) : undefined,
+          familyCount: formData.get("familyCount") ? String(formData.get("familyCount")) : undefined,
+          requestDescription: formData.get("notes") || undefined,
+          maxBudget: formData.get("maxBudget") ? String(formData.get("maxBudget")) : undefined,
           paymentType: formData.get("paymentType") || undefined,
-          location: formData.get("location") || undefined,
+          preferredLocation: formData.get("location") || undefined,
           notes: formData.get("notes") || undefined,
         },
         anonymous: true,
       });
 
-      setSubmitted({
-        id: result.id || "submitted",
-        fullName,
-      });
+      setSubmitted({ id: result.id, fullName: result.fullName || fullName });
       toast.success(t("common.recordCreated") || "Request submitted successfully!");
     } catch (err) {
       const msg = err instanceof ApiError ? err.message : t("common.error");
@@ -209,6 +211,24 @@ function PropertyRequestPage() {
                 </div>
 
                 <div>
+                  <Label htmlFor="propertyType" className="text-xs font-medium">
+                    {t("lead.propertyType")}
+                  </Label>
+                  <Select value={propertyType} onValueChange={setPropertyType}>
+                    <SelectTrigger id="propertyType" className="mt-1">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {PROPERTY_TYPES.map((type) => (
+                        <SelectItem key={type} value={type}>
+                          {localizePropertyType(t, type)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
                   <Label htmlFor="location" className="text-xs font-medium">
                     {t("common.location")}
                   </Label>
@@ -221,15 +241,15 @@ function PropertyRequestPage() {
                 </div>
 
                 <div>
-                  <Label htmlFor="bedroomCount" className="text-xs font-medium">
-                    {t("common.bedroomCount")}
+                  <Label htmlFor="familyCount" className="text-xs font-medium">
+                    {t("residentialSeekers.familyCount")}
                   </Label>
                   <Input
-                    id="bedroomCount"
-                    name="bedroomCount"
+                    id="familyCount"
+                    name="familyCount"
                     type="number"
                     min="0"
-                    placeholder={t("common.bedroomCount")}
+                    placeholder={t("residentialSeekers.familyCount")}
                     className="mt-1"
                   />
                 </div>

@@ -388,6 +388,7 @@ export interface CommercialListing {
   rowFlag?: string | null;
   contactDate?: string | null;
   propertyStatus?: string | null;
+  listingType?: string | null;
   brokerageContract?: string | null;
   licenseNumber?: string | null;
   contractExpiry?: string | null;
@@ -473,6 +474,7 @@ export interface Advertisement {
   propertyType: string;
   location?: string | null;
   quantity: number;
+  locationChangeCount: number;
   adType: string;
   installationType: string;
   officeName?: string | null;

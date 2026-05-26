@@ -68,7 +68,9 @@ function buildResidentialPayload(fd: FormData, original?: ResidentialSeeker | nu
 
   RESIDENTIAL_FIELDS.forEach((key) => {
     const value = readFieldValue(fd, key);
-    if (!original || value !== normalizeValue(original[key as ResidentialFieldKey] as string | null | undefined)) {
+    const originalValue = normalizeValue(original?.[key as ResidentialFieldKey] as string | null | undefined);
+
+    if (!original || value !== originalValue) {
       payload[key] = value;
     }
   });
@@ -462,8 +464,8 @@ function ResidentialSeekerDialog({
   const { t } = useTranslation();
   const [listingType, setListingType] = useState(seeker?.listingType ?? "Rental");
   const maxBudgetLabel = listingType === "Rental"
-    ? t("residentialSeekers.maxRentalBudget")
-    : t("residentialSeekers.maxBudget");
+    ? t("residentialSeekers.rentAmount")
+    : t("residentialSeekers.salePrice");
 
   return (
     <FormDialog
@@ -516,7 +518,7 @@ function ResidentialSeekerDialog({
             onValueChange={setListingType}
             options={[
               { value: "Rental", label: t("listingType.Rental") },
-              { value: "Sale", label: t("listingType.Sale") },
+              { value: "Sale", label: t("requestType.Purchase") },
             ]}
           />
           <SelectField

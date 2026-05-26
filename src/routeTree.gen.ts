@@ -26,10 +26,10 @@ import { Route as AppPropertiesRouteImport } from './routes/app.properties'
 import { Route as AppPaymentsRouteImport } from './routes/app.payments'
 import { Route as AppPartnersRouteImport } from './routes/app.partners'
 import { Route as AppOwnersRouteImport } from './routes/app.owners'
+import { Route as AppListingsRouteImport } from './routes/app.listings'
 import { Route as AppLeadsRouteImport } from './routes/app.leads'
 import { Route as AppEmployeeProductivityRouteImport } from './routes/app.employee-productivity'
 import { Route as AppContractsRouteImport } from './routes/app.contracts'
-import { Route as AppCommercialListingsRouteImport } from './routes/app.commercial-listings'
 import { Route as AppBuyersRouteImport } from './routes/app.buyers'
 import { Route as AppAmenitiesRouteImport } from './routes/app.amenities'
 import { Route as AppAdvertisementsRouteImport } from './routes/app.advertisements'
@@ -121,6 +121,11 @@ const AppOwnersRoute = AppOwnersRouteImport.update({
   path: '/owners',
   getParentRoute: () => AppRoute,
 } as any)
+const AppListingsRoute = AppListingsRouteImport.update({
+  id: '/listings',
+  path: '/listings',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppLeadsRoute = AppLeadsRouteImport.update({
   id: '/leads',
   path: '/leads',
@@ -134,11 +139,6 @@ const AppEmployeeProductivityRoute = AppEmployeeProductivityRouteImport.update({
 const AppContractsRoute = AppContractsRouteImport.update({
   id: '/contracts',
   path: '/contracts',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppCommercialListingsRoute = AppCommercialListingsRouteImport.update({
-  id: '/commercial-listings',
-  path: '/commercial-listings',
   getParentRoute: () => AppRoute,
 } as any)
 const AppBuyersRoute = AppBuyersRouteImport.update({
@@ -177,10 +177,10 @@ export interface FileRoutesByFullPath {
   '/app/advertisements': typeof AppAdvertisementsRoute
   '/app/amenities': typeof AppAmenitiesRoute
   '/app/buyers': typeof AppBuyersRoute
-  '/app/commercial-listings': typeof AppCommercialListingsRoute
   '/app/contracts': typeof AppContractsRoute
   '/app/employee-productivity': typeof AppEmployeeProductivityRoute
   '/app/leads': typeof AppLeadsRouteWithChildren
+  '/app/listings': typeof AppListingsRoute
   '/app/owners': typeof AppOwnersRoute
   '/app/partners': typeof AppPartnersRoute
   '/app/payments': typeof AppPaymentsRoute
@@ -204,10 +204,10 @@ export interface FileRoutesByTo {
   '/app/advertisements': typeof AppAdvertisementsRoute
   '/app/amenities': typeof AppAmenitiesRoute
   '/app/buyers': typeof AppBuyersRoute
-  '/app/commercial-listings': typeof AppCommercialListingsRoute
   '/app/contracts': typeof AppContractsRoute
   '/app/employee-productivity': typeof AppEmployeeProductivityRoute
   '/app/leads': typeof AppLeadsRouteWithChildren
+  '/app/listings': typeof AppListingsRoute
   '/app/owners': typeof AppOwnersRoute
   '/app/partners': typeof AppPartnersRoute
   '/app/payments': typeof AppPaymentsRoute
@@ -233,10 +233,10 @@ export interface FileRoutesById {
   '/app/advertisements': typeof AppAdvertisementsRoute
   '/app/amenities': typeof AppAmenitiesRoute
   '/app/buyers': typeof AppBuyersRoute
-  '/app/commercial-listings': typeof AppCommercialListingsRoute
   '/app/contracts': typeof AppContractsRoute
   '/app/employee-productivity': typeof AppEmployeeProductivityRoute
   '/app/leads': typeof AppLeadsRouteWithChildren
+  '/app/listings': typeof AppListingsRoute
   '/app/owners': typeof AppOwnersRoute
   '/app/partners': typeof AppPartnersRoute
   '/app/payments': typeof AppPaymentsRoute
@@ -263,10 +263,10 @@ export interface FileRouteTypes {
     | '/app/advertisements'
     | '/app/amenities'
     | '/app/buyers'
-    | '/app/commercial-listings'
     | '/app/contracts'
     | '/app/employee-productivity'
     | '/app/leads'
+    | '/app/listings'
     | '/app/owners'
     | '/app/partners'
     | '/app/payments'
@@ -290,10 +290,10 @@ export interface FileRouteTypes {
     | '/app/advertisements'
     | '/app/amenities'
     | '/app/buyers'
-    | '/app/commercial-listings'
     | '/app/contracts'
     | '/app/employee-productivity'
     | '/app/leads'
+    | '/app/listings'
     | '/app/owners'
     | '/app/partners'
     | '/app/payments'
@@ -318,10 +318,10 @@ export interface FileRouteTypes {
     | '/app/advertisements'
     | '/app/amenities'
     | '/app/buyers'
-    | '/app/commercial-listings'
     | '/app/contracts'
     | '/app/employee-productivity'
     | '/app/leads'
+    | '/app/listings'
     | '/app/owners'
     | '/app/partners'
     | '/app/payments'
@@ -469,6 +469,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppOwnersRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/listings': {
+      id: '/app/listings'
+      path: '/listings'
+      fullPath: '/app/listings'
+      preLoaderRoute: typeof AppListingsRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/leads': {
       id: '/app/leads'
       path: '/leads'
@@ -488,13 +495,6 @@ declare module '@tanstack/react-router' {
       path: '/contracts'
       fullPath: '/app/contracts'
       preLoaderRoute: typeof AppContractsRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/app/commercial-listings': {
-      id: '/app/commercial-listings'
-      path: '/commercial-listings'
-      fullPath: '/app/commercial-listings'
-      preLoaderRoute: typeof AppCommercialListingsRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/buyers': {
@@ -563,10 +563,10 @@ interface AppRouteChildren {
   AppAdvertisementsRoute: typeof AppAdvertisementsRoute
   AppAmenitiesRoute: typeof AppAmenitiesRoute
   AppBuyersRoute: typeof AppBuyersRoute
-  AppCommercialListingsRoute: typeof AppCommercialListingsRoute
   AppContractsRoute: typeof AppContractsRoute
   AppEmployeeProductivityRoute: typeof AppEmployeeProductivityRoute
   AppLeadsRoute: typeof AppLeadsRouteWithChildren
+  AppListingsRoute: typeof AppListingsRoute
   AppOwnersRoute: typeof AppOwnersRoute
   AppPartnersRoute: typeof AppPartnersRoute
   AppPaymentsRoute: typeof AppPaymentsRoute
@@ -582,10 +582,10 @@ const AppRouteChildren: AppRouteChildren = {
   AppAdvertisementsRoute: AppAdvertisementsRoute,
   AppAmenitiesRoute: AppAmenitiesRoute,
   AppBuyersRoute: AppBuyersRoute,
-  AppCommercialListingsRoute: AppCommercialListingsRoute,
   AppContractsRoute: AppContractsRoute,
   AppEmployeeProductivityRoute: AppEmployeeProductivityRoute,
   AppLeadsRoute: AppLeadsRouteWithChildren,
+  AppListingsRoute: AppListingsRoute,
   AppOwnersRoute: AppOwnersRoute,
   AppPartnersRoute: AppPartnersRoute,
   AppPaymentsRoute: AppPaymentsRoute,
