@@ -36,6 +36,7 @@ const DEAL_THROUGH_OFFICE = "المكتب";
 
 const COMMERCIAL_FIELDS = [
   "contactDate",
+  "listingCategory",
   "propertyStatus",
   "listingType",
   "adNumber",
@@ -97,15 +98,86 @@ const PUBLISHING_CHANNELS: PublishingChannel[] = [
 type PublishingState = Record<string, boolean>;
 
 const PROPERTY_STATUS_OPTIONS = [
-  { value: STATUS_AVAILABLE, labelKey: "commercialListings.statusAvailable" },
-  { value: STATUS_OCCUPIED, labelKey: "commercialListings.statusOccupied" },
-  { value: STATUS_UNAVAILABLE, labelKey: "commercialListings.statusUnavailable" },
+  { value: STATUS_AVAILABLE },
+  { value: STATUS_OCCUPIED },
+  { value: STATUS_UNAVAILABLE },
 ] as const;
 
 const DEAL_THROUGH_OPTIONS = [
   { value: DEAL_THROUGH_OWNER, labelKey: "commercialListings.dealThroughOwner" },
   { value: DEAL_THROUGH_OFFICE, labelKey: "commercialListings.dealThroughOffice" },
 ] as const;
+
+const LISTING_CATEGORY_COMMERCIAL = "Commercial";
+const LISTING_CATEGORY_RESIDENTIAL = "Residential";
+type ListingCategoryValue = typeof LISTING_CATEGORY_COMMERCIAL | typeof LISTING_CATEGORY_RESIDENTIAL;
+type ListingTypeValue = "Rental" | "Sale";
+type CommercialListingStatusKey = "Available" | "Occupied" | "Unavailable";
+
+const LISTING_CATEGORY_OPTIONS = [
+  { value: LISTING_CATEGORY_COMMERCIAL },
+  { value: LISTING_CATEGORY_RESIDENTIAL },
+] as const;
+
+function normalizeListingCategory(value: string | null | undefined): ListingCategoryValue {
+  const normalized = normalizeValue(value).toLowerCase();
+  if (normalized === "residential" || normalized === "سكني") return LISTING_CATEGORY_RESIDENTIAL;
+  return LISTING_CATEGORY_COMMERCIAL;
+}
+
+function normalizeListingType(value: string | null | undefined): ListingTypeValue {
+  const normalized = normalizeValue(value).toLowerCase();
+  if (normalized === "sale" || normalized === "بيع") return "Sale";
+  return "Rental";
+}
+
+type PropertyTypeKey =
+  | "Apartment"
+  | "Shop"
+  | "Office"
+  | "Showroom"
+  | "Building"
+  | "Land"
+  | "RestHouse"
+  | "Villa"
+  | "Warehouse"
+  | "Other";
+
+function normalizePropertyType(value: string | null | undefined): PropertyTypeKey | "" {
+  const v = normalizeValue(value).toLowerCase();
+  if (v === "شقة" || v === "apartment") return "Apartment";
+  if (v === "محل" || v === "shop") return "Shop";
+  if (v === "مكتب" || v === "office") return "Office";
+  if (v === "معرض" || v === "showroom" || v === "gallery") return "Showroom";
+  if (v === "عمارة" || v === "building") return "Building";
+  if (v === "ارض" || v === "land") return "Land";
+  if (v === "استراحة" || v === "resthouse" || v === "rest house") return "RestHouse";
+  if (v === "فيلا" || v === "villa") return "Villa";
+  if (v === "مستودع" || v === "warehouse") return "Warehouse";
+  if (v === "اخري" || v === "أخرى" || v === "other") return "Other";
+  // If value already matches a key (case-insensitive), return it normalized
+  const mapping: Record<string, PropertyTypeKey> = {
+    apartment: "Apartment",
+    shop: "Shop",
+    office: "Office",
+    showroom: "Showroom",
+    building: "Building",
+    land: "Land",
+    resthouse: "RestHouse",
+    villa: "Villa",
+    warehouse: "Warehouse",
+    other: "Other",
+  };
+  if (v in mapping) return mapping[v as keyof typeof mapping];
+  return "";
+}
+
+function statusKeyFromValue(value: string | null | undefined): CommercialListingStatusKey {
+  const normalized = normalizeValue(value).toLowerCase();
+  if (normalized === STATUS_OCCUPIED || normalized === "occupied") return "Occupied";
+  if (normalized === STATUS_UNAVAILABLE || normalized === "unavailable") return "Unavailable";
+  return "Available";
+}
 
 function normalizeValue(value: string | null | undefined) {
   return (value ?? "").trim();
@@ -301,15 +373,18 @@ function CommercialListingsPage() {
   const statusLabel = (value?: string | null) => {
     const normalized = normalizeValue(value);
     if (!normalized) return t("common.notProvided");
-    if (normalized === STATUS_AVAILABLE) return t("commercialListings.statusAvailable");
-    if (normalized === STATUS_OCCUPIED) return t("commercialListings.statusOccupied");
-    if (normalized === STATUS_UNAVAILABLE) return t("commercialListings.statusUnavailable");
+    if ([STATUS_AVAILABLE, STATUS_OCCUPIED, STATUS_UNAVAILABLE, "available", "occupied", "unavailable"].includes(normalized.toLowerCase())) {
+      return t(`commercialListingStatus.${statusKeyFromValue(normalized)}`);
+    }
     return value ?? t("common.notProvided");
   };
+
+  const listingCategoryLabel = (value?: string | null) => t(`listingCategory.${normalizeListingCategory(value)}`);
 
   const columns: Column<CommercialListing>[] = [
     { key: "adNumber", header: t("commercialListings.adNumber"), cell: (r) => r.adNumber || t("common.notProvided") },
     { key: "contactDate", header: t("commercialListings.contactDate"), cell: (r) => r.contactDate || t("common.notProvided") },
+    { key: "listingCategory", header: t("commercialListings.listingCategory"), cell: (r) => listingCategoryLabel(r.listingCategory) },
     { key: "propertyStatus", header: t("commercialListings.propertyStatus"), cell: (r) => <StatusBadge tone={statusTone(r.propertyStatus)}>{statusLabel(r.propertyStatus)}</StatusBadge> },
     { key: "dealThrough", header: t("commercialListings.dealThrough"), cell: (r) => {
         const normalized = normalizeValue(r.dealThrough);
@@ -553,8 +628,10 @@ function CommercialListingDialog({
   const { t } = useTranslation();
   const [publishing, setPublishing] = useState<PublishingState>(() => buildPublishingState(listing));
   const [broker, setBroker] = useState<string>(listing?.broker ?? "");
+  const [listingCategory, setListingCategory] = useState<ListingCategoryValue>(normalizeListingCategory(listing?.listingCategory));
   const [propertyStatus, setPropertyStatus] = useState<string>(listing?.propertyStatus ?? STATUS_AVAILABLE);
-  const [listingType, setListingType] = useState<string>(listing?.listingType ?? "Rental");
+  const [listingType, setListingType] = useState<ListingTypeValue>(normalizeListingType(listing?.listingType));
+  const [propertyType, setPropertyType] = useState<PropertyTypeKey | "">(normalizePropertyType(listing?.propertyType));
   const [dealThrough, setDealThrough] = useState<string>(listing?.dealThrough ?? DEAL_THROUGH_OWNER);
   const [hasKey, setHasKey] = useState<boolean>(Boolean(listing?.hasKey));
   const [contracts, setContracts] = useState<BrokerageContractFormValue[]>(() => {
@@ -592,8 +669,10 @@ function CommercialListingDialog({
     if (open) {
       setPublishing(buildPublishingState(listing));
       setBroker(listing?.broker ?? "");
+      setListingCategory(normalizeListingCategory(listing?.listingCategory));
       setPropertyStatus(listing?.propertyStatus ?? STATUS_AVAILABLE);
-      setListingType(listing?.listingType ?? "Rental");
+      setListingType(normalizeListingType(listing?.listingType));
+      setPropertyType(normalizePropertyType(listing?.propertyType));
       setDealThrough(listing?.dealThrough ?? DEAL_THROUGH_OWNER);
       setHasKey(Boolean(listing?.hasKey));
       setContracts(listing?.brokerageContracts?.length
@@ -623,6 +702,20 @@ function CommercialListingDialog({
           <TextField id="adNumber" label={t("commercialListings.adNumber")} defaultValue={listing?.adNumber} readOnly={readOnly} />
           <TextField id="contactDate" label={t("commercialListings.contactDate")} defaultValue={listing?.contactDate} readOnly={readOnly} />
           <div className="space-y-2">
+            <Label htmlFor="listingCategory" className="text-xs font-medium">{t("commercialListings.listingCategory")}</Label>
+            <Select value={listingCategory} onValueChange={setListingCategory} disabled={readOnly}>
+              <SelectTrigger id="listingCategory" className="mt-1">
+                <SelectValue placeholder={t("commercialListings.listingCategory")} />
+              </SelectTrigger>
+              <SelectContent>
+                {LISTING_CATEGORY_OPTIONS.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>{t(`listingCategory.${option.value}`)}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <input type="hidden" name="listingCategory" value={listingCategory} />
+          </div>
+          <div className="space-y-2">
             <Label htmlFor="propertyStatus" className="text-xs font-medium">{t("commercialListings.propertyStatus")}</Label>
             <Select value={propertyStatus} onValueChange={setPropertyStatus} disabled={readOnly}>
               <SelectTrigger id="propertyStatus" className="mt-1">
@@ -630,7 +723,7 @@ function CommercialListingDialog({
               </SelectTrigger>
               <SelectContent>
                 {PROPERTY_STATUS_OPTIONS.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>{t(option.labelKey)}</SelectItem>
+                  <SelectItem key={option.value} value={option.value}>{t(`commercialListingStatus.${statusKeyFromValue(option.value)}`)}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -693,7 +786,27 @@ function CommercialListingDialog({
           <TextField id="mobile2" label={t("commercialListings.mobile2")} defaultValue={listing?.mobile2} readOnly={readOnly} />
           <TextField id="availableUnits" label={t("commercialListings.availableUnits")} defaultValue={listing?.availableUnits} readOnly={readOnly} />
           <TextField id="deedNumber" label={t("commercialListings.deedNumber")} defaultValue={listing?.deedNumber} readOnly={readOnly} />
-          <TextField id="propertyType" label={t("commercialListings.propertyType")} defaultValue={listing?.propertyType} readOnly={readOnly} />
+          <div className="space-y-2">
+            <Label htmlFor="propertyType" className="text-xs font-medium">{t("commercialListings.propertyType")}</Label>
+            <Select value={propertyType} onValueChange={setPropertyType} disabled={readOnly}>
+              <SelectTrigger id="propertyType" className="mt-1">
+                <SelectValue placeholder={t("commercialListings.propertyType")} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Apartment">{t("propertyType.Apartment")}</SelectItem>
+                <SelectItem value="Shop">{t("propertyType.Shop")}</SelectItem>
+                <SelectItem value="Office">{t("propertyType.Office")}</SelectItem>
+                <SelectItem value="Showroom">{t("propertyType.Showroom")}</SelectItem>
+                <SelectItem value="Building">{t("propertyType.Building")}</SelectItem>
+                <SelectItem value="Land">{t("propertyType.Land")}</SelectItem>
+                <SelectItem value="RestHouse">{t("propertyType.RestHouse")}</SelectItem>
+                <SelectItem value="Villa">{t("propertyType.Villa")}</SelectItem>
+                <SelectItem value="Warehouse">{t("propertyType.Warehouse")}</SelectItem>
+                <SelectItem value="Other">{t("propertyType.Other")}</SelectItem>
+              </SelectContent>
+            </Select>
+            <input type="hidden" name="propertyType" value={propertyType} />
+          </div>
           <TextField id="roomsCount" label={t("commercialListings.roomsCount")} defaultValue={listing?.roomsCount} readOnly={readOnly} />
           <TextField id="buildingAge" label={t("commercialListings.buildingAge")} defaultValue={listing?.buildingAge} readOnly={readOnly} />
           <TextField id="hasElevator" label={t("commercialListings.hasElevator")} defaultValue={listing?.hasElevator} readOnly={readOnly} />

@@ -268,6 +268,10 @@ const en = {
     Land: "Land",
     Shop: "Shop",
     Warehouse: "Warehouse",
+    Showroom: "Showroom",
+    Building: "Building",
+    RestHouse: "Rest house",
+    Other: "Other",
   },
   suggestions: {
     reasons: {
@@ -283,6 +287,8 @@ const en = {
   commercialListings: {
     pageTitle: "Commercial & Investment Listings",
     pageSubtitle: "Manage commercial and investment rental property offers",
+    listingCategory: "Category",
+    listingType: "Listing Type",
     serialNumber: "Serial #",
     contactDate: "Contact Date",
     propertyStatus: "Property Status",
@@ -382,6 +388,8 @@ const en = {
     propertyCodeOrFallback: "Property number",
   },
   leadStatus: { New: "New", Contacted: "Contacted", Qualified: "Qualified", ClosedLost: "Closed (lost)", ClosedWon: "Closed (won)" },
+  listingCategory: { Commercial: "Commercial", Residential: "Residential" },
+  commercialListingStatus: { Available: "Available", Occupied: "Occupied", Unavailable: "Unavailable" },
   listingType: { Rental: "Rental", Sale: "Sale" },
   propertyStatus: { Pending: "Pending", Approved: "Approved", Rejected: "Rejected", Sold: "Sold" },
   contractStatus: { Active: "Active", Expired: "Expired", Terminated: "Terminated", Pending: "Pending" },
@@ -730,6 +738,10 @@ const ar = {
     Land: "أرض",
     Shop: "محل",
     Warehouse: "مستودع",
+    Showroom: "معرض",
+    Building: "عمارة",
+    RestHouse: "استراحة",
+    Other: "أخرى",
   },
   suggestions: {
     reasons: {
@@ -747,6 +759,8 @@ const ar = {
   commercialListings: {
     pageTitle: "العروض الإيجارية التجارية والاستثمارية",
     pageSubtitle: "إدارة عروض تأجير العقارات التجارية والاستثمارية",
+    listingCategory: "تصنيف العرض",
+    listingType: "نوع العرض",
     serialNumber: "الرقم التسلسلي",
     contactDate: "تاريخ التواصل",
     propertyStatus: "حالة العقار",
@@ -847,6 +861,8 @@ const ar = {
   },
   intent: { Buy: "شراء", Rent: "استئجار", Sell: "بيع", LetOut: "تأجير" },
   leadStatus: { New: "جديد", Contacted: "تم التواصل", Qualified: "مؤهّل", ClosedLost: "مغلق (خسارة)", ClosedWon: "مغلق (نجاح)" },
+  listingCategory: { Commercial: "تجاري", Residential: "سكني" },
+  commercialListingStatus: { Available: "متاح", Occupied: "مشغول", Unavailable: "غير متاح" },
   listingType: { Rental: "إيجار", Sale: "بيع" },
   propertyStatus: { Pending: "قيد المراجعة", Approved: "معتمد", Rejected: "مرفوض", Sold: "مُباع" },
   contractStatus: { Active: "نشط", Expired: "منتهي", Terminated: "مُلغى", Pending: "قيد الانتظار" },

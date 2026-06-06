@@ -422,6 +422,7 @@ export interface CommercialListing {
   id: number;
   rowFlag?: string | null;
   contactDate?: string | null;
+  listingCategory?: string | null;
   propertyStatus?: string | null;
   listingType?: string | null;
   brokerageContract?: string | null;
