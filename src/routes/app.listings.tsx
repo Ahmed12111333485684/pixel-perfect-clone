@@ -198,6 +198,10 @@ function readFieldValue(fd: FormData, key: string) {
   return String(fd.get(key) ?? "").trim();
 }
 
+function readBooleanField(fd: FormData, key: string) {
+  return String(fd.get(key) ?? "").trim().toLowerCase() === "true";
+}
+
 function makeContractId() {
   return typeof crypto !== "undefined" && crypto.randomUUID
     ? crypto.randomUUID()
@@ -245,6 +249,11 @@ function buildCommercialPayload(
       payload[channel.key] = value;
     }
   });
+
+  const isOfficeListing = readBooleanField(fd, "isOfficeListing");
+  if (!original || isOfficeListing !== Boolean(original.isOfficeListing)) {
+    payload.isOfficeListing = isOfficeListing;
+  }
 
   payload.brokerageContracts = normalizeBrokerageContracts(contracts);
 
@@ -634,6 +643,7 @@ function CommercialListingDialog({
   const [propertyType, setPropertyType] = useState<PropertyTypeKey | "">(normalizePropertyType(listing?.propertyType));
   const [dealThrough, setDealThrough] = useState<string>(listing?.dealThrough ?? DEAL_THROUGH_OWNER);
   const [hasKey, setHasKey] = useState<boolean>(Boolean(listing?.hasKey));
+  const [isOfficeListing, setIsOfficeListing] = useState<boolean>(Boolean(listing?.isOfficeListing));
   const [contracts, setContracts] = useState<BrokerageContractFormValue[]>(() => {
     const initialContracts = listing?.brokerageContracts?.length ? listing?.brokerageContracts : [null];
     return initialContracts.map((contract) => (contract ? {
@@ -675,6 +685,7 @@ function CommercialListingDialog({
       setPropertyType(normalizePropertyType(listing?.propertyType));
       setDealThrough(listing?.dealThrough ?? DEAL_THROUGH_OWNER);
       setHasKey(Boolean(listing?.hasKey));
+      setIsOfficeListing(Boolean(listing?.isOfficeListing));
       setContracts(listing?.brokerageContracts?.length
         ? listing.brokerageContracts.map((contract) => ({
           id: makeContractId(),
@@ -701,6 +712,7 @@ function CommercialListingDialog({
         <div className="grid gap-4 sm:grid-cols-2">
           <TextField id="adNumber" label={t("commercialListings.adNumber")} defaultValue={listing?.adNumber} readOnly={readOnly} />
           <TextField id="contactDate" label={t("commercialListings.contactDate")} defaultValue={listing?.contactDate} readOnly={readOnly} />
+          <TextField id="offerCode" label={t("commercialListings.offerCode")} defaultValue={listing?.offerCode} readOnly={true} />
           <div className="space-y-2">
             <Label htmlFor="listingCategory" className="text-xs font-medium">{t("commercialListings.listingCategory")}</Label>
             <Select value={listingCategory} onValueChange={setListingCategory} disabled={readOnly}>
@@ -758,6 +770,11 @@ function CommercialListingDialog({
               </SelectContent>
             </Select>
             <input type="hidden" name="broker" value={broker} />
+          </div>
+          <div className="flex items-center gap-3">
+            {/* Office Listing checkbox - only visible to admin/staff */}
+            <OfficeListingCheckbox isOfficeListing={isOfficeListing} setIsOfficeListing={setIsOfficeListing} readOnly={readOnly} />
+            <input type="hidden" name="isOfficeListing" value={String(isOfficeListing)} />
           </div>
         </div>
       </div>
@@ -864,6 +881,21 @@ function TextareaField({ id, label, defaultValue, readOnly, className }: { id: s
       <Label htmlFor={id} className="text-xs font-medium">{label}</Label>
       <Textarea id={id} name={id} defaultValue={defaultValue ?? ""} readOnly={readOnly} disabled={readOnly} rows={3} className="mt-1" />
     </div>
+  );
+}
+
+function OfficeListingCheckbox({ isOfficeListing, setIsOfficeListing, readOnly }: { isOfficeListing: boolean; setIsOfficeListing: (v: boolean) => void; readOnly: boolean; }) {
+  const auth = useAuth();
+  const { t } = useTranslation();
+  // Show only for Admin or Staff
+  const show = auth.isStaff;
+  if (!show) return <></>;
+
+  return (
+    <label className="flex items-center gap-2">
+      <input type="checkbox" checked={isOfficeListing} onChange={(e) => setIsOfficeListing(e.target.checked)} disabled={readOnly} />
+      <span className="text-sm">{t("commercialListings.officeListing")}</span>
+    </label>
   );
 }
 

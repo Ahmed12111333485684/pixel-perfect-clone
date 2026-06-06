@@ -438,6 +438,9 @@ export interface CommercialListing {
   availableUnits?: string | null;
   deedNumber?: string | null;
   propertyType?: string | null;
+  prefix?: string | null;
+  offerCode?: string | null;
+  isOfficeListing?: boolean | null;
   roomsCount?: string | null;
   buildingAge?: string | null;
   hasElevator?: string | null;

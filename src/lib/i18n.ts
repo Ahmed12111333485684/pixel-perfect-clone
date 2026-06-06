@@ -301,6 +301,7 @@ const en = {
     licenseNumber: "License Number",
     contractExpiry: "Contract Expiry",
     adNumber: "Ad Number",
+    offerCode: "Reference Code",
     broker: "Broker",
     ownerName: "Owner / Representative",
     mobile1: "Primary Mobile",
@@ -324,6 +325,7 @@ const en = {
     statusOccupied: "Occupied",
     statusUnavailable: "Unavailable",
     statusRented: "Rented",
+    officeListing: "Office Listing",
     
     channels: {
       tahmid: "Tahmid",
@@ -773,6 +775,7 @@ const ar = {
     licenseNumber: "رقم الترخيص",
     contractExpiry: "تاريخ انتهاء العقد",
     adNumber: "رقم الإعلان",
+    offerCode: "رمز المرجع",
     broker: "الوسيط",
     ownerName: "اسم المالك / من يمثله",
     mobile1: "الجوال الرئيسي",
@@ -796,6 +799,7 @@ const ar = {
     statusOccupied: "مشغول",
     statusUnavailable: "غير متاح",
     statusRented: "تم التأجير",
+    officeListing: "عرض مكتب عقاري",
     
     channels: {
       tahmid: "تعميد",
