@@ -56,7 +56,7 @@ function UsersPage() {
 
   const list = useQuery({
     queryKey: ["users"],
-    queryFn: () => api<UserDto[]>("/api/users"),
+    queryFn: () => api<UserDto[]>("/users"),
     enabled: auth.hasRole("Admin"),
   });
 
@@ -85,7 +85,7 @@ function UsersPage() {
         throw new Error(t("common.usePartnersPageForPartnerAccounts"));
       }
 
-      await api("/api/users", {
+      await api("/users", {
         method: "POST",
         body: {
           username: vals.username,

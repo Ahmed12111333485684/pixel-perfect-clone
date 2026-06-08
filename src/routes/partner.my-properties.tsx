@@ -26,7 +26,7 @@ function PartnerMyPropertiesPage() {
   const list = useQuery({
     queryKey: ["partner", "commercial-listings"],
     queryFn: async () => {
-      const result = await api<{ items: CommercialListing[] }>("/api/listings", {
+      const result = await api<{ items: CommercialListing[] }>("/listings", {
         query: {
           page: 1,
           pageSize: 200,

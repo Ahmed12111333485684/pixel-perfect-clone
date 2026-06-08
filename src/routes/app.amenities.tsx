@@ -23,7 +23,7 @@ function AmenitiesPage() {
   const qc = useQueryClient();
   const list = useQuery({
     queryKey: ["amenities"],
-    queryFn: () => api<Amenity[]>("/api/amenities"),
+    queryFn: () => api<Amenity[]>("/amenities"),
   });
   const [editing, setEditing] = useState<Amenity | null>(null);
   const [creating, setCreating] = useState(false);
@@ -35,7 +35,7 @@ function AmenitiesPage() {
       if (vals.id) {
         await api(`/api/amenities/${vals.id}`, { method: "PUT", body: vals });
       } else {
-        await api("/api/amenities", { method: "POST", body: vals });
+        await api("/amenities", { method: "POST", body: vals });
       }
     },
     onSuccess: () => {

@@ -24,7 +24,7 @@ function OwnersPage() {
   const auth = useAuth();
   const qc = useQueryClient();
 
-  const list = useQuery({ queryKey: ["owners"], queryFn: () => api<Owner[]>("/api/owners") });
+  const list = useQuery({ queryKey: ["owners"], queryFn: () => api<Owner[]>("/owners") });
 
   const [editing, setEditing] = useState<Owner | null>(null);
   const [creating, setCreating] = useState(false);
@@ -38,7 +38,7 @@ function OwnersPage() {
       if (vals.id) {
         await api(`/api/owners/${vals.id}`, { method: "PUT", body: vals });
       } else {
-        await api("/api/owners", { method: "POST", body: vals });
+        await api("/owners", { method: "POST", body: vals });
       }
     },
     onSuccess: () => {

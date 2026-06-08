@@ -72,33 +72,33 @@ function Dashboard() {
 
   const properties = useQuery({
     queryKey: ["properties"],
-    queryFn: () => api<PropertyDto[]>("/api/properties"),
+    queryFn: () => api<PropertyDto[]>("/properties"),
   });
   const owners = useQuery({
     queryKey: ["owners"],
-    queryFn: () => api<Owner[]>("/api/owners"),
+    queryFn: () => api<Owner[]>("/owners"),
     enabled: auth.isStaff,
   });
   const leads = useQuery({
     queryKey: ["leads"],
-    queryFn: () => api<Lead[]>("/api/leads"),
+    queryFn: () => api<Lead[]>("/leads"),
     enabled: auth.isStaff,
   });
   const contracts = useQuery({
     queryKey: ["contracts"],
-    queryFn: () => api<Contract[]>("/api/contracts"),
+    queryFn: () => api<Contract[]>("/contracts"),
   });
   const payments = useQuery({
     queryKey: ["payments"],
-    queryFn: () => api<Payment[]>("/api/payments"),
+    queryFn: () => api<Payment[]>("/payments"),
   });
   const sales = useQuery({
     queryKey: ["sales"],
-    queryFn: () => api<Sale[]>("/api/sales"),
+    queryFn: () => api<Sale[]>("/sales"),
   });
   const productivity = useQuery({
     queryKey: ["employee-productivity"],
-    queryFn: () => api<EmployeeProductivityRecord[]>("/api/employee-productivity"),
+    queryFn: () => api<EmployeeProductivityRecord[]>("/employee-productivity"),
     enabled: auth.hasRole("Admin"),
   });
 

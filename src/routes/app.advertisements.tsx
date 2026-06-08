@@ -158,7 +158,7 @@ function AdvertisementsPage() {
     queryKey: ["advertisements"],
     queryFn: async () => {
       const fetchPage = (pageNumber: number) =>
-        api<AdvertisementsSearchResult>("/api/advertisements", {
+        api<AdvertisementsSearchResult>("/advertisements", {
           query: {
             page: pageNumber,
             pageSize: 100,
@@ -182,7 +182,7 @@ function AdvertisementsPage() {
 
   const properties = useQuery({
     queryKey: ["properties", "lookup", "advertisements"],
-    queryFn: () => api<PropertyDto[]>("/api/properties"),
+    queryFn: () => api<PropertyDto[]>("/properties"),
     enabled: hasAccess,
   });
 
@@ -239,7 +239,7 @@ function AdvertisementsPage() {
     try {
       const fd = new FormData(e.currentTarget);
       const payload = buildAdvertisementPayload(fd);
-      await api<Advertisement>("/api/advertisements", { method: "POST", body: payload });
+      await api<Advertisement>("/advertisements", { method: "POST", body: payload });
       toast.success(t("common.created"));
       setCreating(false);
       qc.invalidateQueries({ queryKey: ["advertisements"] });

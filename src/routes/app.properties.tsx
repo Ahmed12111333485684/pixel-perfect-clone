@@ -54,16 +54,16 @@ function PropertiesPage() {
 
   const list = useQuery({
     queryKey: ["properties"],
-    queryFn: () => api<PropertyDto[]>("/api/properties"),
+    queryFn: () => api<PropertyDto[]>("/properties"),
   });
   const owners = useQuery({
     queryKey: ["owners"],
-    queryFn: () => api<Owner[]>("/api/owners"),
+    queryFn: () => api<Owner[]>("/owners"),
     enabled: auth.isStaff,
   });
   const amenities = useQuery({
     queryKey: ["amenities"],
-    queryFn: () => api<Amenity[]>("/api/amenities"),
+    queryFn: () => api<Amenity[]>("/amenities"),
   });
 
   const propertyImageQueries = useQueries({
@@ -134,7 +134,7 @@ function PropertiesPage() {
           },
         });
       } else {
-        const response = await api<{ id: number }>("/api/properties", {
+        const response = await api<{ id: number }>("/properties", {
           method: "POST",
           body: {
             ownerId: vals.ownerId,

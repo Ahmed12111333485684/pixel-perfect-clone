@@ -29,10 +29,10 @@ function PaymentsPage() {
   const { t } = useTranslation();
   const auth = useAuth();
   const qc = useQueryClient();
-  const list = useQuery({ queryKey: ["payments"], queryFn: () => api<Payment[]>("/api/payments") });
+  const list = useQuery({ queryKey: ["payments"], queryFn: () => api<Payment[]>("/payments") });
   const contracts = useQuery({
     queryKey: ["contracts"],
-    queryFn: () => api<Contract[]>("/api/contracts"),
+    queryFn: () => api<Contract[]>("/contracts"),
     enabled: auth.isStaff,
   });
 
@@ -44,7 +44,7 @@ function PaymentsPage() {
   const upsert = useMutation({
     mutationFn: async (vals: Partial<Payment> & { id?: number }) => {
       if (vals.id) await api(`/api/payments/${vals.id}`, { method: "PUT", body: vals });
-      else await api("/api/payments", { method: "POST", body: vals });
+      else await api("/payments", { method: "POST", body: vals });
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["payments"] });

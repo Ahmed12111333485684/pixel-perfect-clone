@@ -57,14 +57,14 @@ function EmployeeProductivityPage() {
     queryKey: ["employee-productivity", isAdmin ? "all" : "mine"],
     queryFn: () =>
       api<EmployeeProductivityRecord[]>(
-        isAdmin ? "/api/employee-productivity" : "/api/employee-productivity/mine",
+        isAdmin ? "/employee-productivity" : "/employee-productivity/mine",
       ),
     enabled: auth.isStaff,
   });
 
   const submit = useMutation({
     mutationFn: (body: EmployeeProductivityUpsertDto) =>
-      api("/api/employee-productivity", { method: "POST", body }),
+      api("/employee-productivity", { method: "POST", body }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["employee-productivity"] });
       toast.success(t("common.success"));

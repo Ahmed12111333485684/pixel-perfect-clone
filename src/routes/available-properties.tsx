@@ -42,7 +42,7 @@ function AvailablePropertiesPage() {
   const { t } = useTranslation();
   const list = useQuery({
     queryKey: ["public-properties"],
-    queryFn: () => api<PublicProperty[]>("/api/public/properties", { anonymous: true }),
+    queryFn: () => api<PublicProperty[]>("/public/properties", { anonymous: true }),
   });
 
   return (

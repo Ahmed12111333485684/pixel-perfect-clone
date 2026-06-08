@@ -105,7 +105,7 @@ function ResidentialSeekersPage() {
 
   const seekers = useQuery({
     queryKey: ["residential-seekers", { q, status, page, pageSize, sortBy, sortDir }],
-    queryFn: () => api<ResidentialSeekersSearchResult>("/api/residential-seekers", {
+    queryFn: () => api<ResidentialSeekersSearchResult>("/residential-seekers", {
       query: {
         q: q || undefined,
         status: status !== "all" ? status : undefined,
@@ -136,7 +136,7 @@ function ResidentialSeekersPage() {
     try {
       const fd = new FormData(e.currentTarget);
       const payload = buildResidentialPayload(fd);
-      await api<ResidentialSeeker>("/api/residential-seekers", { method: "POST", body: payload });
+      await api<ResidentialSeeker>("/residential-seekers", { method: "POST", body: payload });
       toast.success(t("common.created"));
       setCreating(false);
       qc.invalidateQueries({ queryKey: ["residential-seekers"] });
