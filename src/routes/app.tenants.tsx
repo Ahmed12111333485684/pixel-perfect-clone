@@ -181,13 +181,13 @@ function TenantsPage() {
 
   const tenants = useQuery({
     queryKey: ["tenants"],
-    queryFn: () => api<Tenant[]>("/api/tenants"),
+    queryFn: () => api<Tenant[]>("/tenants"),
     enabled: auth.isStaff,
   });
 
   const properties = useQuery({
     queryKey: ["properties", "tenant-picker"],
-    queryFn: () => api<PropertyDto[]>("/api/properties"),
+    queryFn: () => api<PropertyDto[]>("/properties"),
     enabled: auth.isStaff,
   });
 
@@ -218,7 +218,7 @@ function TenantsPage() {
       };
 
       if (vals.id) await api(`/api/tenants/${vals.id}`, { method: "PUT", body });
-      else await api("/api/tenants", { method: "POST", body });
+      else await api("/tenants", { method: "POST", body });
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["tenants"] });

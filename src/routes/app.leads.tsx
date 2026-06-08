@@ -214,7 +214,7 @@ function LeadsPage() {
 
   const list = useQuery({
     queryKey: ["leads"],
-    queryFn: () => api<Lead[]>("/api/leads"),
+    queryFn: () => api<Lead[]>("/leads"),
   });
 
   const update = useMutation({

@@ -73,7 +73,7 @@ function PropertyRequestPage() {
 
     setLoading(true);
     try {
-      const result = await api<ResidentialSeeker>("/api/residential-seekers/submit", {
+      const result = await api<ResidentialSeeker>("/residential-seekers/submit", {
         method: "POST",
         body: {
           sourceChannel: "Public website",

@@ -27,15 +27,15 @@ function SalesPage() {
   const { t } = useTranslation();
   const auth = useAuth();
   const qc = useQueryClient();
-  const list = useQuery({ queryKey: ["sales"], queryFn: () => api<Sale[]>("/api/sales") });
+  const list = useQuery({ queryKey: ["sales"], queryFn: () => api<Sale[]>("/sales") });
   const properties = useQuery({
     queryKey: ["properties"],
-    queryFn: () => api<PropertyDto[]>("/api/properties"),
+    queryFn: () => api<PropertyDto[]>("/properties"),
     enabled: auth.isStaff,
   });
   const buyers = useQuery({
     queryKey: ["buyers"],
-    queryFn: () => api<Buyer[]>("/api/buyers"),
+    queryFn: () => api<Buyer[]>("/buyers"),
     enabled: auth.isStaff,
   });
 
@@ -59,7 +59,7 @@ function SalesPage() {
       salePrice: number;
       deedNumber: string;
       soldAt: string;
-    }) => api("/api/sales", { method: "POST", body: vals }),
+    }) => api("/sales", { method: "POST", body: vals }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["sales"] });
       toast.success(t("common.success"));

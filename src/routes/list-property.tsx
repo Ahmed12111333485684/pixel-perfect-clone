@@ -77,7 +77,7 @@ function LeadIntakePage() {
     files.forEach((f) => fd.append("images", f));
     setLoading(true);
     try {
-      const lead = await api<Lead>("/api/leads/submit", {
+      const lead = await api<Lead>("/leads/submit", {
         method: "POST",
         formData: fd,
         anonymous: true,

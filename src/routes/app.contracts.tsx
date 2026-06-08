@@ -33,15 +33,15 @@ function ContractsPage() {
 
   const list = useQuery({
     queryKey: ["contracts"],
-    queryFn: () => api<Contract[]>("/api/contracts"),
+    queryFn: () => api<Contract[]>("/contracts"),
   });
   const properties = useQuery({
     queryKey: ["properties"],
-    queryFn: () => api<PropertyDto[]>("/api/properties"),
+    queryFn: () => api<PropertyDto[]>("/properties"),
   });
   const tenants = useQuery({
     queryKey: ["tenants"],
-    queryFn: () => api<Tenant[]>("/api/tenants"),
+    queryFn: () => api<Tenant[]>("/tenants"),
     enabled: auth.isStaff,
   });
 
@@ -54,7 +54,7 @@ function ContractsPage() {
   const upsert = useMutation({
     mutationFn: async (vals: Partial<Contract> & { id?: number }) => {
       if (vals.id) await api(`/api/contracts/${vals.id}`, { method: "PUT", body: vals });
-      else await api("/api/contracts", { method: "POST", body: vals });
+      else await api("/contracts", { method: "POST", body: vals });
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["contracts"] });
@@ -76,7 +76,7 @@ function ContractsPage() {
 
   const createTenant = useMutation({
     mutationFn: (vals: { fullName: string; phone: string; email: string; nationalId: string }) =>
-      api("/api/tenants", { method: "POST", body: vals }),
+      api("/tenants", { method: "POST", body: vals }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["tenants"] });
       toast.success(t("common.success"));

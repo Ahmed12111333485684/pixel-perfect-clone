@@ -286,7 +286,7 @@ function CommercialListingsPage() {
     queryKey: ["commercial-listings"],
     queryFn: async () => {
       const fetchPage = (pageNumber: number) =>
-        api<CommercialListingSearchResult>("/api/listings", {
+        api<CommercialListingSearchResult>("/listings", {
           query: {
             page: pageNumber,
             pageSize: 100,
@@ -323,7 +323,7 @@ function CommercialListingsPage() {
     try {
       const fd = new FormData(e.currentTarget);
       const payload = buildCommercialPayload(fd, publishing, contracts);
-      await api<CommercialListing>("/api/listings", { method: "POST", body: payload });
+      await api<CommercialListing>("/listings", { method: "POST", body: payload });
       toast.success(t("common.created"));
       setCreating(false);
       qc.invalidateQueries({ queryKey: ["commercial-listings"] });
