@@ -4,7 +4,7 @@ const TOKEN_KEY = "estatly.token";
 
 export function getApiBaseUrl(): string {
   // Configurable via VITE_API_BASE_URL. Falls back to localhost.
-  const url = (import.meta.env.VITE_API_BASE_URL as string | undefined) ?? "http://localhost:5015";
+  const url = (import.meta.env.VITE_API_BASE_URL as string | undefined) ?? "";
   return url.replace(/\/+$/, "");
 }
 
