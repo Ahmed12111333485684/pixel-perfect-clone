@@ -62,7 +62,11 @@ function buildQuery(query?: ApiOptions["query"]) {
 
 export async function api<T = unknown>(path: string, opts: ApiOptions = {}): Promise<T> {
   const base = getApiBaseUrl();
-  const url = `${base}${path.startsWith("/") ? path : `/${path}`}${buildQuery(opts.query)}`;
+  let normalizedPath = path.startsWith("/") ? path : `/${path}`;
+  if (!normalizedPath.startsWith("/api/") && !normalizedPath.startsWith("/uploads/")) {
+    normalizedPath = `/api${normalizedPath}`;
+  }
+  const url = `${base}${normalizedPath}${buildQuery(opts.query)}`;
   const headers: Record<string, string> = {};
   if (!opts.anonymous) {
     const token = getStoredToken();
