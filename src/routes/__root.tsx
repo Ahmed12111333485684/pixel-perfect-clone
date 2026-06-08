@@ -1,12 +1,10 @@
-import { Outlet, createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
+import { Outlet, createRootRoute, Link } from "@tanstack/react-router";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-import { Link } from "@tanstack/react-router";
 import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider } from "@/lib/auth";
 import "@/lib/i18n";
 import { applyLangToDocument, getInitialLang } from "@/lib/i18n";
-import appCss from "../styles.css?url";
 
 function NotFoundComponent() {
   return (
@@ -27,52 +25,6 @@ function NotFoundComponent() {
         </div>
       </div>
     </div>
-  );
-}
-
-export const Route = createRootRoute({
-  head: () => ({
-    meta: [
-      { charSet: "utf-8" },
-      { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Estatly — Property Management" },
-      {
-        name: "description",
-        content:
-          "Beautiful properties, expertly managed. Listings, leads, contracts, and payments in one place.",
-      },
-      { name: "author", content: "Estatly" },
-      { property: "og:title", content: "Estatly — Property Management" },
-      { property: "og:description", content: "Beautiful properties, expertly managed." },
-      { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary" },
-    ],
-    links: [
-      { rel: "stylesheet", href: appCss },
-      { rel: "preconnect", href: "https://fonts.googleapis.com" },
-      { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
-      {
-        rel: "stylesheet",
-        href: "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700&family=Tajawal:wght@400;500;700&display=swap",
-      },
-    ],
-  }),
-  shellComponent: RootShell,
-  component: RootComponent,
-  notFoundComponent: NotFoundComponent,
-});
-
-function RootShell({ children }: { children: React.ReactNode }) {
-  return (
-    <html lang="en">
-      <head>
-        <HeadContent />
-      </head>
-      <body>
-        {children}
-        <Scripts />
-      </body>
-    </html>
   );
 }
 
@@ -103,3 +55,8 @@ function RootComponent() {
     </QueryClientProvider>
   );
 }
+
+export const Route = createRootRoute({
+  component: RootComponent,
+  notFoundComponent: NotFoundComponent,
+});
