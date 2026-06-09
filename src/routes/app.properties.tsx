@@ -227,6 +227,7 @@ function PropertiesPage() {
             alt={r.name}
             className="h-10 w-14 rounded-md border border-border object-cover"
             loading="lazy"
+            zoomable
           />
         );
       },

@@ -119,6 +119,7 @@ function PartnersPage() {
               src={resolveApiAssetUrl(r.photoUrl)}
               alt={r.fullName}
               className="h-full w-full object-cover"
+              zoomable
             />
           </div>
         ) : (
