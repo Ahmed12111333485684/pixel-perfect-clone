@@ -1,5 +1,5 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
-import { AppLayout } from "./app";
+import { AppLayout } from "@/components/AppLayout";
 import { useRef, useState, type FormEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { ApiError, submitPartnerLead, type Lead, type LeadIntent } from "@/lib/api";
