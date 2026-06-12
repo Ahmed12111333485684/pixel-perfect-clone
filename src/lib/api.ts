@@ -420,6 +420,7 @@ export interface RequestDetails {
 export interface RequestPropertySuggestion extends PropertyDto {
   score: number;
   reasons: { key: string; args?: Record<string, string> }[];
+  primaryImageUrl?: string | null;
 }
 
 export interface CommercialListing {
@@ -503,6 +504,7 @@ export interface ResidentialSeeker {
   paymentType?: string | null;
   preferredLocation?: string | null;
   notes?: string | null;
+  requestCategory?: string | null;
   createdAt: string;
   updatedAt?: string | null;
 }

@@ -42,11 +42,6 @@ function PartnerMyPropertiesPage() {
 
   const cols: Column<CommercialListing>[] = [
     {
-      key: "adNumber",
-      header: t("commercialListings.adNumber"),
-      cell: (r) => <span className="font-medium">{r.adNumber ?? "-"}</span>,
-    },
-    {
       key: "ownerName",
       header: t("commercialListings.ownerName"),
       cell: (r) => r.ownerName ?? "-",
@@ -84,7 +79,6 @@ function PartnerMyPropertiesPage() {
     const lower = search.toLowerCase();
     return (list.data ?? []).filter((record) => {
       return (
-        (record.adNumber ?? "").toLowerCase().includes(lower) ||
         (record.ownerName ?? "").toLowerCase().includes(lower) ||
         (record.deedNumber ?? "").toLowerCase().includes(lower) ||
         (record.location ?? "").toLowerCase().includes(lower) ||

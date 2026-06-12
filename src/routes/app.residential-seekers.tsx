@@ -1,4 +1,4 @@
-﻿import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
@@ -29,8 +29,8 @@ interface ResidentialSeekersSearchResult {
   items: ResidentialSeeker[];
 }
 
-const STATUS_ACTIVE = "نشط";
-const STATUS_ENDED = "انتهى";
+const STATUS_DONE = "تم";
+const STATUS_NOT_DONE = "لم يتم";
 
 const RESIDENTIAL_FIELDS = [
   "serialNumber",
@@ -51,6 +51,7 @@ const RESIDENTIAL_FIELDS = [
   "paymentType",
   "preferredLocation",
   "notes",
+  "requestCategory",
 ] as const;
 
 type ResidentialFieldKey = (typeof RESIDENTIAL_FIELDS)[number];
@@ -186,16 +187,16 @@ function ResidentialSeekersPage() {
 
   const statusTone = (value?: string | null) => {
     const normalized = normalizeValue(value);
-    if (normalized === STATUS_ENDED) return "neutral" as const;
-    if (normalized === STATUS_ACTIVE) return "success" as const;
-    return "warning" as const;
+    if (normalized === STATUS_DONE) return "success" as const;
+    if (normalized === STATUS_NOT_DONE) return "warning" as const;
+    return "neutral" as const;
   };
 
   const statusLabel = (value?: string | null) => {
     const normalized = normalizeValue(value);
     if (!normalized) return t("common.notProvided");
-    if (normalized === STATUS_ACTIVE) return t("residentialSeekers.statusActive");
-    if (normalized === STATUS_ENDED) return t("residentialSeekers.statusEnded");
+    if (normalized === STATUS_DONE) return STATUS_DONE;
+    if (normalized === STATUS_NOT_DONE) return STATUS_NOT_DONE;
     return value ?? t("common.notProvided");
   };
 
@@ -328,8 +329,8 @@ function ResidentialSeekersPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">{t("common.all")}</SelectItem>
-                <SelectItem value={STATUS_ACTIVE}>{t("residentialSeekers.statusActive")}</SelectItem>
-                <SelectItem value={STATUS_ENDED}>{t("residentialSeekers.statusEnded")}</SelectItem>
+                <SelectItem value={STATUS_NOT_DONE}>{STATUS_NOT_DONE}</SelectItem>
+                <SelectItem value={STATUS_DONE}>{STATUS_DONE}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -480,7 +481,26 @@ function ResidentialSeekerDialog({
         <div className="grid gap-4 sm:grid-cols-2">
           <TextField id="serialNumber" label={t("residentialSeekers.serialNumber")} defaultValue={seeker?.serialNumber} readOnly={readOnly} />
           <TextField id="requestDate" label={t("residentialSeekers.requestDate")} defaultValue={seeker?.requestDate} readOnly={readOnly} />
-          <TextField id="status" label={t("residentialSeekers.status")} defaultValue={seeker?.status} readOnly={readOnly} />
+          <SelectField
+            id="status"
+            label={t("residentialSeekers.status")}
+            defaultValue={seeker?.status ?? STATUS_NOT_DONE}
+            readOnly={readOnly}
+            options={[
+              { value: STATUS_NOT_DONE, label: STATUS_NOT_DONE },
+              { value: STATUS_DONE, label: STATUS_DONE },
+            ]}
+          />
+          <SelectField
+            id="requestCategory"
+            label="تصنيف الطلب"
+            defaultValue={seeker?.requestCategory ?? "سكني"}
+            readOnly={readOnly}
+            options={[
+              { value: "سكني", label: "سكني" },
+              { value: "تجاري", label: "تجاري" },
+            ]}
+          />
           <TextField id="employee" label={t("common.employee")} defaultValue={seeker?.employee} readOnly={readOnly} />
           <TextField id="receiver" label={t("residentialSeekers.receiver")} defaultValue={seeker?.receiver} readOnly={readOnly} />
           {readOnly ? (

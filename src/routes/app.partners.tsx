@@ -48,7 +48,7 @@ function PartnersPage() {
     mutationFn: async (vals: {
       id?: string;
       fullName: string;
-      phone: string;
+      phone?: string;
       email?: string;
       nationalId?: string;
       falLicenseNumber?: string;
@@ -59,7 +59,7 @@ function PartnersPage() {
     }) => {
       const formData = new FormData();
       formData.append("fullName", vals.fullName);
-      formData.append("phone", vals.phone);
+      if (vals.phone) formData.append("phone", vals.phone);
       if (vals.email) formData.append("email", vals.email);
       if (vals.nationalId) formData.append("nationalId", vals.nationalId);
       if (vals.falLicenseNumber) formData.append("falLicenseNumber", vals.falLicenseNumber);
@@ -270,7 +270,7 @@ function PartnerDialog({
   partner: Partner | null;
   onSubmit: (vals: {
     fullName: string;
-    phone: string;
+    phone?: string;
     email?: string;
     nationalId?: string;
     falLicenseNumber?: string;
@@ -297,7 +297,7 @@ function PartnerDialog({
         const photoInput = e.currentTarget.elements.namedItem("photo") as HTMLInputElement | null;
         onSubmit({
           fullName: String(fd.get("fullName") ?? ""),
-          phone: String(fd.get("phone") ?? ""),
+          phone: String(fd.get("phone") ?? "") || undefined,
           email: String(fd.get("email") ?? "") || undefined,
           nationalId: String(fd.get("nationalId") ?? "") || undefined,
           falLicenseNumber: String(fd.get("falLicenseNumber") ?? "") || undefined,
@@ -319,7 +319,6 @@ function PartnerDialog({
         id="phone"
         label={t("common.phone")}
         defaultValue={partner?.phone ?? ""}
-        required
       />
       <FormField
         id="email"

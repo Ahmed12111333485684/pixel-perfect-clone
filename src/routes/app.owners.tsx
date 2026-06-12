@@ -128,38 +128,38 @@ function OwnersPage() {
           ...cols,
           ...(auth.isStaff
             ? [
-                {
-                  key: "actions2",
-                  header: "",
-                  className: "w-24",
-                  cell: (r: Owner) => (
-                    <div className="flex items-center gap-1">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setStatsFor(r);
-                        }}
-                        title={t("common.stats")}
-                      >
-                        <BarChart3 className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setAccountFor(r);
-                        }}
-                        title={t("common.account")}
-                      >
-                        <KeyRound className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  ),
-                },
-              ]
+              {
+                key: "actions2",
+                header: "",
+                className: "w-24",
+                cell: (r: Owner) => (
+                  <div className="flex items-center gap-1">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setStatsFor(r);
+                      }}
+                      title={t("common.stats")}
+                    >
+                      <BarChart3 className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setAccountFor(r);
+                      }}
+                      title={t("common.account")}
+                    >
+                      <KeyRound className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ),
+              },
+            ]
             : []),
         ]}
         rows={filteredOwners}
@@ -214,7 +214,7 @@ function OwnerDialog({
   open: boolean;
   onOpenChange: (v: boolean) => void;
   owner: Owner | null;
-  onSubmit: (vals: { fullName: string; phone: string; email: string; nationalId: string }) => void;
+  onSubmit: (vals: { fullName: string; phone: string; email?: string; nationalId?: string; notes?: string }) => void;
   submitting?: boolean;
 }) {
   const { t } = useTranslation();
@@ -230,19 +230,31 @@ function OwnerDialog({
       onSubmit={(e) => {
         e.preventDefault();
         const fd = new FormData(e.currentTarget);
+        const fullName = String(fd.get("fullName") ?? "").trim();
+        const phone = String(fd.get("phone") ?? "").trim();
+
+        const missing = [];
+        if (!fullName) missing.push(t("common.fullName"));
+        if (!phone) missing.push(t("common.phone"));
+
+        if (missing.length > 0) {
+          toast.error(`الرجاء تعبئة الحقول المطلوبة: ${missing.join("، ")}`);
+          return;
+        }
+
         onSubmit({
-          fullName: String(fd.get("fullName") ?? ""),
-          phone: String(fd.get("phone") ?? ""),
-          email: String(fd.get("email") ?? ""),
-          nationalId: String(fd.get("nationalId") ?? ""),
-          notes: String(fd.get("notes") ?? "") || undefined,
+          fullName,
+          phone,
+          email: String(fd.get("email") ?? "").trim() || undefined,
+          nationalId: String(fd.get("nationalId") ?? "").trim() || undefined,
+          notes: String(fd.get("notes") ?? "").trim() || undefined,
         });
       }}
     >
       <FormField id="fullName" label={t("common.fullName")} defaultValue={owner?.fullName} />
       <FormField id="phone" label={t("common.phone")} defaultValue={owner?.phone} />
-      <FormField id="email" label={t("common.email")} type="email" defaultValue={owner?.email} />
-      <FormField id="nationalId" label={t("common.nationalId")} defaultValue={owner?.nationalId} />
+      <FormField id="email" label={t("common.email")} type="email" defaultValue={owner?.email} required={false} />
+      <FormField id="nationalId" label={t("common.nationalId")} defaultValue={owner?.nationalId} required={false} />
       <TextareaField id="notes" label={t("common.notes")} defaultValue={owner?.notes ?? ""} />
     </FormDialog>
   );

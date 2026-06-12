@@ -1,4 +1,4 @@
-﻿import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { memo, useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -39,7 +39,6 @@ const COMMERCIAL_FIELDS = [
   "listingCategory",
   "propertyStatus",
   "listingType",
-  "adNumber",
   "dealThrough",
   "employee",
   "broker",
@@ -98,9 +97,9 @@ const PUBLISHING_CHANNELS: PublishingChannel[] = [
 type PublishingState = Record<string, boolean>;
 
 const PROPERTY_STATUS_OPTIONS = [
-  { value: STATUS_AVAILABLE },
-  { value: STATUS_OCCUPIED },
-  { value: STATUS_UNAVAILABLE },
+  { value: STATUS_AVAILABLE, labelKey: "commercialListingStatus.Available" },
+  { value: STATUS_OCCUPIED, labelKey: "commercialListingStatus.Occupied" },
+  { value: STATUS_UNAVAILABLE, labelKey: "commercialListingStatus.Unavailable" },
 ] as const;
 
 const DEAL_THROUGH_OPTIONS = [
@@ -391,7 +390,6 @@ function CommercialListingsPage() {
   const listingCategoryLabel = (value?: string | null) => t(`listingCategory.${normalizeListingCategory(value)}`);
 
   const columns: Column<CommercialListing>[] = [
-    { key: "adNumber", header: t("commercialListings.adNumber"), cell: (r) => r.adNumber || t("common.notProvided") },
     { key: "contactDate", header: t("commercialListings.contactDate"), cell: (r) => r.contactDate || t("common.notProvided") },
     { key: "listingCategory", header: t("commercialListings.listingCategory"), cell: (r) => listingCategoryLabel(r.listingCategory) },
     { key: "propertyStatus", header: t("commercialListings.propertyStatus"), cell: (r) => <StatusBadge tone={statusTone(r.propertyStatus)}>{statusLabel(r.propertyStatus)}</StatusBadge> },
@@ -429,7 +427,7 @@ function CommercialListingsPage() {
     return items.filter((record) => {
       const qMatch =
         !lower ||
-        [record.ownerName, record.adNumber, record.deedNumber, record.location, record.propertyType, record.propertyStatus]
+        [record.ownerName, record.deedNumber, record.location, record.propertyType, record.propertyStatus]
           .some((v) => (v ?? "").toLowerCase().includes(lower));
 
       const deedMatch = !deedLower || (record.deedNumber ?? "").toLowerCase().includes(deedLower);
@@ -710,12 +708,11 @@ function CommercialListingDialog({
     >
       <div className="space-y-4 rounded-lg border border-border bg-muted/30 p-4">
         <div className="grid gap-4 sm:grid-cols-2">
-          <TextField id="adNumber" label={t("commercialListings.adNumber")} defaultValue={listing?.adNumber} readOnly={readOnly} />
           <TextField id="contactDate" label={t("commercialListings.contactDate")} defaultValue={listing?.contactDate} readOnly={readOnly} />
           <TextField id="offerCode" label={t("commercialListings.offerCode")} defaultValue={listing?.offerCode} readOnly={true} />
           <div className="space-y-2">
             <Label htmlFor="listingCategory" className="text-xs font-medium">{t("commercialListings.listingCategory")}</Label>
-            <Select value={listingCategory} onValueChange={setListingCategory} disabled={readOnly}>
+            <Select value={listingCategory} onValueChange={(v) => setListingCategory(v as ListingCategoryValue)} disabled={readOnly}>
               <SelectTrigger id="listingCategory" className="mt-1">
                 <SelectValue placeholder={t("commercialListings.listingCategory")} />
               </SelectTrigger>
@@ -743,7 +740,7 @@ function CommercialListingDialog({
           </div>
           <div className="space-y-2">
             <Label htmlFor="listingType" className="text-xs font-medium">{t("commercialListings.listingType")}</Label>
-            <Select value={listingType} onValueChange={setListingType} disabled={readOnly}>
+            <Select value={listingType} onValueChange={(v) => setListingType(v as ListingTypeValue)} disabled={readOnly}>
               <SelectTrigger id="listingType" className="mt-1">
                 <SelectValue placeholder={t("commercialListings.listingType")} />
               </SelectTrigger>
@@ -805,7 +802,7 @@ function CommercialListingDialog({
           <TextField id="deedNumber" label={t("commercialListings.deedNumber")} defaultValue={listing?.deedNumber} readOnly={readOnly} />
           <div className="space-y-2">
             <Label htmlFor="propertyType" className="text-xs font-medium">{t("commercialListings.propertyType")}</Label>
-            <Select value={propertyType} onValueChange={setPropertyType} disabled={readOnly}>
+            <Select value={propertyType} onValueChange={(v) => setPropertyType(v as PropertyTypeKey | "")} disabled={readOnly}>
               <SelectTrigger id="propertyType" className="mt-1">
                 <SelectValue placeholder={t("commercialListings.propertyType")} />
               </SelectTrigger>
