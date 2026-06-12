@@ -19,6 +19,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { FormDialog, ConfirmDialog } from "@/components/FormDialog";
 import { MediaPreview } from "@/components/MediaPreview";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { ImagePlus, KeyRound, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { formatDate } from "@/lib/format";
@@ -55,6 +56,8 @@ function PartnersPage() {
       commercialRegistrationNumber?: string;
       location?: string;
       notes?: string;
+      partnerType?: string;
+      companyName?: string;
       photo?: File | null;
     }) => {
       const formData = new FormData();
@@ -67,6 +70,8 @@ function PartnersPage() {
         formData.append("commercialRegistrationNumber", vals.commercialRegistrationNumber);
       if (vals.location) formData.append("location", vals.location);
       if (vals.notes) formData.append("notes", vals.notes);
+      if (vals.partnerType) formData.append("partnerType", vals.partnerType);
+      if (vals.companyName) formData.append("companyName", vals.companyName);
       if (vals.photo) formData.append("photo", vals.photo);
       if (vals.id) {
         await updatePartner(vals.id, formData);
@@ -222,6 +227,7 @@ function PartnersPage() {
         loading={list.isLoading}
         error={list.error}
         rowKey={(r) => r.id}
+        onRowClick={(r) => setEditing(r)}
         onEdit={(r) => setEditing(r)}
         onDelete={(r) => setDeleting(r)}
       />
@@ -277,11 +283,15 @@ function PartnerDialog({
     commercialRegistrationNumber?: string;
     location?: string;
     notes?: string;
+    partnerType?: string;
+    companyName?: string;
     photo?: File | null;
   }) => void;
   submitting?: boolean;
 }) {
   const { t } = useTranslation();
+  const [partnerType, setPartnerType] = useState<string>(partner?.partnerType ?? "فرد");
+
   const key = `${partner?.id ?? "new"}-${open}`;
   return (
     <FormDialog
@@ -305,6 +315,8 @@ function PartnerDialog({
             String(fd.get("commercialRegistrationNumber") ?? "") || undefined,
           location: String(fd.get("location") ?? "") || undefined,
           notes: String(fd.get("notes") ?? "") || undefined,
+          partnerType: String(fd.get("partnerType") ?? "") || undefined,
+          companyName: String(fd.get("companyName") ?? "") || undefined,
           photo: photoInput?.files?.[0] ?? null,
         });
       }}
@@ -315,6 +327,31 @@ function PartnerDialog({
         defaultValue={partner?.fullName}
         required
       />
+      <div className="space-y-2">
+        <Label>{t("common.partnerType")}</Label>
+        <RadioGroup
+          name="partnerType"
+          value={partnerType}
+          onValueChange={setPartnerType}
+          className="flex gap-4"
+        >
+          <div className="flex items-center space-x-2 space-x-reverse">
+            <RadioGroupItem value="فرد" id="type-individual" />
+            <Label htmlFor="type-individual">فرد</Label>
+          </div>
+          <div className="flex items-center space-x-2 space-x-reverse">
+            <RadioGroupItem value="منشأة" id="type-facility" />
+            <Label htmlFor="type-facility">منشأة</Label>
+          </div>
+        </RadioGroup>
+      </div>
+      {partnerType === "منشأة" && (
+        <FormField
+          id="companyName"
+          label={t("common.companyName")}
+          defaultValue={partner?.companyName ?? ""}
+        />
+      )}
       <FormField
         id="phone"
         label={t("common.phone")}

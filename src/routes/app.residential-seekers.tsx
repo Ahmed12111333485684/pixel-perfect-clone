@@ -491,16 +491,7 @@ function ResidentialSeekerDialog({
               { value: STATUS_DONE, label: STATUS_DONE },
             ]}
           />
-          <SelectField
-            id="requestCategory"
-            label="تصنيف الطلب"
-            defaultValue={seeker?.requestCategory ?? "سكني"}
-            readOnly={readOnly}
-            options={[
-              { value: "سكني", label: "سكني" },
-              { value: "تجاري", label: "تجاري" },
-            ]}
-          />
+
           <TextField id="employee" label={t("common.employee")} defaultValue={seeker?.employee} readOnly={readOnly} />
           <TextField id="receiver" label={t("residentialSeekers.receiver")} defaultValue={seeker?.receiver} readOnly={readOnly} />
           {readOnly ? (
@@ -537,6 +528,16 @@ function ResidentialSeekerDialog({
             options={[
               { value: "Rental", label: t("listingType.Rental") },
               { value: "Sale", label: t("listingType.Sale") },
+            ]}
+          />
+          <SelectField
+            id="requestCategory"
+            label="تصنيف الطلب"
+            defaultValue={seeker?.requestCategory ?? "سكني"}
+            readOnly={readOnly}
+            options={[
+              { value: "سكني", label: "سكني" },
+              { value: "تجاري", label: "تجاري" },
             ]}
           />
           <SelectField

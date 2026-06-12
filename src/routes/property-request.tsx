@@ -49,12 +49,14 @@ function PropertyRequestPage() {
   const [submitted, setSubmitted] = useState<RequestSubmission | null>(null);
   const [loading, setLoading] = useState(false);
   const [requestType, setRequestType] = useState<string>("Rental");
+  const [requestCategory, setRequestCategory] = useState<string>("سكني");
   const [propertyType, setPropertyType] = useState<string>(PROPERTY_TYPES[0]);
   const formRef = useRef<HTMLFormElement>(null);
 
   const reset = () => {
     setSubmitted(null);
     setRequestType("Rental");
+    setRequestCategory("سكني");
     setPropertyType(PROPERTY_TYPES[0]);
     formRef.current?.reset();
   };
@@ -78,6 +80,7 @@ function PropertyRequestPage() {
         body: {
           sourceChannel: "Public website",
           listingType: requestType,
+          requestCategory,
           propertyType,
           fullName,
           mobile: mobileNumber,
@@ -222,6 +225,21 @@ function PropertyRequestPage() {
                       <SelectItem value="Purchase">
                         {t("requestType.Purchase") || "Purchase"}
                       </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor="requestCategory" className="text-xs font-medium">
+                    تصنيف الطلب
+                  </Label>
+                  <Select value={requestCategory} onValueChange={setRequestCategory}>
+                    <SelectTrigger id="requestCategory" className="mt-1">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="سكني">سكني</SelectItem>
+                      <SelectItem value="تجاري">تجاري</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

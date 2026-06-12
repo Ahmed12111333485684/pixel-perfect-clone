@@ -159,6 +159,8 @@ export interface Partner {
   location?: string | null;
   photoUrl?: string | null;
   notes?: string | null;
+  partnerType?: string | null;
+  companyName?: string | null;
   userId?: number | null;
   createdAt: string;
 }
@@ -449,7 +451,8 @@ export interface CommercialListing {
   roomsCount?: string | null;
   buildingAge?: string | null;
   hasElevator?: string | null;
-  otherDetails?: string | null;
+  adText1?: string | null;
+  adText2?: string | null;
   rentAmount?: string | null;
   paymentType?: string | null;
   location?: string | null;

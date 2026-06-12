@@ -51,7 +51,8 @@ const COMMERCIAL_FIELDS = [
   "roomsCount",
   "buildingAge",
   "hasElevator",
-  "otherDetails",
+  "adText1",
+  "adText2",
   "rentAmount",
   "paymentType",
   "location",
@@ -829,7 +830,8 @@ function CommercialListingDialog({
 
       <div className="space-y-4 rounded-lg border border-border bg-muted/30 p-4">
         <div className="grid gap-4 sm:grid-cols-2">
-          <TextareaField id="otherDetails" label={t("commercialListings.otherDetails")} defaultValue={listing?.otherDetails} readOnly={readOnly} className="sm:col-span-2" />
+          <TextareaField id="adText1" label={t("commercialListings.adText1")} defaultValue={listing?.adText1} readOnly={readOnly} className="sm:col-span-2" />
+          <TextareaField id="adText2" label={t("commercialListings.adText2")} defaultValue={listing?.adText2} readOnly={readOnly} className="sm:col-span-2" />
           <TextField id="rentAmount" label={listingType === "Sale" ? t("commercialListings.salePrice") : t("commercialListings.rentAmount")} defaultValue={listing?.rentAmount} readOnly={readOnly} />
           <TextField id="paymentType" label={t("commercialListings.paymentType")} defaultValue={listing?.paymentType} readOnly={readOnly} />
           <TextField id="location" label={t("commercialListings.location")} defaultValue={listing?.location} readOnly={readOnly} />
