@@ -67,7 +67,7 @@ function AvailablePropertiesPage() {
     queryFn: () => {
       if (searchParams) {
         return api<(PublicProperty & RequestPropertySuggestion)[]>("/public/properties/suggest", { 
-          query: searchParams as Record<string, unknown>,
+          query: searchParams as Record<string, string | number | boolean | null | undefined>,
           anonymous: true 
         });
       }

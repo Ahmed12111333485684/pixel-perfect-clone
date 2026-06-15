@@ -28,6 +28,7 @@ import { Route as AppPartnersRouteImport } from './routes/app.partners'
 import { Route as AppOwnersRouteImport } from './routes/app.owners'
 import { Route as AppListingsRouteImport } from './routes/app.listings'
 import { Route as AppLeadsRouteImport } from './routes/app.leads'
+import { Route as AppExpensesRouteImport } from './routes/app.expenses'
 import { Route as AppEmployeeProductivityRouteImport } from './routes/app.employee-productivity'
 import { Route as AppContractsRouteImport } from './routes/app.contracts'
 import { Route as AppBuyersRouteImport } from './routes/app.buyers'
@@ -131,6 +132,11 @@ const AppLeadsRoute = AppLeadsRouteImport.update({
   path: '/leads',
   getParentRoute: () => AppRoute,
 } as any)
+const AppExpensesRoute = AppExpensesRouteImport.update({
+  id: '/expenses',
+  path: '/expenses',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppEmployeeProductivityRoute = AppEmployeeProductivityRouteImport.update({
   id: '/employee-productivity',
   path: '/employee-productivity',
@@ -179,6 +185,7 @@ export interface FileRoutesByFullPath {
   '/app/buyers': typeof AppBuyersRoute
   '/app/contracts': typeof AppContractsRoute
   '/app/employee-productivity': typeof AppEmployeeProductivityRoute
+  '/app/expenses': typeof AppExpensesRoute
   '/app/leads': typeof AppLeadsRouteWithChildren
   '/app/listings': typeof AppListingsRoute
   '/app/owners': typeof AppOwnersRoute
@@ -206,6 +213,7 @@ export interface FileRoutesByTo {
   '/app/buyers': typeof AppBuyersRoute
   '/app/contracts': typeof AppContractsRoute
   '/app/employee-productivity': typeof AppEmployeeProductivityRoute
+  '/app/expenses': typeof AppExpensesRoute
   '/app/leads': typeof AppLeadsRouteWithChildren
   '/app/listings': typeof AppListingsRoute
   '/app/owners': typeof AppOwnersRoute
@@ -235,6 +243,7 @@ export interface FileRoutesById {
   '/app/buyers': typeof AppBuyersRoute
   '/app/contracts': typeof AppContractsRoute
   '/app/employee-productivity': typeof AppEmployeeProductivityRoute
+  '/app/expenses': typeof AppExpensesRoute
   '/app/leads': typeof AppLeadsRouteWithChildren
   '/app/listings': typeof AppListingsRoute
   '/app/owners': typeof AppOwnersRoute
@@ -265,6 +274,7 @@ export interface FileRouteTypes {
     | '/app/buyers'
     | '/app/contracts'
     | '/app/employee-productivity'
+    | '/app/expenses'
     | '/app/leads'
     | '/app/listings'
     | '/app/owners'
@@ -292,6 +302,7 @@ export interface FileRouteTypes {
     | '/app/buyers'
     | '/app/contracts'
     | '/app/employee-productivity'
+    | '/app/expenses'
     | '/app/leads'
     | '/app/listings'
     | '/app/owners'
@@ -320,6 +331,7 @@ export interface FileRouteTypes {
     | '/app/buyers'
     | '/app/contracts'
     | '/app/employee-productivity'
+    | '/app/expenses'
     | '/app/leads'
     | '/app/listings'
     | '/app/owners'
@@ -483,6 +495,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppLeadsRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/expenses': {
+      id: '/app/expenses'
+      path: '/expenses'
+      fullPath: '/app/expenses'
+      preLoaderRoute: typeof AppExpensesRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/employee-productivity': {
       id: '/app/employee-productivity'
       path: '/employee-productivity'
@@ -565,6 +584,7 @@ interface AppRouteChildren {
   AppBuyersRoute: typeof AppBuyersRoute
   AppContractsRoute: typeof AppContractsRoute
   AppEmployeeProductivityRoute: typeof AppEmployeeProductivityRoute
+  AppExpensesRoute: typeof AppExpensesRoute
   AppLeadsRoute: typeof AppLeadsRouteWithChildren
   AppListingsRoute: typeof AppListingsRoute
   AppOwnersRoute: typeof AppOwnersRoute
@@ -584,6 +604,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppBuyersRoute: AppBuyersRoute,
   AppContractsRoute: AppContractsRoute,
   AppEmployeeProductivityRoute: AppEmployeeProductivityRoute,
+  AppExpensesRoute: AppExpensesRoute,
   AppLeadsRoute: AppLeadsRouteWithChildren,
   AppListingsRoute: AppListingsRoute,
   AppOwnersRoute: AppOwnersRoute,

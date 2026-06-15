@@ -11,6 +11,7 @@ import {
   type Payment,
   type Sale,
   type EmployeeProductivityRecord,
+  type Expense,
 } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import {
@@ -101,13 +102,25 @@ function Dashboard() {
     queryFn: () => api<EmployeeProductivityRecord[]>("/employee-productivity"),
     enabled: auth.hasRole("Admin"),
   });
+  const expenses = useQuery({
+    queryKey: ["expenses", new Date().getFullYear(), new Date().getMonth() + 1],
+    queryFn: () =>
+      api<Expense[]>("/api/expenses", {
+        query: {
+          year: new Date().getFullYear(),
+          month: new Date().getMonth() + 1,
+        },
+      }),
+    enabled: auth.hasRole("Admin"),
+  });
 
   const loading =
     properties.isLoading ||
     contracts.isLoading ||
     payments.isLoading ||
     sales.isLoading ||
-    productivity.isLoading;
+    productivity.isLoading ||
+    expenses.isLoading;
 
   // ---------- Derived KPIs ----------
   const stats = useMemo(() => {
@@ -868,6 +881,30 @@ function Dashboard() {
                 ))}
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {auth.hasRole("Admin") && (
+        <div className="rounded-2xl border border-border bg-card p-5 shadow-card">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <h3 className="font-display text-lg font-semibold">{t("expenses.title")}</h3>
+              <p className="text-sm text-muted-foreground">{t("expenses.totalThisMonth")}</p>
+            </div>
+            <Button asChild variant="outline">
+              <Link to="/app/expenses">{t("expenses.title")}</Link>
+            </Button>
+          </div>
+          <div className="mt-4">
+            <DetailStat
+              icon={<DollarSign className="h-5 w-5" />}
+              label={t("expenses.totalThisMonth")}
+              value={formatMoney(
+                (expenses.data ?? []).reduce((sum, e) => sum + Number(e.amount || 0), 0)
+              )}
+              accent
+            />
           </div>
         </div>
       )}

@@ -538,6 +538,30 @@ export interface Advertisement {
   updatedAt?: string | null;
 }
 
+export interface Expense {
+  id: number;
+  date: string;
+  reference?: string;
+  employeeId: number;
+  employeeName?: string;
+  category: string;
+  amount: number;
+  paymentMethod: string;
+  notes?: string;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export interface ExpenseCreate {
+  date: string;
+  reference?: string;
+  employeeId: number;
+  category: string;
+  amount: number;
+  paymentMethod: string;
+  notes?: string;
+}
+
 // ============ Partner helpers ============
 export function fetchPartners() {
   return api<Partner[]>("/api/partners");
