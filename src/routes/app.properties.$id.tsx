@@ -617,6 +617,8 @@ function renderValue(v: unknown, t: (k: string) => string): React.ReactNode {
   if (typeof v === "number") return String(v);
   if (typeof v === "string") {
     if (/^\d{4}-\d{2}-\d{2}T/.test(v)) return formatDate(v);
+    const translatedEnum = t(`enums.${v}`);
+    if (translatedEnum && translatedEnum !== `enums.${v}`) return translatedEnum;
     return v;
   }
   if (Array.isArray(v))

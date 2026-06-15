@@ -107,6 +107,8 @@ const en = {
     password: "Password",
     role: "Role",
     owner: "Owner",
+    price: "Price",
+    overview: "Overview",
     createdAt: "Created",
     amount: "Amount",
     dueDate: "Due date",
@@ -520,6 +522,20 @@ const en = {
     noData: "No data for this period",
     viewAll: "View all",
   },
+  enums: {
+    North: "North",
+    South: "South",
+    East: "East",
+    West: "West",
+    NorthEast: "North East",
+    NorthWest: "North West",
+    SouthEast: "South East",
+    SouthWest: "South West",
+    Commercial: "Commercial",
+    Residential: "Residential",
+    Industrial: "Industrial",
+    Agricultural: "Agricultural",
+  },
 };
 
 const ar = {
@@ -630,6 +646,8 @@ const ar = {
     password: "كلمة المرور",
     role: "الدور",
     owner: "المالك",
+    price: "السعر",
+    overview: "نظرة عامة",
     createdAt: "تاريخ الإنشاء",
     amount: "المبلغ",
     dueDate: "تاريخ الاستحقاق",

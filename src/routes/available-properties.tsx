@@ -25,7 +25,17 @@ import {
   ZoomIn,
   Search,
   FilterX,
+  CalendarDays,
+  Hash,
+  Info,
+  Phone,
+  Mail,
+  User,
+  IdCard,
+  Clock,
 } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { RequestPropertySuggestion } from "@/lib/api";
@@ -240,6 +250,7 @@ function PropertyCard({ property }: { property: PublicProperty & Partial<Request
     .sort((a, b) => a.sortOrder - b.sortOrder || a.id - b.id);
   const [activeIndex, setActiveIndex] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [detailsOpen, setDetailsOpen] = useState(false);
   const activeImage = images[activeIndex];
   const hasMultiple = images.length > 1;
   const resolvedImageUrl = activeImage ? resolveApiAssetUrl(activeImage.url) : "";
@@ -248,16 +259,23 @@ function PropertyCard({ property }: { property: PublicProperty & Partial<Request
   const goPrev = () => setActiveIndex((index) => (index - 1 + images.length) % images.length);
 
   return (
-    <article className="rounded-2xl border border-border bg-card p-5 shadow-card transition hover:shadow-elegant">
-      <div className="relative aspect-[16/10] overflow-hidden rounded-xl border border-border bg-muted">
-        {activeImage ? (
-          <>
-            <button
-              type="button"
-              onClick={() => setLightboxOpen(true)}
-              aria-label={t("publicProperties.zoomImage", { defaultValue: "Zoom image" })}
-              className="group absolute inset-0 h-full w-full"
-            >
+    <>
+      <article 
+        className="cursor-pointer rounded-2xl border border-border bg-card p-5 shadow-card transition hover:shadow-elegant"
+        onClick={() => setDetailsOpen(true)}
+      >
+        <div className="relative aspect-[16/10] overflow-hidden rounded-xl border border-border bg-muted" onClick={(e) => e.stopPropagation()}>
+          {activeImage ? (
+            <>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setLightboxOpen(true);
+                }}
+                aria-label={t("publicProperties.zoomImage", { defaultValue: "Zoom image" })}
+                className="group absolute inset-0 h-full w-full"
+              >
               <MediaPreview
                 src={resolvedImageUrl}
                 alt={activeImage.originalFileName || property.name}
@@ -390,7 +408,13 @@ function PropertyCard({ property }: { property: PublicProperty & Partial<Request
           onClose={() => setLightboxOpen(false)}
         />
       )}
-    </article>
+      </article>
+      <PropertyDetailsDialog 
+        property={property}
+        open={detailsOpen}
+        onOpenChange={setDetailsOpen}
+      />
+    </>
   );
 }
 
@@ -505,4 +529,222 @@ function PriceCard({ label, value }: { label: string; value?: number | null }) {
       </div>
     </div>
   );
+}
+
+function PropertyDetailsDialog({
+  property,
+  open,
+  onOpenChange,
+}: {
+  property: PublicProperty & Partial<RequestPropertySuggestion>;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
+  const { t } = useTranslation();
+  
+  if (!property) return null;
+
+  const images = (property.images?.length ? property.images : [])
+    .slice()
+    .sort((a, b) => a.sortOrder - b.sortOrder || a.id - b.id);
+  const primary = images.find((i) => i.isPrimary) ?? images[0];
+
+  const detailEntries = Object.entries((property.details ?? {}) as Record<string, unknown>).filter(
+    ([, v]) => hasValue(v),
+  );
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-4xl p-0 overflow-hidden bg-card/95 backdrop-blur-md">
+        <ScrollArea className="max-h-[90vh] overflow-y-auto">
+          <div className="relative aspect-video w-full bg-muted lg:aspect-[21/9]">
+            {primary ? (
+              <MediaPreview
+                src={resolveApiAssetUrl(primary.url)}
+                alt={primary.originalFileName || property.name}
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              <div className="flex h-full w-full flex-col items-center justify-center gap-2 text-muted-foreground">
+                <ImagePlus className="h-8 w-8" />
+                <span className="text-sm">{t("common.noImages")}</span>
+              </div>
+            )}
+            <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 p-6 pt-24 text-white">
+              <div className="flex items-center gap-2 text-xs uppercase tracking-wide text-white/80">
+                <Hash className="h-3.5 w-3.5" />
+                <span>{t("common.propertyId")}</span>
+                <span className="font-mono text-white">#{property.id}</span>
+              </div>
+              <DialogTitle className="mt-2 text-2xl font-semibold md:text-3xl text-white">
+                {property.name}
+              </DialogTitle>
+              <DialogDescription className="sr-only">
+                {t("common.propertyDetails", { defaultValue: "Property Details" })}
+              </DialogDescription>
+              <div className="mt-2 flex items-center gap-2 text-sm text-white/90">
+                <MapPin className="h-4 w-4 text-gold" />
+                <span>{property.address}</span>
+              </div>
+            </div>
+          </div>
+          
+          <div className="p-6">
+            <div className="grid gap-6 md:grid-cols-5">
+              <div className="space-y-6 md:col-span-3">
+                <div className="rounded-xl border border-border bg-background p-5 shadow-sm">
+                  <h3 className="mb-4 flex items-center gap-2 font-semibold">
+                    <BadgeDollarSign className="h-5 w-5 text-gold" />
+                    {t("common.price")}
+                  </h3>
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div>
+                      <div className="text-xs uppercase text-muted-foreground">{t("common.salePrice")}</div>
+                      <div className="text-lg font-medium">{property.salePrice ? formatMoney(property.salePrice) : "—"}</div>
+                    </div>
+                    <div>
+                      <div className="text-xs uppercase text-muted-foreground">{t("common.monthlyRent")}</div>
+                      <div className="text-lg font-medium">{property.rentPrice ? formatMoney(property.rentPrice) : "—"}</div>
+                    </div>
+                  </div>
+                </div>
+
+                {detailEntries.length > 0 && (
+                  <div className="rounded-xl border border-border bg-background p-5 shadow-sm">
+                    <h3 className="mb-4 flex items-center gap-2 font-semibold">
+                      <Info className="h-5 w-5 text-gold" />
+                      {t("common.details")}
+                    </h3>
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      {detailEntries.map(([k, v]) => (
+                        <div key={k}>
+                          <div className="flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                            {iconForKey(k)}
+                            <span>{labelFor(k, t)}</span>
+                          </div>
+                          <div className="mt-1 text-sm font-medium">{renderValue(v, t)}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="space-y-6 md:col-span-2">
+                <div className="rounded-xl border border-border bg-background p-5 shadow-sm">
+                  <h3 className="mb-4 flex items-center gap-2 font-semibold">
+                    <Home className="h-5 w-5 text-gold" />
+                    {t("common.overview")}
+                  </h3>
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between border-b border-border pb-2 text-sm">
+                      <span className="text-muted-foreground">{t("common.type")}</span>
+                      <span className="font-medium">{localizePropertyType(t, property.type)}</span>
+                    </div>
+                    <div className="flex items-center justify-between border-b border-border pb-2 text-sm">
+                      <span className="text-muted-foreground">{t("common.createdAt")}</span>
+                      <span className="font-medium">{formatDate(property.createdAt)}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {property.amenities && property.amenities.length > 0 && (
+                  <div className="rounded-xl border border-border bg-background p-5 shadow-sm">
+                    <h3 className="mb-4 flex items-center gap-2 font-semibold">
+                      <Sparkles className="h-5 w-5 text-gold" />
+                      {t("nav.amenities")}
+                    </h3>
+                    <div className="flex flex-wrap gap-2">
+                      {property.amenities.map((a) => (
+                        <Badge key={a.id} variant="secondary" className="bg-primary/5 text-primary hover:bg-primary/10">
+                          {a.name}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </ScrollArea>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// --- Helpers ---
+
+const FIELD_LABEL_KEYS: Record<string, string> = {
+  rooms: "common.rooms",
+  area: "common.area",
+  facade: "common.facade",
+  street_width: "common.streetWidth",
+  category: "common.category",
+  floor: "common.floor",
+  furnished: "common.furnished",
+  price_per_meter: "common.pricePerMeter",
+  zoning: "common.zoning",
+  buildable: "common.buildable",
+  frontage_m: "common.frontageM",
+  street_facing: "common.streetFacing",
+  storefront_width_m: "common.storefrontWidthM",
+  has_storage: "common.hasStorage",
+  ceiling_height_m: "common.ceilingHeightM",
+  loading_docks: "common.loadingDocks",
+  climate_control: "common.climateControl",
+  yard_area: "common.yardArea",
+};
+
+function hasValue(v: unknown) {
+  if (v === null || v === undefined || v === "") return false;
+  if (Array.isArray(v) && v.length === 0) return false;
+  return true;
+}
+
+function humanizeKey(k: string) {
+  return k
+    .replace(/([A-Z])/g, " $1")
+    .replace(/^./, (c) => c.toUpperCase())
+    .trim();
+}
+
+function labelFor(k: string, t: (k: string) => string): string {
+  const i18nKey = FIELD_LABEL_KEYS[k];
+  if (i18nKey) {
+    const translated = t(i18nKey);
+    if (translated && translated !== i18nKey) return translated;
+  }
+  return humanizeKey(k);
+}
+
+function iconForKey(k: string): React.ReactNode {
+  const cls = "h-4 w-4";
+  if (/phone/i.test(k)) return <Phone className={cls} />;
+  if (/email/i.test(k)) return <Mail className={cls} />;
+  if (/name/i.test(k)) return <User className={cls} />;
+  if (/(nationalId|deed|number|id$)/i.test(k)) return <IdCard className={cls} />;
+  if (/(date|At$|time)/i.test(k)) return <Clock className={cls} />;
+  if (/address|location/i.test(k)) return <MapPin className={cls} />;
+  if (/note/i.test(k)) return <Info className={cls} />;
+  if (/assigned/i.test(k)) return <User className={cls} />;
+  return <Info className={cls} />;
+}
+
+function renderValue(v: unknown, t: (k: string) => string): React.ReactNode {
+  if (!hasValue(v)) return <span className="text-muted-foreground">{t("common.notProvided")}</span>;
+  if (typeof v === "boolean") return v ? t("common.yes") : t("common.no");
+  if (typeof v === "number") return String(v);
+  if (typeof v === "string") {
+    if (/^\d{4}-\d{2}-\d{2}T/.test(v)) return formatDate(v);
+    const translatedEnum = t(`enums.${v}`);
+    if (translatedEnum && translatedEnum !== `enums.${v}`) return translatedEnum;
+    return v;
+  }
+  if (Array.isArray(v))
+    return v.map((x) => (typeof x === "object" ? JSON.stringify(x) : String(x))).join(", ");
+  try {
+    return JSON.stringify(v);
+  } catch {
+    return String(v);
+  }
 }
