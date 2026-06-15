@@ -476,6 +476,8 @@ export interface CommercialListing {
   publishedTiktok?: string | null;
   notes?: string | null;
   brokerageContracts?: CommercialListingBrokerageContract[] | null;
+  parentId?: number | null;
+  units?: CommercialListing[] | null;
   createdAt: string;
   updatedAt?: string | null;
 }

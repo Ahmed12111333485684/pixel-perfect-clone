@@ -255,6 +255,11 @@ function buildCommercialPayload(
     payload.isOfficeListing = isOfficeListing;
   }
 
+  const parentIdStr = fd.get("parentId");
+  if (parentIdStr) {
+    payload.parentId = parseInt(parentIdStr as string, 10);
+  }
+
   payload.brokerageContracts = normalizeBrokerageContracts(contracts);
 
   return payload;
@@ -275,6 +280,7 @@ function CommercialListingsPage() {
   const [creating, setCreating] = useState(false);
   const [selected, setSelected] = useState<CommercialListing | null>(null);
   const [deleting, setDeleting] = useState<CommercialListing | null>(null);
+  const [creatingUnitFor, setCreatingUnitFor] = useState<CommercialListing | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [deletingRecord, setDeletingRecord] = useState(false);
 
@@ -405,7 +411,7 @@ function CommercialListingsPage() {
     { key: "ownerName", header: t("commercialListings.ownerName"), cell: (r) => <span className="font-medium">{r.ownerName || t("common.notProvided")}</span> },
     { key: "deedNumber", header: t("commercialListings.deedNumber"), cell: (r) => (r.deedNumber ? <span className="font-mono text-sm">{r.deedNumber}</span> : t("common.notProvided")) },
     { key: "mobile1", header: t("commercialListings.mobile1"), cell: (r) => r.mobile1 || t("common.notProvided") },
-    { key: "propertyType", header: t("commercialListings.propertyType"), cell: (r) => r.propertyType || t("common.notProvided") },
+    { key: "propertyType", header: t("commercialListings.propertyType"), cell: (r) => r.propertyType ? t(`propertyType.${r.propertyType}`, { defaultValue: r.propertyType }) : t("common.notProvided") },
     { key: "rentAmount", header: t("commercialListings.rentAmount"), cell: (r) => r.rentAmount || t("common.notProvided") },
     { key: "paymentType", header: t("commercialListings.paymentType"), cell: (r) => r.paymentType || t("common.notProvided") },
     { key: "location", header: t("commercialListings.location"), cell: (r) => r.location || t("common.notProvided") },
@@ -428,7 +434,7 @@ function CommercialListingsPage() {
     return items.filter((record) => {
       const qMatch =
         !lower ||
-        [record.ownerName, record.deedNumber, record.location, record.propertyType, record.propertyStatus]
+        [record.ownerName, record.deedNumber, record.location, record.propertyType, record.propertyStatus, record.offerCode]
           .some((v) => (v ?? "").toLowerCase().includes(lower));
 
       const deedMatch = !deedLower || (record.deedNumber ?? "").toLowerCase().includes(deedLower);
@@ -448,6 +454,25 @@ function CommercialListingsPage() {
     const start = (page - 1) * pageSize;
     return filteredListings.slice(start, start + pageSize);
   }, [filteredListings, page, pageSize]);
+
+  const unitInitialState = useMemo(() => {
+    if (!creatingUnitFor) return null;
+    return {
+      parentId: creatingUnitFor.id,
+      contactDate: creatingUnitFor.contactDate,
+      ownerName: creatingUnitFor.ownerName,
+      location: creatingUnitFor.location,
+      employee: creatingUnitFor.employee,
+      broker: creatingUnitFor.broker,
+      dealThrough: creatingUnitFor.dealThrough,
+      listingCategory: creatingUnitFor.listingCategory,
+      mobile1: creatingUnitFor.mobile1,
+      mobile2: creatingUnitFor.mobile2,
+      isOfficeListing: creatingUnitFor.isOfficeListing,
+      propertyType: "Apartment", // Default
+      createdAt: new Date().toISOString(),
+    } as CommercialListing;
+  }, [creatingUnitFor]);
 
   return (
     <div>
@@ -581,7 +606,7 @@ function CommercialListingsPage() {
         onOpenChange={(value) => {
           if (!value) setSelected(null);
         }}
-        listing={selected}
+        listing={listings.data?.find(l => l.id === selected?.id) || selected}
         partners={partners.data ?? []}
         partnersLoading={partners.isLoading}
         readOnly={!canManage}
@@ -592,6 +617,25 @@ function CommercialListingsPage() {
           e.preventDefault();
           setSelected(null);
         }}
+        onAddUnit={() => setCreatingUnitFor(selected)}
+      />
+
+      <CommercialListingDialog
+        open={!!creatingUnitFor}
+        onOpenChange={(value) => {
+          if (!value) setCreatingUnitFor(null);
+        }}
+        listing={unitInitialState}
+        partners={partners.data ?? []}
+        partnersLoading={partners.isLoading}
+        readOnly={!canManage}
+        submitting={submitting}
+        title={`${t("common.add")} ${t("common.unit")}`}
+        submitLabel={t("common.create")}
+        onSubmit={(e, publishing, contracts) => {
+           handleCreate(e, publishing, contracts).then(() => setCreatingUnitFor(null));
+        }}
+        isUnit={true}
       />
 
       <ConfirmDialog
@@ -621,6 +665,8 @@ function CommercialListingDialog({
   title,
   submitLabel,
   onSubmit,
+  onAddUnit,
+  isUnit,
 }: {
   open: boolean;
   onOpenChange: (value: boolean) => void;
@@ -632,6 +678,8 @@ function CommercialListingDialog({
   title: string;
   submitLabel: string;
   onSubmit: (e: React.FormEvent<HTMLFormElement>, publishing: PublishingState, contracts: BrokerageContractFormValue[]) => void | Promise<void>;
+  onAddUnit?: () => void;
+  isUnit?: boolean;
 }) {
   const { t } = useTranslation();
   const [publishing, setPublishing] = useState<PublishingState>(() => buildPublishingState(listing));
@@ -643,6 +691,7 @@ function CommercialListingDialog({
   const [dealThrough, setDealThrough] = useState<string>(listing?.dealThrough ?? DEAL_THROUGH_OWNER);
   const [hasKey, setHasKey] = useState<boolean>(Boolean(listing?.hasKey));
   const [isOfficeListing, setIsOfficeListing] = useState<boolean>(Boolean(listing?.isOfficeListing));
+  const [parentId, setParentId] = useState<number | null>(listing?.parentId ?? null);
   const [contracts, setContracts] = useState<BrokerageContractFormValue[]>(() => {
     const initialContracts = listing?.brokerageContracts?.length ? listing?.brokerageContracts : [null];
     return initialContracts.map((contract) => (contract ? {
@@ -685,6 +734,7 @@ function CommercialListingDialog({
       setDealThrough(listing?.dealThrough ?? DEAL_THROUGH_OWNER);
       setHasKey(Boolean(listing?.hasKey));
       setIsOfficeListing(Boolean(listing?.isOfficeListing));
+      setParentId(listing?.parentId ?? null);
       setContracts(listing?.brokerageContracts?.length
         ? listing.brokerageContracts.map((contract) => ({
           id: makeContractId(),
@@ -709,6 +759,7 @@ function CommercialListingDialog({
     >
       <div className="space-y-4 rounded-lg border border-border bg-muted/30 p-4">
         <div className="grid gap-4 sm:grid-cols-2">
+          {parentId && <input type="hidden" name="parentId" value={parentId} />}
           <TextField id="contactDate" label={t("commercialListings.contactDate")} defaultValue={listing?.contactDate} readOnly={readOnly} />
           <TextField id="offerCode" label={t("commercialListings.offerCode")} defaultValue={listing?.offerCode} readOnly={true} />
           <div className="space-y-2">
@@ -808,16 +859,25 @@ function CommercialListingDialog({
                 <SelectValue placeholder={t("commercialListings.propertyType")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="Apartment">{t("propertyType.Apartment")}</SelectItem>
-                <SelectItem value="Shop">{t("propertyType.Shop")}</SelectItem>
-                <SelectItem value="Office">{t("propertyType.Office")}</SelectItem>
-                <SelectItem value="Showroom">{t("propertyType.Showroom")}</SelectItem>
-                <SelectItem value="Building">{t("propertyType.Building")}</SelectItem>
-                <SelectItem value="Land">{t("propertyType.Land")}</SelectItem>
-                <SelectItem value="RestHouse">{t("propertyType.RestHouse")}</SelectItem>
-                <SelectItem value="Villa">{t("propertyType.Villa")}</SelectItem>
-                <SelectItem value="Warehouse">{t("propertyType.Warehouse")}</SelectItem>
-                <SelectItem value="Other">{t("propertyType.Other")}</SelectItem>
+                {isUnit ? (
+                  <>
+                    <SelectItem value="Apartment">{t("propertyType.Apartment")}</SelectItem>
+                    <SelectItem value="Office">{t("propertyType.Office")}</SelectItem>
+                  </>
+                ) : (
+                  <>
+                    <SelectItem value="Apartment">{t("propertyType.Apartment")}</SelectItem>
+                    <SelectItem value="Shop">{t("propertyType.Shop")}</SelectItem>
+                    <SelectItem value="Office">{t("propertyType.Office")}</SelectItem>
+                    <SelectItem value="Showroom">{t("propertyType.Showroom")}</SelectItem>
+                    <SelectItem value="Building">{t("propertyType.Building")}</SelectItem>
+                    <SelectItem value="Land">{t("propertyType.Land")}</SelectItem>
+                    <SelectItem value="RestHouse">{t("propertyType.RestHouse")}</SelectItem>
+                    <SelectItem value="Villa">{t("propertyType.Villa")}</SelectItem>
+                    <SelectItem value="Warehouse">{t("propertyType.Warehouse")}</SelectItem>
+                    <SelectItem value="Other">{t("propertyType.Other")}</SelectItem>
+                  </>
+                )}
               </SelectContent>
             </Select>
             <input type="hidden" name="propertyType" value={propertyType} />
@@ -861,6 +921,38 @@ function CommercialListingDialog({
       <div className="space-y-4 rounded-lg border border-border bg-muted/30 p-4">
         <TextareaField id="notes" label={t("common.notes")} defaultValue={listing?.notes} readOnly={readOnly} />
       </div>
+
+      {normalizePropertyType(listing?.propertyType) === "Building" && !isUnit && (
+        <div className="space-y-4 rounded-lg border border-border bg-muted/30 p-4">
+          <div className="flex items-center justify-between gap-3">
+            <Label className="text-sm font-medium">{t("common.units", { defaultValue: "Units" })}</Label>
+            {onAddUnit && !readOnly && (
+              <Button type="button" variant="outline" size="sm" onClick={onAddUnit}>
+                <Plus className="me-1 h-4 w-4" />
+                {t("common.add")} {t("common.unit", { defaultValue: "Unit" })}
+              </Button>
+            )}
+          </div>
+          {(listing?.units?.length ?? 0) > 0 ? (
+            <div className="space-y-3">
+              {listing?.units?.map(u => (
+                <div key={u.id} className="flex items-center justify-between rounded-md border bg-card p-3 shadow-sm">
+                  <div>
+                    <div className="font-medium text-sm">{u.offerCode || "-"}</div>
+                    <div className="text-xs text-muted-foreground mt-1">
+                      {t(`propertyType.${u.propertyType}`)} &bull; {u.rentAmount ? `${u.rentAmount} SAR` : "-"} &bull; {u.propertyStatus}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center text-sm text-muted-foreground py-4">
+              {t("common.noRecords", { defaultValue: "No records found" })}
+            </div>
+          )}
+        </div>
+      )}
     </FormDialog>
   );
 }

@@ -184,6 +184,8 @@ const en = {
     recordCreated: "Record created successfully",
     home: "Home",
     createRequest: "Add request",
+    units: "Units",
+    unit: "Unit",
   },
   auth: {
     title: "Sign in to Estatly",
@@ -661,6 +663,8 @@ const ar = {
     recordCreated: "تم إنشاء السجل بنجاح",
     home: "الرئيسية",
     createRequest: "إضافة طلب",
+    units: "الوحدات",
+    unit: "وحدة",
   },
   auth: {
     title: "تسجيل الدخول إلى إستيتلي",
