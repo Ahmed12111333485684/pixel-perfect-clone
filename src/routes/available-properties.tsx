@@ -23,7 +23,12 @@ import {
   ChevronRight,
   X,
   ZoomIn,
+  Search,
+  FilterX,
 } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import type { RequestPropertySuggestion } from "@/lib/api";
 
 export const Route = createFileRoute("/available-properties")({
   head: () => ({
@@ -40,10 +45,57 @@ export const Route = createFileRoute("/available-properties")({
 
 function AvailablePropertiesPage() {
   const { t } = useTranslation();
-  const list = useQuery({
-    queryKey: ["public-properties"],
-    queryFn: () => api<PublicProperty[]>("/public/properties", { anonymous: true }),
+  
+  const [searchParams, setSearchParams] = useState<{
+    requestType?: string;
+    location?: string;
+    maxBudget?: number;
+    bedroomCount?: number;
+    requestPropertyType?: string;
+  } | null>(null);
+
+  const [formState, setFormState] = useState({
+    requestType: "",
+    location: "",
+    maxBudget: "",
+    bedroomCount: "",
+    requestPropertyType: "",
   });
+
+  const list = useQuery({
+    queryKey: ["public-properties", searchParams],
+    queryFn: () => {
+      if (searchParams) {
+        return api<(PublicProperty & RequestPropertySuggestion)[]>("/public/properties/suggest", { 
+          query: searchParams as Record<string, unknown>,
+          anonymous: true 
+        });
+      }
+      return api<PublicProperty[]>("/public/properties", { anonymous: true });
+    },
+  });
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    setSearchParams({
+      requestType: formState.requestType || undefined,
+      location: formState.location || undefined,
+      maxBudget: formState.maxBudget ? Number(formState.maxBudget) : undefined,
+      bedroomCount: formState.bedroomCount ? Number(formState.bedroomCount) : undefined,
+      requestPropertyType: formState.requestPropertyType || undefined,
+    });
+  };
+
+  const clearSearch = () => {
+    setFormState({
+      requestType: "",
+      location: "",
+      maxBudget: "",
+      bedroomCount: "",
+      requestPropertyType: "",
+    });
+    setSearchParams(null);
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -78,6 +130,85 @@ function AvailablePropertiesPage() {
       <section className="mx-auto max-w-7xl px-6 py-12">
         <PageHeader title={t("publicProperties.title")} subtitle={t("publicProperties.subtitle")} />
 
+        <div className="mb-8 rounded-2xl border border-border bg-card p-6 shadow-sm">
+          <form onSubmit={handleSearch} className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6">
+            <div className="space-y-1.5 lg:col-span-1">
+              <label className="text-xs font-medium text-muted-foreground">{t("common.intent")}</label>
+              <Select value={formState.requestType} onValueChange={(v) => setFormState(s => ({ ...s, requestType: v }))}>
+                <SelectTrigger>
+                  <SelectValue placeholder={t("common.all")} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="rental">{t("requestType.Rental")}</SelectItem>
+                  <SelectItem value="sale">{t("requestType.Purchase")}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="space-y-1.5 lg:col-span-1">
+              <label className="text-xs font-medium text-muted-foreground">{t("common.type")}</label>
+              <Select value={formState.requestPropertyType} onValueChange={(v) => setFormState(s => ({ ...s, requestPropertyType: v }))}>
+                <SelectTrigger>
+                  <SelectValue placeholder={t("common.all")} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Apartment">{t("propertyType.Apartment")}</SelectItem>
+                  <SelectItem value="Villa">{t("propertyType.Villa")}</SelectItem>
+                  <SelectItem value="Office">{t("propertyType.Office")}</SelectItem>
+                  <SelectItem value="Building">{t("propertyType.Building")}</SelectItem>
+                  <SelectItem value="Land">{t("propertyType.Land")}</SelectItem>
+                  <SelectItem value="Shop">{t("propertyType.Shop")}</SelectItem>
+                  <SelectItem value="Showroom">{t("propertyType.Showroom")}</SelectItem>
+                  <SelectItem value="Warehouse">{t("propertyType.Warehouse")}</SelectItem>
+                  <SelectItem value="RestHouse">{t("propertyType.RestHouse")}</SelectItem>
+                  <SelectItem value="Other">{t("propertyType.Other")}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-1.5 lg:col-span-1">
+              <label className="text-xs font-medium text-muted-foreground">{t("common.location")}</label>
+              <Input 
+                placeholder={t("common.city")} 
+                value={formState.location} 
+                onChange={(e) => setFormState(s => ({ ...s, location: e.target.value }))} 
+              />
+            </div>
+
+            <div className="space-y-1.5 lg:col-span-1">
+              <label className="text-xs font-medium text-muted-foreground">{t("common.maxBudget")}</label>
+              <Input 
+                type="number" 
+                placeholder="50000" 
+                value={formState.maxBudget} 
+                onChange={(e) => setFormState(s => ({ ...s, maxBudget: e.target.value }))} 
+              />
+            </div>
+
+            <div className="space-y-1.5 lg:col-span-1">
+              <label className="text-xs font-medium text-muted-foreground">{t("common.bedroomCount")}</label>
+              <Input 
+                type="number" 
+                placeholder="3" 
+                value={formState.bedroomCount} 
+                onChange={(e) => setFormState(s => ({ ...s, bedroomCount: e.target.value }))} 
+              />
+            </div>
+
+            <div className="flex items-end gap-2 lg:col-span-1">
+              <Button type="submit" className="w-full bg-gold-gradient text-gold-foreground hover:opacity-95">
+                <Search className="me-2 h-4 w-4" />
+                {t("common.search")}
+              </Button>
+              {searchParams && (
+                <Button type="button" variant="outline" size="icon" onClick={clearSearch} title={t("common.cancel")}>
+                  <FilterX className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
+          </form>
+        </div>
+
         {list.data && list.data.length > 0 ? (
           <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
             {list.data.map((property) => (
@@ -101,7 +232,7 @@ function AvailablePropertiesPage() {
   );
 }
 
-function PropertyCard({ property }: { property: PublicProperty }) {
+function PropertyCard({ property }: { property: PublicProperty & Partial<RequestPropertySuggestion> }) {
   const { t } = useTranslation();
   // Do not use `primaryImageUrl` fallback — only show images returned in `property.images`.
   const images = (property.images?.length ? property.images : [])
@@ -192,6 +323,11 @@ function PropertyCard({ property }: { property: PublicProperty }) {
           <div className="flex items-center gap-2 text-xs uppercase tracking-wide text-muted-foreground">
             <Building2 className="h-3.5 w-3.5" />
             {t("publicProperties.propertyNumber", { id: property.id })}
+            {typeof property.score === "number" && (
+              <Badge variant="secondary" className="ms-auto bg-gold/10 text-gold hover:bg-gold/20">
+                {property.score}% Match
+              </Badge>
+            )}
           </div>
           <h2 className="mt-2 text-xl font-semibold">{property.name}</h2>
         </div>
@@ -229,6 +365,18 @@ function PropertyCard({ property }: { property: PublicProperty }) {
           </Badge>
         )}
       </div>
+
+      {property.reasons && property.reasons.length > 0 && (
+        <div className="mt-4 flex flex-wrap gap-1.5 border-t border-border pt-4">
+          <span className="w-full text-xs font-medium text-muted-foreground">{t("suggestions.reasonsTitle", { defaultValue: "Why this property?" })}</span>
+          {property.reasons.map((reason, idx) => (
+            <Badge key={idx} variant="secondary" className="bg-primary/5 text-primary hover:bg-primary/10">
+              <Sparkles className="me-1 h-3 w-3" />
+              {t(`suggestions.reasons.${reason.key}`, reason.args)}
+            </Badge>
+          ))}
+        </div>
+      )}
 
       {lightboxOpen && activeImage && (
         <ImageLightbox
