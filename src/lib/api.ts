@@ -1,6 +1,6 @@
 // Lightweight fetch-based API client for the Property Management API.
 
-const TOKEN_KEY = "estatly.token";
+const TOKEN_KEY = "nourconsultancy.token";
 
 export function getApiBaseUrl(): string {
   // Configurable via VITE_API_BASE_URL. Falls back to localhost.

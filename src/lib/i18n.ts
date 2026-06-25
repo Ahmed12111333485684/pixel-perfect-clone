@@ -2,7 +2,7 @@ import i18n from "i18next";
 import { initReactI18next } from "react-i18next";
 
 const en = {
-  brand: { name: "Estatly", tagline: "Property management, refined." },
+  brand: { name: "نور الاستشارة", tagline: "Property management, refined." },
   nav: {
     dashboard: "Dashboard",
     owners: "Owners",
@@ -227,13 +227,13 @@ const en = {
     unit: "Unit",
   },
   auth: {
-    title: "Sign in to Estatly",
+    title: "Sign in to نور الاستشارة",
     subtitle: "Manage properties, owners, contracts and leads.",
     invalid: "Invalid username or password",
   },
   landing: {
     heroTitle: "Beautiful properties, expertly managed.",
-    heroSubtitle: "Estatly helps owners and agencies operate properties end-to-end — from listing to lease to sale.",
+    heroSubtitle: "نور الاستشارة helps owners and agencies operate properties end-to-end — from listing to lease to sale.",
     listProperty: "List a property",
     findProperty: "Find your property",
     backofficeSignIn: "Backoffice sign in",
@@ -538,7 +538,7 @@ const en = {
 };
 
 const ar = {
-  brand: { name: "إستيتلي", tagline: "إدارة عقارية بأناقة." },
+  brand: { name: "نور الاستشارة", tagline: "متميزون في طرح العروض العقارية ونتجاوب مع عروضكم وطلباتكم العقارية" },
   nav: {
     dashboard: "لوحة التحكم",
     owners: "الملاك",
@@ -759,13 +759,13 @@ const ar = {
     unit: "وحدة",
   },
   auth: {
-    title: "تسجيل الدخول إلى إستيتلي",
+    title: "تسجيل الدخول إلى نور الاستشارة",
     subtitle: "إدارة العقارات والملاك والعقود والعملاء.",
     invalid: "اسم المستخدم أو كلمة المرور غير صحيحة",
   },
   landing: {
     heroTitle: "عقارات مميّزة، إدارة احترافية.",
-    heroSubtitle: "إستيتلي يساعد الملاك والوكالات على إدارة العقارات من العرض إلى الإيجار والبيع.",
+    heroSubtitle: "نور الاستشارة يساعد الملاك والوكالات على إدارة العقارات من العرض إلى الإيجار والبيع.",
     listProperty: "اعرض عقارك", findProperty: "اطلب عقارك", backofficeSignIn: "دخول الموظفين",
     feature1Title: "العروض والصور",
     feature1Body: "صفحات عقارية أنيقة مع معارض صور غنية.",
@@ -793,7 +793,7 @@ const ar = {
     myPropertiesSubtitle: "السجلات المسندة إليك",
   },
   footer: {
-    tagline: "إدارة عقارية للملاك والوكالات — متكاملة وأنيقة.",
+    tagline: "متميزون في طرح العروض العقارية ونتجاوب مع عروضكم وطلباتكم العقارية",
     contact: "تواصل معنا",
     explore: "استكشف",
     address: "الرياض، المملكة العربية السعودية",
@@ -1052,7 +1052,7 @@ const ar = {
   },
 };
 
-const STORAGE_KEY = "estatly.lang";
+const STORAGE_KEY = "nourconsultancy.lang";
 
 export function getInitialLang(): "en" | "ar" {
   if (typeof window === "undefined") return "en";

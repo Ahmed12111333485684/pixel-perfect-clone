@@ -24,12 +24,12 @@ import { PROPERTY_TYPES, localizePropertyType } from "@/lib/property-types";
 export const Route = createFileRoute("/list-property")({
   head: () => ({
     meta: [
-      { title: "List your property — Estatly" },
-      { name: "description", content: "Submit your property to Estatly. Our team will reach out." },
-      { property: "og:title", content: "List your property — Estatly" },
+      { title: "List your property — Nour Consultancy" },
+      { name: "description", content: "Submit your property to Nour Consultancy. Our team will reach out." },
+      { property: "og:title", content: "List your property — Nour Consultancy" },
       {
         property: "og:description",
-        content: "Submit your property to Estatly. Our team will reach out.",
+        content: "Submit your property to Nour Consultancy. Our team will reach out.",
       },
     ],
   }),

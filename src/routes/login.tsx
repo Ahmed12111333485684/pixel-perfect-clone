@@ -13,8 +13,8 @@ import { Loader2 } from "lucide-react";
 export const Route = createFileRoute("/login")({
   head: () => ({
     meta: [
-      { title: "Sign in — Estatly" },
-      { name: "description", content: "Sign in to the Estatly backoffice." },
+      { title: "Sign in — Nour Consultancy" },
+      { name: "description", content: "Sign in to the Nour Consultancy backoffice." },
     ],
   }),
   component: LoginPage,
@@ -52,7 +52,7 @@ function LoginPage() {
           <h2 className="font-display text-4xl leading-tight">{t("brand.tagline")}</h2>
           <p className="max-w-md text-white/80">{t("auth.subtitle")}</p>
         </div>
-        <div className="text-xs text-white/60">© {new Date().getFullYear()} Estatly</div>
+        <div className="text-xs text-white/60">© {new Date().getFullYear()} Nour Consultancy</div>
       </div>
 
       <div className="flex flex-col">

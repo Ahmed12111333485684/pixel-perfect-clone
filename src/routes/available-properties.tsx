@@ -43,7 +43,7 @@ import type { RequestPropertySuggestion } from "@/lib/api";
 export const Route = createFileRoute("/available-properties")({
   head: () => ({
     meta: [
-      { title: "Available Properties — Estatly" },
+      { title: "Available Properties — Nour Consultancy" },
       {
         name: "description",
         content: "Browse available properties with their sale and rent prices.",

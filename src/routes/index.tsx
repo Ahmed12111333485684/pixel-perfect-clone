@@ -1,25 +1,25 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
-import { Building2, ImagePlus, ScrollText, Sparkles, Mail } from "lucide-react";
+import { Building2, ImagePlus, ScrollText, Sparkles, Mail, Globe } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { BrandLogo } from "@/components/BrandLogo";
 import { LanguageToggle } from "@/components/LanguageToggle";
 import { PublicFooter } from "@/components/PublicFooter";
-import heroImg from "@/assets/hero-property.jpg";
+import heroImg from "@/assets/hero-property.png";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Estatly — Property Management for Owners & Agencies" },
+      { title: "نور الاستشارة — متميزون في طرح العروض العقارية" },
       {
         name: "description",
         content:
-          "Manage owners, properties, leads, contracts, and payments — all in one elegant platform.",
+          "مكتب نور الاستشارة: متميزون في طرح العروض العقارية ونتجاوب مع عروضكم وطلباتكم العقارية",
       },
-      { property: "og:title", content: "Estatly — Property Management" },
+      { property: "og:title", content: "نور الاستشارة" },
       {
         property: "og:description",
-        content: "Manage owners, properties, leads, contracts, and payments — all in one place.",
+        content: "مكتب نور الاستشارة: متميزون في طرح العروض العقارية ونتجاوب مع عروضكم وطلباتكم العقارية",
       },
       { property: "og:image", content: heroImg },
     ],

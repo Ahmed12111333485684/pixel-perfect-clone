@@ -23,7 +23,7 @@ import { PROPERTY_TYPES, localizePropertyType } from "@/lib/property-types";
 export const Route = createFileRoute("/partner/submit-property")({
   beforeLoad: () => {
     if (typeof window === "undefined") return;
-    const token = window.localStorage.getItem("estatly.token");
+    const token = window.localStorage.getItem("nourconsultancy.token");
     if (!token) throw redirect({ to: "/login" });
   },
   component: () => (

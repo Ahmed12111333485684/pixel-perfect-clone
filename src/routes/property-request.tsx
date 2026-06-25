@@ -23,13 +23,13 @@ import { PROPERTY_TYPES, localizePropertyType } from "@/lib/property-types";
 export const Route = createFileRoute("/property-request")({
   head: () => ({
     meta: [
-      { title: "Find your property — Estatly" },
+      { title: "Find your property — Nour Consultancy" },
       {
         name: "description",
         content:
           "Looking for a property? Tell us what you're looking for and our team will help you find it.",
       },
-      { property: "og:title", content: "Find your property — Estatly" },
+      { property: "og:title", content: "Find your property — Nour Consultancy" },
       {
         property: "og:description",
         content: "Looking for a property? Tell us what you're looking for.",

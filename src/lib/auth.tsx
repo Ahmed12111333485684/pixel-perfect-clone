@@ -33,7 +33,7 @@ interface AuthUser {
   exp?: number;
 }
 
-const AUTH_USER_KEY = "estatly.user";
+const AUTH_USER_KEY = "nourconsultancy.user";
 
 function getStoredUser(): AuthUser | null {
   if (typeof window === "undefined") return null;
