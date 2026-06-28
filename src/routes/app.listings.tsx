@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { memo, useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { api, fetchPartners, type CommercialListing, type Partner } from "@/lib/api";
+import { api, fetchPartners, type CommercialListing, type Partner, type UserDto } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { PageHeader, StatusBadge } from "@/components/PageHeader";
 import { DataTable, type Column } from "@/components/DataTable";
@@ -15,6 +15,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Plus, X } from "lucide-react";
 import { toast } from "sonner";
+import { PhoneField } from "@/components/form/PhoneField";
+
 
 export const Route = createFileRoute("/app/listings")({
   component: CommercialListingsPage,
@@ -315,6 +317,7 @@ function CommercialListingsPage() {
   });
 
   const partners = useQuery({ queryKey: ["partners", "lookup"], queryFn: fetchPartners, enabled: hasAccess });
+  const users = useQuery({ queryKey: ["users", "lookup"], queryFn: () => api<UserDto[]>("/users"), enabled: hasAccess });
 
   const handleReset = () => {
     setQ("");
@@ -400,13 +403,15 @@ function CommercialListingsPage() {
     { key: "contactDate", header: t("commercialListings.contactDate"), cell: (r) => r.contactDate || t("common.notProvided") },
     { key: "listingCategory", header: t("commercialListings.listingCategory"), cell: (r) => listingCategoryLabel(r.listingCategory) },
     { key: "propertyStatus", header: t("commercialListings.propertyStatus"), cell: (r) => <StatusBadge tone={statusTone(r.propertyStatus)}>{statusLabel(r.propertyStatus)}</StatusBadge> },
-    { key: "dealThrough", header: t("commercialListings.dealThrough"), cell: (r) => {
+    {
+      key: "dealThrough", header: t("commercialListings.dealThrough"), cell: (r) => {
         const normalized = normalizeValue(r.dealThrough);
         if (!normalized) return t("common.notProvided");
         if (normalized === DEAL_THROUGH_OWNER) return t("commercialListings.dealThroughOwner");
         if (normalized === DEAL_THROUGH_OFFICE) return t("commercialListings.dealThroughOffice");
         return r.dealThrough || t("common.notProvided");
-      } },
+      }
+    },
     { key: "brokerageContractsCount", header: t("commercialListings.brokerageContracts"), cell: (r) => { const count = r.brokerageContracts?.length ?? 0; return count > 0 ? `${count}` : t("common.notProvided"); } },
     { key: "ownerName", header: t("commercialListings.ownerName"), cell: (r) => <span className="font-medium">{r.ownerName || t("common.notProvided")}</span> },
     { key: "deedNumber", header: t("commercialListings.deedNumber"), cell: (r) => (r.deedNumber ? <span className="font-mono text-sm">{r.deedNumber}</span> : t("common.notProvided")) },
@@ -594,6 +599,8 @@ function CommercialListingsPage() {
         listing={null}
         partners={partners.data ?? []}
         partnersLoading={partners.isLoading}
+        users={users.data ?? []}
+        usersLoading={users.isLoading}
         readOnly={!canManage}
         submitting={submitting}
         title={`${t("common.add")} ${t("nav.commercialListings")}`}
@@ -609,6 +616,8 @@ function CommercialListingsPage() {
         listing={listings.data?.find(l => l.id === selected?.id) || selected}
         partners={partners.data ?? []}
         partnersLoading={partners.isLoading}
+        users={users.data ?? []}
+        usersLoading={users.isLoading}
         readOnly={!canManage}
         submitting={submitting}
         title={canManage ? t("common.edit") : t("common.details")}
@@ -628,12 +637,14 @@ function CommercialListingsPage() {
         listing={unitInitialState}
         partners={partners.data ?? []}
         partnersLoading={partners.isLoading}
+        users={users.data ?? []}
+        usersLoading={users.isLoading}
         readOnly={!canManage}
         submitting={submitting}
         title={`${t("common.add")} ${t("common.unit")}`}
         submitLabel={t("common.create")}
         onSubmit={(e, publishing, contracts) => {
-           handleCreate(e, publishing, contracts).then(() => setCreatingUnitFor(null));
+          handleCreate(e, publishing, contracts).then(() => setCreatingUnitFor(null));
         }}
         isUnit={true}
       />
@@ -660,6 +671,8 @@ function CommercialListingDialog({
   listing,
   partners,
   partnersLoading,
+  users,
+  usersLoading,
   readOnly,
   submitting,
   title,
@@ -673,6 +686,8 @@ function CommercialListingDialog({
   listing: CommercialListing | null;
   partners: Partner[];
   partnersLoading: boolean;
+  users: UserDto[];
+  usersLoading: boolean;
   readOnly: boolean;
   submitting?: boolean;
   title: string;
@@ -760,7 +775,7 @@ function CommercialListingDialog({
       <div className="space-y-4 rounded-lg border border-border bg-muted/30 p-4">
         <div className="grid gap-4 sm:grid-cols-2">
           {parentId && <input type="hidden" name="parentId" value={parentId} />}
-          <TextField id="contactDate" label={t("commercialListings.contactDate")} defaultValue={listing?.contactDate} readOnly={readOnly} />
+          <DateField id="contactDate" label={t("commercialListings.contactDate")} defaultValue={listing?.contactDate || new Date().toISOString().split("T")[0]} readOnly={readOnly} />
           <TextField id="offerCode" label={t("commercialListings.offerCode")} defaultValue={listing?.offerCode} readOnly={true} />
           <div className="space-y-2">
             <Label htmlFor="listingCategory" className="text-xs font-medium">{t("commercialListings.listingCategory")}</Label>
@@ -777,6 +792,19 @@ function CommercialListingDialog({
             <input type="hidden" name="listingCategory" value={listingCategory} />
           </div>
           <div className="space-y-2">
+            <Label htmlFor="listingType" className="text-xs font-medium">{t("commercialListings.listingType")}</Label>
+            <Select value={listingType} onValueChange={(v) => setListingType(v as ListingTypeValue)} disabled={readOnly}>
+              <SelectTrigger id="listingType" className="mt-1">
+                <SelectValue placeholder={t("commercialListings.listingType")} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Rental">{t("listingType.Rental")}</SelectItem>
+                <SelectItem value="Sale">{t("listingType.Sale")}</SelectItem>
+              </SelectContent>
+            </Select>
+            <input type="hidden" name="listingType" value={listingType} />
+          </div>
+          <div className="space-y-2">
             <Label htmlFor="propertyStatus" className="text-xs font-medium">{t("commercialListings.propertyStatus")}</Label>
             <Select value={propertyStatus} onValueChange={setPropertyStatus} disabled={readOnly}>
               <SelectTrigger id="propertyStatus" className="mt-1">
@@ -790,20 +818,26 @@ function CommercialListingDialog({
             </Select>
             <input type="hidden" name="propertyStatus" value={propertyStatus} />
           </div>
+
           <div className="space-y-2">
-            <Label htmlFor="listingType" className="text-xs font-medium">{t("commercialListings.listingType")}</Label>
-            <Select value={listingType} onValueChange={(v) => setListingType(v as ListingTypeValue)} disabled={readOnly}>
-              <SelectTrigger id="listingType" className="mt-1">
-                <SelectValue placeholder={t("commercialListings.listingType")} />
+            <Label htmlFor="employee" className="text-xs font-medium">{t("common.employee")}</Label>
+            <Select
+              name="employee"
+              defaultValue={listing?.employee ?? undefined}
+              disabled={readOnly || usersLoading}
+            >
+              <SelectTrigger id="employee" className="mt-1">
+                <SelectValue placeholder={t("common.employee")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="Rental">{t("listingType.Rental")}</SelectItem>
-                <SelectItem value="Sale">{t("listingType.Sale")}</SelectItem>
+                {users.map((user) => (
+                  <SelectItem key={user.id} value={user.username}>
+                    {user.username}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
-            <input type="hidden" name="listingType" value={listingType} />
           </div>
-          <TextField id="employee" label={t("common.employee")} defaultValue={listing?.employee} readOnly={readOnly} />
           <div className="space-y-2">
             <Label htmlFor="broker" className="text-xs font-medium">{t("commercialListings.broker")}</Label>
             <Select value={broker || "none"} onValueChange={(value) => setBroker(value === "none" ? "" : value)} disabled={readOnly}>
@@ -848,9 +882,9 @@ function CommercialListingDialog({
       <div className="space-y-4 rounded-lg border border-border bg-muted/30 p-4">
         <div className="grid gap-4 sm:grid-cols-2">
           <TextField id="ownerName" label={t("commercialListings.ownerName")} defaultValue={listing?.ownerName} readOnly={readOnly} />
-          <TextField id="mobile1" label={t("commercialListings.mobile1")} defaultValue={listing?.mobile1} readOnly={readOnly} />
-          <TextField id="mobile2" label={t("commercialListings.mobile2")} defaultValue={listing?.mobile2} readOnly={readOnly} />
-          <TextField id="availableUnits" label={t("commercialListings.availableUnits")} defaultValue={listing?.availableUnits} readOnly={readOnly} />
+          <PhoneField id="mobile1" label={t("commercialListings.mobile1")} defaultValue={listing?.mobile1} readOnly={readOnly} />
+          <PhoneField id="mobile2" label={t("commercialListings.mobile2")} defaultValue={listing?.mobile2} readOnly={readOnly} />
+          <TextField id="availableUnits" label={t("commercialListings.availableUnits")} defaultValue={listing?.availableUnits} readOnly={readOnly} type="number" min={0} />
           <TextField id="deedNumber" label={t("commercialListings.deedNumber")} defaultValue={listing?.deedNumber} readOnly={readOnly} />
           <div className="space-y-2">
             <Label htmlFor="propertyType" className="text-xs font-medium">{t("commercialListings.propertyType")}</Label>
@@ -882,8 +916,8 @@ function CommercialListingDialog({
             </Select>
             <input type="hidden" name="propertyType" value={propertyType} />
           </div>
-          <TextField id="roomsCount" label={t("commercialListings.roomsCount")} defaultValue={listing?.roomsCount} readOnly={readOnly} />
-          <TextField id="buildingAge" label={t("commercialListings.buildingAge")} defaultValue={listing?.buildingAge} readOnly={readOnly} />
+          <TextField id="roomsCount" label={t("commercialListings.roomsCount")} defaultValue={listing?.roomsCount} readOnly={readOnly} type="number" min={1} />
+          <TextField id="buildingAge" label={t("commercialListings.buildingAge")} defaultValue={listing?.buildingAge} readOnly={readOnly} type="number" min={0} />
           <TextField id="hasElevator" label={t("commercialListings.hasElevator")} defaultValue={listing?.hasElevator} readOnly={readOnly} />
         </div>
       </div>
@@ -892,7 +926,7 @@ function CommercialListingDialog({
         <div className="grid gap-4 sm:grid-cols-2">
           <TextareaField id="adText1" label={t("commercialListings.adText1")} defaultValue={listing?.adText1} readOnly={readOnly} className="sm:col-span-2" />
           <TextareaField id="adText2" label={t("commercialListings.adText2")} defaultValue={listing?.adText2} readOnly={readOnly} className="sm:col-span-2" />
-          <TextField id="rentAmount" label={listingType === "Sale" ? t("commercialListings.salePrice") : t("commercialListings.rentAmount")} defaultValue={listing?.rentAmount} readOnly={readOnly} />
+          <TextField id="rentAmount" label={listingType === "Sale" ? t("commercialListings.salePrice") : t("commercialListings.rentAmount")} defaultValue={listing?.rentAmount} readOnly={readOnly} type="number" min={0} />
           <TextField id="paymentType" label={t("commercialListings.paymentType")} defaultValue={listing?.paymentType} readOnly={readOnly} />
           <TextField id="location" label={t("commercialListings.location")} defaultValue={listing?.location} readOnly={readOnly} />
           <TextField id="coordinates" label={t("commercialListings.coordinates")} defaultValue={listing?.coordinates} readOnly={readOnly} />
@@ -957,11 +991,71 @@ function CommercialListingDialog({
   );
 }
 
-function TextField({ id, label, defaultValue, readOnly }: { id: string; label: string; defaultValue?: string | null; readOnly: boolean; }) {
+function DateField({
+  id,
+  label,
+  defaultValue,
+  readOnly,
+  className,
+}: {
+  id: string;
+  label: string;
+  defaultValue?: string | null;
+  readOnly: boolean;
+  className?: string;
+}) {
   return (
     <div className="space-y-2">
-      <Label htmlFor={id} className="text-xs font-medium">{label}</Label>
-      <Input id={id} name={id} defaultValue={defaultValue ?? ""} readOnly={readOnly} disabled={readOnly} className="mt-1" />
+      <Label htmlFor={id} className="text-xs font-medium">
+        {label}
+      </Label>
+
+      <Input
+        id={id}
+        name={id}
+        type="date"
+        defaultValue={
+          defaultValue ?? new Date().toISOString().split("T")[0]
+        }
+        readOnly={readOnly}
+        disabled={readOnly}
+        className={className ?? "mt-1 w-full [&::-webkit-calendar-picker-indicator]:ml-auto"}
+      />
+    </div>
+  );
+}
+
+
+function TextField({
+  id,
+  label,
+  defaultValue,
+  readOnly,
+  type = "text",
+  min,
+}: {
+  id: string;
+  label: string;
+  defaultValue?: string | number | null;
+  readOnly: boolean;
+  type?: "text" | "number";
+  min?: number;
+}) {
+  return (
+    <div className="space-y-2">
+      <Label htmlFor={id} className="text-xs font-medium">
+        {label}
+      </Label>
+      <Input
+        id={id}
+        name={id}
+        type={type}
+        min={min}
+        defaultValue={defaultValue ?? ""}
+        readOnly={readOnly}
+        disabled={readOnly}
+        className="mt-1"
+      />
     </div>
   );
 }

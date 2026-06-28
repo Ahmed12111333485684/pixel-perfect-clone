@@ -96,14 +96,14 @@ function Landing() {
                 {t("landing.findProperty") || "Find Your Property"}
               </Link>
             </Button>
-            <Button
+            {/* <Button
               asChild
               size="lg"
               variant="outline"
               className="border-white/40 bg-white/15 text-white shadow-lg shadow-black/10 backdrop-blur hover:bg-white/25 hover:text-white"
             >
               <Link to="/login">{t("landing.backofficeSignIn")}</Link>
-            </Button>
+            </Button> */}
             <Button
               asChild
               size="lg"

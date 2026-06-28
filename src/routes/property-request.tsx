@@ -152,61 +152,6 @@ function PropertyRequestPage() {
           </div>
 
           <form ref={formRef} onSubmit={onSubmit} className="mt-8 space-y-6">
-            <div className="space-y-4">
-              <div className="text-sm font-medium">{t("common.personalInformation")}</div>
-
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div>
-                  <Label htmlFor="fullName" className="text-xs font-medium">
-                    {t("common.fullName")} *
-                  </Label>
-                  <Input
-                    id="fullName"
-                    name="fullName"
-                    required
-                    placeholder={t("common.fullName")}
-                    className="mt-1"
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="mobileNumber" className="text-xs font-medium">
-                    {t("common.mobileNumber")} *
-                  </Label>
-                  <Input
-                    id="mobileNumber"
-                    name="mobileNumber"
-                    required
-                    placeholder={t("common.mobileNumber")}
-                    className="mt-1"
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="nationality" className="text-xs font-medium">
-                    {t("common.nationality")}
-                  </Label>
-                  <Input
-                    id="nationality"
-                    name="nationality"
-                    placeholder={t("common.nationality")}
-                    className="mt-1"
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="profession" className="text-xs font-medium">
-                    {t("common.profession")}
-                  </Label>
-                  <Input
-                    id="profession"
-                    name="profession"
-                    placeholder={t("common.profession")}
-                    className="mt-1"
-                  />
-                </div>
-              </div>
-            </div>
 
             <div className="space-y-4">
               <div className="text-sm font-medium">{t("common.propertyPreferences")}</div>
@@ -311,6 +256,62 @@ function PropertyRequestPage() {
                     id="paymentType"
                     name="paymentType"
                     placeholder={t("common.paymentType")}
+                    className="mt-1"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <div className="text-sm font-medium">{t("common.personalInformation")}</div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <Label htmlFor="fullName" className="text-xs font-medium">
+                    {t("common.fullName")} *
+                  </Label>
+                  <Input
+                    id="fullName"
+                    name="fullName"
+                    required
+                    placeholder={t("common.fullName")}
+                    className="mt-1"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="mobileNumber" className="text-xs font-medium">
+                    {t("common.mobileNumber")} *
+                  </Label>
+                  <Input
+                    id="mobileNumber"
+                    name="mobileNumber"
+                    required
+                    placeholder={t("common.mobileNumber")}
+                    className="mt-1"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="nationality" className="text-xs font-medium">
+                    {t("common.nationality")}
+                  </Label>
+                  <Input
+                    id="nationality"
+                    name="nationality"
+                    placeholder={t("common.nationality")}
+                    className="mt-1"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="profession" className="text-xs font-medium">
+                    {t("common.profession")}
+                  </Label>
+                  <Input
+                    id="profession"
+                    name="profession"
+                    placeholder={t("common.profession")}
                     className="mt-1"
                   />
                 </div>

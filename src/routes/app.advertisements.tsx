@@ -511,9 +511,9 @@ function AdvertisementsPage() {
           canManage
             ? handleUpdate
             : (e) => {
-                e.preventDefault();
-                setSelected(null);
-              }
+              e.preventDefault();
+              setSelected(null);
+            }
         }
       />
 

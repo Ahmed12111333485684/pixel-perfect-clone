@@ -3,7 +3,7 @@ import { Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { api, resolveApiAssetUrl, type ResidentialSeeker, type RequestPropertySuggestion, fetchPartners } from "@/lib/api";
+import { api, resolveApiAssetUrl, type ResidentialSeeker, type RequestPropertySuggestion, fetchPartners, type UserDto } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { PROPERTY_TYPES, localizePropertyType } from "@/lib/property-types";
 import { PageHeader, StatusBadge } from "@/components/PageHeader";
@@ -17,6 +17,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { BadgeDollarSign, Building2, MapPin, Plus, Sparkles, X } from "lucide-react";
 import { toast } from "sonner";
+import { ComboboxField } from "@/components/form/ComboboxField";
+import { PhoneField } from "@/components/form/PhoneField";
 
 export const Route = createFileRoute("/app/residential-seekers")({
   component: ResidentialSeekersPage,
@@ -53,6 +55,54 @@ const RESIDENTIAL_FIELDS = [
   "notes",
   "requestCategory",
 ] as const;
+
+const NATIONALITIES = [
+  "سعودي",
+  "مصري",
+  "إماراتي",
+  "كويتي",
+  "قطري",
+  "بحريني",
+  "عماني",
+  "يمني",
+  "أردني",
+  "سوري",
+  "لبناني",
+  "فلسطيني",
+  "عراقي",
+  "سوداني",
+  "ليبي",
+  "تونسي",
+  "جزائري",
+  "مغربي",
+  "موريتاني",
+  "صومالي",
+  "جيبوتي",
+  "إريتري",
+  "إثيوبي",
+  "تركي",
+  "إيراني",
+  "باكستاني",
+  "هندي",
+  "بنغلاديشي",
+  "نيبالي",
+  "سريلانكي",
+  "فلبيني",
+  "إندونيسي",
+  "ماليزي",
+  "صيني",
+  "ياباني",
+  "كوري",
+  "أمريكي",
+  "كندي",
+  "بريطاني",
+  "فرنسي",
+  "ألماني",
+  "إيطالي",
+  "إسباني",
+  "روسي",
+  "أسترالي",
+];
 
 type ResidentialFieldKey = (typeof RESIDENTIAL_FIELDS)[number];
 
@@ -124,6 +174,8 @@ function ResidentialSeekersPage() {
     queryFn: () => api<RequestPropertySuggestion[]>(`/api/residential-seekers/${selected?.id}/property-suggestions`),
     enabled: !!selected?.id,
   });
+
+  const users = useQuery({ queryKey: ["users", "lookup"], queryFn: () => api<UserDto[]>("/users"), enabled: hasAccess });
 
   const handleReset = () => {
     setQ("");
@@ -201,11 +253,11 @@ function ResidentialSeekersPage() {
   };
 
   const columns: Column<ResidentialSeeker>[] = [
-    {
-      key: "serialNumber",
-      header: t("residentialSeekers.serialNumber"),
-      cell: (r) => r.serialNumber || t("common.notProvided"),
-    },
+    // {
+    //   key: "serialNumber",
+    //   header: t("residentialSeekers.serialNumber"),
+    //   cell: (r) => r.serialNumber || t("common.notProvided"),
+    // },
     {
       key: "requestDate",
       header: t("residentialSeekers.requestDate"),
@@ -393,6 +445,8 @@ function ResidentialSeekersPage() {
         suggestions={[]}
         suggestionsLoading={false}
         suggestionsError={null}
+        users={users.data ?? []}
+        usersLoading={users.isLoading}
         readOnly={!canManage}
         submitting={submitting}
         title={`${t("common.add")} ${t("nav.residentialSeekers")}`}
@@ -409,6 +463,8 @@ function ResidentialSeekersPage() {
         suggestions={suggestionsQuery.data ?? []}
         suggestionsLoading={suggestionsQuery.isLoading}
         suggestionsError={suggestionsQuery.error}
+        users={users.data ?? []}
+        usersLoading={users.isLoading}
         readOnly={!canManage}
         submitting={submitting}
         title={canManage ? t("common.edit") : t("common.details")}
@@ -442,6 +498,8 @@ function ResidentialSeekerDialog({
   suggestions = [],
   suggestionsLoading = false,
   suggestionsError = null,
+  users,
+  usersLoading,
   readOnly,
   submitting,
   title,
@@ -454,6 +512,8 @@ function ResidentialSeekerDialog({
   suggestions: RequestPropertySuggestion[];
   suggestionsLoading: boolean;
   suggestionsError: unknown;
+  users: UserDto[];
+  usersLoading: boolean;
   readOnly: boolean;
   submitting?: boolean;
   title: string;
@@ -479,8 +539,8 @@ function ResidentialSeekerDialog({
     >
       <div className="space-y-4 rounded-lg border border-border bg-muted/30 p-4">
         <div className="grid gap-4 sm:grid-cols-2">
-          <TextField id="serialNumber" label={t("residentialSeekers.serialNumber")} defaultValue={seeker?.serialNumber} readOnly={readOnly} />
-          <TextField id="requestDate" label={t("residentialSeekers.requestDate")} defaultValue={seeker?.requestDate} readOnly={readOnly} />
+          {/* <TextField id="serialNumber" label={t("residentialSeekers.serialNumber")} defaultValue={seeker?.serialNumber} readOnly={readOnly} /> */}
+          <DateField id="requestDate" label={t("residentialSeekers.requestDate")} defaultValue={seeker?.requestDate || new Date().toISOString().split("T")[0]} readOnly={readOnly} className="mt-1 w-full [color-scheme:light] [&::-webkit-calendar-picker-indicator]:ml-auto" />
           <SelectField
             id="status"
             label={t("residentialSeekers.status")}
@@ -492,7 +552,13 @@ function ResidentialSeekerDialog({
             ]}
           />
 
-          <TextField id="employee" label={t("common.employee")} defaultValue={seeker?.employee} readOnly={readOnly} />
+          <SelectField
+            id="employee"
+            label={t("common.employee")}
+            defaultValue={seeker?.employee ?? ""}
+            readOnly={readOnly || usersLoading}
+            options={users.map(u => ({ value: u.username, label: u.username }))}
+          />
           <TextField id="receiver" label={t("residentialSeekers.receiver")} defaultValue={seeker?.receiver} readOnly={readOnly} />
           {readOnly ? (
             <TextField id="sourceChannel" label={t("residentialSeekers.sourceChannel")} defaultValue={seeker?.sourceChannel} readOnly={readOnly} />
@@ -507,16 +573,7 @@ function ResidentialSeekerDialog({
         </div>
       </div>
 
-      <div className="space-y-4 rounded-lg border border-border bg-muted/30 p-4">
-        <div className="grid gap-4 sm:grid-cols-2">
-          <TextField id="fullName" label={t("residentialSeekers.fullName")} defaultValue={seeker?.fullName} readOnly={readOnly} />
-          <TextField id="mobile" label={t("common.mobileNumber")} defaultValue={seeker?.mobile} readOnly={readOnly} />
-          <TextField id="nationality" label={t("residentialSeekers.nationality")} defaultValue={seeker?.nationality} readOnly={readOnly} />
-          <TextField id="profession" label={t("residentialSeekers.profession")} defaultValue={seeker?.profession} readOnly={readOnly} />
-          <TextField id="familyCount" label={t("residentialSeekers.familyCount")} defaultValue={seeker?.familyCount} readOnly={readOnly} />
-        </div>
-      </div>
-
+      {/* --> Listing Info */}
       <div className="space-y-4 rounded-lg border border-border bg-muted/30 p-4">
         <div className="grid gap-4 sm:grid-cols-2">
           <SelectField
@@ -550,6 +607,29 @@ function ResidentialSeekerDialog({
         </div>
       </div>
 
+      {/* --> Personal Info */}
+      <div className="space-y-4 rounded-lg border border-border bg-muted/30 p-4">
+        <div className="grid gap-4 sm:grid-cols-2">
+          <TextField id="fullName" label={t("residentialSeekers.fullName")} defaultValue={seeker?.fullName} readOnly={readOnly} />
+          <PhoneField id="mobile" label={t("common.mobileNumber")} defaultValue={seeker?.mobile} readOnly={readOnly} />
+          <ComboboxField
+            id="nationality"
+            label={t("residentialSeekers.nationality")}
+            defaultValue={seeker?.nationality ?? "سعودي"}
+            readOnly={readOnly}
+            options={NATIONALITIES.map((n) => ({
+              value: n,
+              label: n,
+            }))}
+          />
+          <TextField id="profession" label={t("residentialSeekers.profession")} defaultValue={seeker?.profession} readOnly={readOnly} />
+          <TextField id="familyCount" label={t("residentialSeekers.familyCount")} defaultValue={seeker?.familyCount} readOnly={readOnly} type="number" min={1} />
+        </div>
+      </div>
+
+
+
+
       <div className="space-y-4 rounded-lg border border-border bg-muted/30 p-4">
         <div className="grid gap-4 sm:grid-cols-2">
           <TextareaField
@@ -559,7 +639,7 @@ function ResidentialSeekerDialog({
             readOnly={readOnly}
             className="sm:col-span-2"
           />
-          <TextField id="maxBudget" label={maxBudgetLabel} defaultValue={seeker?.maxBudget} readOnly={readOnly} />
+          <TextField id="maxBudget" label={maxBudgetLabel} defaultValue={seeker?.maxBudget} readOnly={readOnly} type="number" />
           <TextField id="paymentType" label={t("residentialSeekers.paymentType")} defaultValue={seeker?.paymentType} readOnly={readOnly} />
           <TextField id="preferredLocation" label={t("residentialSeekers.preferredLocation")} defaultValue={seeker?.preferredLocation} readOnly={readOnly} />
         </div>
@@ -693,11 +773,15 @@ function TextField({
   label,
   defaultValue,
   readOnly,
+  type = "text",
+  min,
 }: {
   id: string;
   label: string;
-  defaultValue?: string | null;
+  defaultValue?: string | number | null;
   readOnly: boolean;
+  type?: "text" | "number";
+  min?: number;
 }) {
   return (
     <div className="space-y-2">
@@ -707,10 +791,46 @@ function TextField({
       <Input
         id={id}
         name={id}
+        type={type}
+        min={min}
         defaultValue={defaultValue ?? ""}
         readOnly={readOnly}
         disabled={readOnly}
         className="mt-1"
+      />
+    </div>
+  );
+}
+
+function DateField({
+  id,
+  label,
+  defaultValue,
+  readOnly,
+  className,
+}: {
+  id: string;
+  label: string;
+  defaultValue?: string | null;
+  readOnly: boolean;
+  className?: string;
+}) {
+  return (
+    <div className="space-y-2">
+      <Label htmlFor={id} className="text-xs font-medium">
+        {label}
+      </Label>
+
+      <Input
+        id={id}
+        name={id}
+        type="date"
+        defaultValue={
+          defaultValue ?? new Date().toISOString().split("T")[0]
+        }
+        readOnly={readOnly}
+        disabled={readOnly}
+        className={className ?? "mt-1 w-full [&::-webkit-calendar-picker-indicator]:ml-auto"}
       />
     </div>
   );

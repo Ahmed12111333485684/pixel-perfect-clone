@@ -20,6 +20,7 @@ interface FormDialogProps {
   submitLabel?: string;
   children: React.ReactNode;
   size?: "default" | "lg";
+  readOnly?: boolean;
 }
 
 export function FormDialog({
@@ -32,6 +33,7 @@ export function FormDialog({
   submitLabel,
   children,
   size = "default",
+  readOnly,
 }: FormDialogProps) {
   const { t } = useTranslation();
   return (
@@ -49,14 +51,16 @@ export function FormDialog({
           </DialogHeader>
           <div className="space-y-4">{children}</div>
           <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-              disabled={submitting}
-            >
-              {t("common.cancel")}
-            </Button>
+            {!readOnly && (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => onOpenChange(false)}
+                disabled={submitting}
+              >
+                {t("common.cancel")}
+              </Button>
+            )}
             <Button type="submit" disabled={submitting}>
               {submitting && <Loader2 className="me-2 h-4 w-4 animate-spin" />}
               {submitLabel ?? t("common.save")}
