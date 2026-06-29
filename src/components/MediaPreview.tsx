@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { createPortal } from "react-dom";
 import { isVideoAsset } from "@/lib/media";
 import { X } from "lucide-react";
 
@@ -82,7 +81,7 @@ export function MediaPreview({
   return (
     <>
       {content}
-      {zoomed && zoomable && createPortal(
+      {zoomed && zoomable && (
         <div
           role="dialog"
           aria-modal="true"
@@ -118,8 +117,7 @@ export function MediaPreview({
               className="max-h-[85vh] max-w-full rounded-lg object-contain shadow-2xl"
             />
           )}
-        </div>,
-        document.body,
+        </div>
       )}
     </>
   );

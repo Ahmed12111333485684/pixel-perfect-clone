@@ -39,8 +39,14 @@ export function FormDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        onPointerDownOutside={(e) => e.preventDefault()}
-        onInteractOutside={(e) => e.preventDefault()}
+        onPointerDownOutside={(e) => {
+          if ((e.target as Element)?.closest?.("#media-lightbox")) return;
+          e.preventDefault();
+        }}
+        onInteractOutside={(e) => {
+          // Always prevent closing the FormDialog when clicking outside
+          e.preventDefault();
+        }}
         className={`max-h-[90vh] overflow-y-auto rounded-xl ${size === "lg" ? "sm:max-w-2xl" : "sm:max-w-md"
           }`}
       >

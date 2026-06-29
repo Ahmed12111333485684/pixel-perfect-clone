@@ -10,11 +10,13 @@ export function CommercialListingImageManager({
   images,
   onChange,
   readOnly = false,
+  onImageZoom,
 }: {
   listingId: number;
   images: CommercialListingImage[];
   onChange: () => void;
   readOnly?: boolean;
+  onImageZoom?: (index: number) => void;
 }) {
   const [uploading, setUploading] = useState(false);
 
@@ -78,17 +80,20 @@ export function CommercialListingImageManager({
         </div>
       ) : (
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-          {images.map((img) => {
+          {images.map((img, index) => {
             const url = resolveApiAssetUrl(img.url);
             return (
-              <div key={img.id} className="group relative aspect-square overflow-hidden rounded-md border bg-muted">
+              <div
+                key={img.id}
+                className="group relative aspect-square overflow-hidden rounded-md border bg-muted cursor-zoom-in"
+                onClick={onImageZoom ? (e) => { e.stopPropagation(); onImageZoom(index); } : undefined}
+              >
                 <MediaPreview
                   src={url}
                   alt={img.originalFileName}
                   fileName={img.originalFileName}
                   mimeType={img.mimeType}
                   className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                  zoomable
                 />
                 {!readOnly && (
                   <div className="absolute inset-x-0 bottom-0 flex items-center justify-between bg-black/60 p-2 opacity-0 transition-opacity group-hover:opacity-100">

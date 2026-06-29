@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { createPortal } from "react-dom";
 import { X, ChevronLeft, ChevronRight } from "lucide-react";
 import { MediaPreview } from "@/components/MediaPreview";
 
@@ -32,11 +33,12 @@ export function MediaLightbox({
 
   if (!img) return null;
 
-  return (
+  return createPortal(
     <div
+      id="media-lightbox"
       role="dialog"
       aria-modal="true"
-      className="fixed inset-0 z-[60] flex items-center justify-center bg-black/90 p-4"
+      className="fixed inset-0 z-[60] flex items-center justify-center bg-black/90 p-4 pointer-events-auto"
       onClick={onClose}
     >
       <button
@@ -97,6 +99,7 @@ export function MediaLightbox({
           </span>
         </figcaption>
       </figure>
-    </div>
+    </div>,
+    document.body,
   );
 }

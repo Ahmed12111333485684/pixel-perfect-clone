@@ -773,6 +773,10 @@ function CommercialListingsPage() {
         }}
         onImagesChange={() => qc.invalidateQueries({ queryKey: ["commercial-listings"] })}
         onAddUnit={() => setCreatingUnitFor(selected)}
+        onImageZoom={(index) => {
+          const listing = listings.data?.find(l => l.id === selected?.id) || selected;
+          if (listing) openLightbox(listing, index);
+        }}
       />
 
       <CommercialListingDialog
@@ -837,6 +841,7 @@ function CommercialListingDialog({
   onAddUnit,
   onImagesChange,
   isUnit,
+  onImageZoom,
 }: {
   open: boolean;
   onOpenChange: (value: boolean) => void;
@@ -853,6 +858,7 @@ function CommercialListingDialog({
   onAddUnit?: () => void;
   onImagesChange?: () => void;
   isUnit?: boolean;
+  onImageZoom?: (index: number) => void;
 }) {
   const { t } = useTranslation();
   const [publishing, setPublishing] = useState<PublishingState>(() => buildPublishingState(listing));
@@ -1121,6 +1127,7 @@ function CommercialListingDialog({
             images={listing.images ?? []}
             onChange={onImagesChange ?? (() => {})}
             readOnly={readOnly}
+            onImageZoom={onImageZoom}
           />
         </div>
       )}
