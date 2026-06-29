@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { memo, useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { api, fetchPartners, type CommercialListing, type Partner, type UserDto } from "@/lib/api";
+import { api, fetchPartners, type CommercialListing, type Partner, type CommercialListingImage, type UserDto } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { PageHeader, StatusBadge } from "@/components/PageHeader";
 import { DataTable, type Column } from "@/components/DataTable";
@@ -13,11 +13,12 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Plus, X } from "lucide-react";
+import { Plus, X, LayoutGrid, List, FileImage } from "lucide-react";
 import { toast } from "sonner";
 import { PhoneField } from "@/components/form/PhoneField";
-
-
+import { CommercialListingImageManager } from "@/components/CommercialListingImageManager";
+import { resolveApiAssetUrl } from "@/lib/api";
+import { MediaLightbox } from "@/components/MediaLightbox";
 export const Route = createFileRoute("/app/listings")({
   component: CommercialListingsPage,
 });
@@ -285,6 +286,20 @@ function CommercialListingsPage() {
   const [creatingUnitFor, setCreatingUnitFor] = useState<CommercialListing | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [deletingRecord, setDeletingRecord] = useState(false);
+  const [viewMode, setViewMode] = useState<"card" | "table">("card");
+  const [lightboxImages, setLightboxImages] = useState<{ src: string; alt: string; mimeType?: string }[]>([]);
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+
+  const openLightbox = (listing: CommercialListing, startIndex: number) => {
+    setLightboxImages(
+      (listing.images ?? []).map((i) => ({
+        src: resolveApiAssetUrl(i.url),
+        alt: i.originalFileName,
+        mimeType: i.mimeType,
+      })),
+    );
+    setLightboxIndex(startIndex);
+  };
 
   const hasAccess = auth.hasRole("Admin") || auth.isPartner || auth.user?.screenPermissions.includes("/app/listings");
   const canManage = auth.isStaff || auth.isPartner;
@@ -553,24 +568,153 @@ function CommercialListingsPage() {
           </div>
         </div>
 
-        <div className="flex gap-2">
-          <Button size="sm" variant="outline" onClick={handleReset} className="w-fit">
-            {t("common.filter")}
-            {(q || status !== "all") && <X className="ms-1 h-3 w-3" />}
-          </Button>
+        <div className="flex items-center justify-between">
+          <div className="flex gap-2">
+            <Button size="sm" variant="outline" onClick={handleReset} className="w-fit">
+              {t("common.filter")}
+              {(q || status !== "all") && <X className="ms-1 h-3 w-3" />}
+            </Button>
+          </div>
+          <div className="flex items-center rounded-md border border-border p-1 bg-muted/50">
+            <Button
+              size="sm"
+              variant={viewMode === "card" ? "secondary" : "ghost"}
+              className="h-7 px-2"
+              onClick={() => setViewMode("card")}
+            >
+              <LayoutGrid className="h-4 w-4" />
+            </Button>
+            <Button
+              size="sm"
+              variant={viewMode === "table" ? "secondary" : "ghost"}
+              className="h-7 px-2"
+              onClick={() => setViewMode("table")}
+            >
+              <List className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
       </div>
 
-      <DataTable
-        columns={columns}
-        rows={visibleListings}
-        loading={listings.isLoading}
-        error={listings.error}
-        rowKey={(r) => r.id}
-        onEdit={canManage ? (row) => setSelected(row) : undefined}
-        onDelete={canManage ? (row) => setDeleting(row) : undefined}
-        onRowClick={(row) => setSelected(row)}
-      />
+      {listings.isLoading ? (
+        <div className="flex justify-center p-8 text-muted-foreground">
+          {t("common.loading", { defaultValue: "Loading..." })}
+        </div>
+      ) : listings.error ? (
+        <div className="rounded-xl border border-dashed border-destructive/40 p-8 text-center text-destructive">
+          {t("common.error", { defaultValue: "An error occurred." })}
+        </div>
+      ) : visibleListings.length === 0 ? (
+        <div className="rounded-xl border border-dashed border-border p-8 text-center text-muted-foreground">
+          {t("common.noData", { defaultValue: "No data found." })}
+        </div>
+      ) : viewMode === "table" ? (
+        <DataTable
+          columns={columns}
+          rows={visibleListings}
+          loading={listings.isLoading}
+          error={listings.error}
+          rowKey={(r) => r.id}
+          onEdit={canManage ? (row) => setSelected(row) : undefined}
+          onDelete={canManage ? (row) => setDeleting(row) : undefined}
+          onRowClick={(row) => setSelected(row)}
+        />
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          {visibleListings.map((r) => (
+            <div
+              key={r.id}
+              className="group cursor-pointer flex flex-col justify-between rounded-xl border border-border bg-card p-4 transition-all hover:border-primary/50 hover:shadow-md"
+              onClick={() => setSelected(r)}
+            >
+              <div className="flex flex-col sm:flex-row gap-4">
+                {r.images && r.images.length > 0 ? (
+                  <div 
+                    className="w-full sm:w-1/3 aspect-video sm:aspect-square overflow-hidden rounded-lg bg-muted relative group/img cursor-zoom-in flex-shrink-0"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      openLightbox(r, 0);
+                    }}
+                  >
+                    <img
+                      src={resolveApiAssetUrl(r.images.find(img => img.isPrimary)?.url || r.images[0].url)}
+                      alt={r.images[0].originalFileName}
+                      className="w-full h-full object-cover transition-transform duration-300 group-hover/img:scale-105"
+                    />
+                    <div className="absolute inset-x-0 bottom-0 flex items-center justify-center bg-black/60 p-1 opacity-0 transition-opacity group-hover/img:opacity-100">
+                      <span className="text-xs text-white">View {r.images.length} images</span>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="w-full sm:w-1/3 aspect-video sm:aspect-square flex flex-col items-center justify-center rounded-lg border border-dashed bg-muted/50 text-muted-foreground flex-shrink-0">
+                    <FileImage className="mb-1 h-6 w-6 opacity-20" />
+                    <span className="text-[10px] uppercase tracking-wider">No Image</span>
+                  </div>
+                )}
+                
+                <div className="flex-1 min-w-0 space-y-2 text-sm">
+                  <div className="flex items-start justify-between gap-2 mb-3">
+                    <div className="font-medium truncate" title={r.ownerName || t("common.notProvided")}>
+                      {r.ownerName || t("common.notProvided")}
+                    </div>
+                    <StatusBadge tone={statusTone(r.propertyStatus)}>
+                      {statusLabel(r.propertyStatus)}
+                    </StatusBadge>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">{t("commercialListings.propertyType")}</span>
+                    <span>{r.propertyType ? t(`propertyType.${r.propertyType}`, { defaultValue: r.propertyType }) : t("common.notProvided")}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">{t("commercialListings.listingCategory")}</span>
+                    <span>{listingCategoryLabel(r.listingCategory)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">{t("commercialListings.location")}</span>
+                    <span className="truncate max-w-[120px]" title={r.location}>{r.location || t("common.notProvided")}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">{t("commercialListings.rentAmount")}</span>
+                    <span>{r.rentAmount || t("common.notProvided")}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-4 pt-4 border-t border-border flex items-center justify-between text-xs text-muted-foreground">
+                <div>
+                  {t("commercialListings.contactDate")}: {r.contactDate || t("common.notProvided")}
+                </div>
+                {canManage && (
+                  <div className="flex gap-1">
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="h-7 px-2"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelected(r);
+                      }}
+                    >
+                      {t("common.edit")}
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="h-7 px-2 text-destructive hover:text-destructive/90 hover:bg-destructive/10"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setDeleting(r);
+                      }}
+                    >
+                      {t("common.delete")}
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
       {filteredListings.length > 0 && (
         <div className="mt-4 flex items-center justify-between">
@@ -606,6 +750,7 @@ function CommercialListingsPage() {
         title={`${t("common.add")} ${t("nav.commercialListings")}`}
         submitLabel={t("common.create")}
         onSubmit={handleCreate}
+        onImagesChange={() => qc.invalidateQueries({ queryKey: ["commercial-listings"] })}
       />
 
       <CommercialListingDialog
@@ -626,6 +771,7 @@ function CommercialListingsPage() {
           e.preventDefault();
           setSelected(null);
         }}
+        onImagesChange={() => qc.invalidateQueries({ queryKey: ["commercial-listings"] })}
         onAddUnit={() => setCreatingUnitFor(selected)}
       />
 
@@ -655,12 +801,22 @@ function CommercialListingsPage() {
           if (!value) setDeleting(null);
         }}
         title={t("common.delete")}
-        description={deleting?.ownerName ?? t("commercialListings.pageTitle")}
+        description={deleting?.propertyName || t("commercialListings.listing")}
         confirmLabel={t("common.delete")}
         destructive
         loading={deletingRecord}
         onConfirm={handleDelete}
       />
+
+      {/* Lightbox */}
+      {lightboxIndex !== null && lightboxImages.length > 0 && (
+        <MediaLightbox
+          images={lightboxImages}
+          index={lightboxIndex}
+          onClose={() => setLightboxIndex(null)}
+          onChange={setLightboxIndex}
+        />
+      )}
     </div>
   );
 }
@@ -679,6 +835,7 @@ function CommercialListingDialog({
   submitLabel,
   onSubmit,
   onAddUnit,
+  onImagesChange,
   isUnit,
 }: {
   open: boolean;
@@ -694,6 +851,7 @@ function CommercialListingDialog({
   submitLabel: string;
   onSubmit: (e: React.FormEvent<HTMLFormElement>, publishing: PublishingState, contracts: BrokerageContractFormValue[]) => void | Promise<void>;
   onAddUnit?: () => void;
+  onImagesChange?: () => void;
   isUnit?: boolean;
 }) {
   const { t } = useTranslation();
@@ -955,6 +1113,17 @@ function CommercialListingDialog({
       <div className="space-y-4 rounded-lg border border-border bg-muted/30 p-4">
         <TextareaField id="notes" label={t("common.notes")} defaultValue={listing?.notes} readOnly={readOnly} />
       </div>
+
+      {listing?.id && (
+        <div className="space-y-4 rounded-lg border border-border bg-muted/30 p-4">
+          <CommercialListingImageManager
+            listingId={listing.id}
+            images={listing.images ?? []}
+            onChange={onImagesChange ?? (() => {})}
+            readOnly={readOnly}
+          />
+        </div>
+      )}
 
       {normalizePropertyType(listing?.propertyType) === "Building" && !isUnit && (
         <div className="space-y-4 rounded-lg border border-border bg-muted/30 p-4">

@@ -15,7 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { BadgeDollarSign, Building2, MapPin, Plus, Sparkles, X } from "lucide-react";
+import { BadgeDollarSign, Building2, MapPin, Plus, Sparkles, X, LayoutGrid, List } from "lucide-react";
 import { toast } from "sonner";
 import { ComboboxField } from "@/components/form/ComboboxField";
 import { PhoneField } from "@/components/form/PhoneField";
@@ -148,6 +148,7 @@ function ResidentialSeekersPage() {
   const [deleting, setDeleting] = useState<ResidentialSeeker | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [deletingRecord, setDeletingRecord] = useState(false);
+  const [viewMode, setViewMode] = useState<"card" | "table">("card");
 
   const hasAccess = auth.hasRole("Admin")
     || auth.isPartner
@@ -253,11 +254,6 @@ function ResidentialSeekersPage() {
   };
 
   const columns: Column<ResidentialSeeker>[] = [
-    // {
-    //   key: "serialNumber",
-    //   header: t("residentialSeekers.serialNumber"),
-    //   cell: (r) => r.serialNumber || t("common.notProvided"),
-    // },
     {
       key: "requestDate",
       header: t("residentialSeekers.requestDate"),
@@ -388,24 +384,137 @@ function ResidentialSeekersPage() {
           </div>
         </div>
 
-        <div className="flex gap-2">
-          <Button size="sm" variant="outline" onClick={handleReset} className="w-fit">
-            {t("common.filter")}
-            {(q || status !== "all") && <X className="ms-1 h-3 w-3" />}
-          </Button>
+        <div className="flex items-center justify-between">
+          <div className="flex gap-2">
+            <Button size="sm" variant="outline" onClick={handleReset} className="w-fit">
+              {t("common.filter")}
+              {(q || status !== "all") && <X className="ms-1 h-3 w-3" />}
+            </Button>
+          </div>
+          <div className="flex items-center rounded-md border border-border p-1 bg-muted/50">
+            <Button
+              size="sm"
+              variant={viewMode === "card" ? "secondary" : "ghost"}
+              className="h-7 px-2"
+              onClick={() => setViewMode("card")}
+            >
+              <LayoutGrid className="h-4 w-4" />
+            </Button>
+            <Button
+              size="sm"
+              variant={viewMode === "table" ? "secondary" : "ghost"}
+              className="h-7 px-2"
+              onClick={() => setViewMode("table")}
+            >
+              <List className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
       </div>
 
-      <DataTable
-        columns={columns}
-        rows={seekers.data?.items ?? []}
-        loading={seekers.isLoading}
-        error={seekers.error}
-        rowKey={(r) => r.id}
-        onEdit={canManage ? (row) => setSelected(row) : undefined}
-        onDelete={canManage ? (row) => setDeleting(row) : undefined}
-        onRowClick={(row) => setSelected(row)}
-      />
+      {seekers.isLoading ? (
+        <div className="flex justify-center p-8 text-muted-foreground">
+          {t("common.loading", { defaultValue: "Loading..." })}
+        </div>
+      ) : seekers.error ? (
+        <div className="rounded-xl border border-dashed border-destructive/40 p-8 text-center text-destructive">
+          {t("common.error", { defaultValue: "An error occurred." })}
+        </div>
+      ) : (seekers.data?.items ?? []).length === 0 ? (
+        <div className="rounded-xl border border-dashed border-border p-8 text-center text-muted-foreground">
+          {t("common.noData", { defaultValue: "No data found." })}
+        </div>
+      ) : viewMode === "table" ? (
+        <DataTable
+          columns={columns}
+          rows={seekers.data?.items ?? []}
+          loading={seekers.isLoading}
+          error={seekers.error}
+          rowKey={(r) => r.id}
+          onEdit={canManage ? (row) => setSelected(row) : undefined}
+          onDelete={canManage ? (row) => setDeleting(row) : undefined}
+          onRowClick={(row) => setSelected(row)}
+        />
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          {(seekers.data?.items ?? []).map((r) => (
+            <div
+              key={r.id}
+              className="group cursor-pointer flex flex-col justify-between rounded-xl border border-border bg-card p-4 transition-all hover:border-primary/50 hover:shadow-md"
+              onClick={() => setSelected(r)}
+            >
+              <div>
+                <div className="flex items-start justify-between gap-2 mb-3">
+                  <div className="font-medium truncate" title={r.fullName || t("common.notProvided")}>
+                    {r.fullName || t("common.notProvided")}
+                  </div>
+                  <StatusBadge tone={statusTone(r.status)}>
+                    {statusLabel(r.status)}
+                  </StatusBadge>
+                </div>
+
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">{t("residentialSeekers.propertyType")}</span>
+                    <span>{r.propertyType ? localizePropertyType(t, r.propertyType) : t("common.notProvided")}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">{t("residentialSeekers.listingType")}</span>
+                    <span>{r.listingType ? t(`listingType.${r.listingType}`, { defaultValue: r.listingType }) : t("common.notProvided")}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">{t("residentialSeekers.preferredLocation")}</span>
+                    <span className="truncate max-w-[120px]" title={r.preferredLocation}>{r.preferredLocation || t("common.notProvided")}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">{t("residentialSeekers.maxBudget")}</span>
+                    <span>{r.maxBudget || t("common.notProvided")}</span>
+                  </div>
+                  {r.requestDescription && (
+                    <div className="pt-2">
+                      <p className="text-xs text-muted-foreground line-clamp-2" title={r.requestDescription}>
+                        {r.requestDescription}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="mt-4 pt-4 border-t border-border flex items-center justify-between text-xs text-muted-foreground">
+                <div>
+                  {t("residentialSeekers.requestDate")}: {r.requestDate || t("common.notProvided")}
+                </div>
+                {canManage && (
+                  <div className="flex gap-1">
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="h-7 px-2"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelected(r);
+                      }}
+                    >
+                      {t("common.edit")}
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="h-7 px-2 text-destructive hover:text-destructive/90 hover:bg-destructive/10"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setDeleting(r);
+                      }}
+                    >
+                      {t("common.delete")}
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
       {(seekers.data?.total ?? 0) > 0 && (
         <div className="mt-4 flex items-center justify-between">

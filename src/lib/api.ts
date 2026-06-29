@@ -478,8 +478,21 @@ export interface CommercialListing {
   brokerageContracts?: CommercialListingBrokerageContract[] | null;
   parentId?: number | null;
   units?: CommercialListing[] | null;
+  images?: CommercialListingImage[] | null;
   createdAt: string;
   updatedAt?: string | null;
+}
+
+export interface CommercialListingImage {
+  id: number;
+  commercialListingId: number;
+  originalFileName: string;
+  mimeType: string;
+  sizeBytes: number;
+  sortOrder: number;
+  isPrimary: boolean;
+  url: string;
+  createdAt: string;
 }
 
 export interface CommercialListingBrokerageContract {
@@ -597,4 +610,21 @@ export function submitPartnerLead(formData: FormData) {
 
 export function fetchPartnerLeads() {
   return api<Lead[]>("/api/leads");
+}
+
+// ============ Commercial Listing Image helpers ============
+
+export function uploadCommercialListingImage(listingId: number, file: File, isPrimary: boolean = false) {
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("isPrimary", String(isPrimary));
+  return api<CommercialListingImage>(`/api/commercial-listings/${listingId}/images`, { method: "POST", formData });
+}
+
+export function deleteCommercialListingImage(listingId: number, imageId: number) {
+  return api(`/api/commercial-listings/${listingId}/images/${imageId}`, { method: "DELETE" });
+}
+
+export function setPrimaryCommercialListingImage(listingId: number, imageId: number) {
+  return api(`/api/commercial-listings/${listingId}/images/${imageId}/primary`, { method: "PUT" });
 }
