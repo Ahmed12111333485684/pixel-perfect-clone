@@ -258,6 +258,11 @@ function buildCommercialPayload(
     payload.isOfficeListing = isOfficeListing;
   }
 
+  const publicVisible = readBooleanField(fd, "publicVisible");
+  if (!original || publicVisible !== Boolean(original.publicVisible)) {
+    payload.publicVisible = publicVisible;
+  }
+
   const parentIdStr = fd.get("parentId");
   if (parentIdStr) {
     payload.parentId = parseInt(parentIdStr as string, 10);
@@ -671,7 +676,7 @@ function CommercialListingsPage() {
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">{t("commercialListings.location")}</span>
-                    <span className="truncate max-w-[120px]" title={r.location}>{r.location || t("common.notProvided")}</span>
+                    <span className="truncate max-w-[120px]" title={r.location ?? undefined}>{r.location || t("common.notProvided")}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">{t("commercialListings.rentAmount")}</span>
@@ -805,7 +810,7 @@ function CommercialListingsPage() {
           if (!value) setDeleting(null);
         }}
         title={t("common.delete")}
-        description={deleting?.propertyName || t("commercialListings.listing")}
+        description={deleting?.ownerName || t("commercialListings.listing")}
         confirmLabel={t("common.delete")}
         destructive
         loading={deletingRecord}
@@ -870,6 +875,7 @@ function CommercialListingDialog({
   const [dealThrough, setDealThrough] = useState<string>(listing?.dealThrough ?? DEAL_THROUGH_OWNER);
   const [hasKey, setHasKey] = useState<boolean>(Boolean(listing?.hasKey));
   const [isOfficeListing, setIsOfficeListing] = useState<boolean>(Boolean(listing?.isOfficeListing));
+  const [publicVisible, setPublicVisible] = useState<boolean>(Boolean(listing?.publicVisible));
   const [parentId, setParentId] = useState<number | null>(listing?.parentId ?? null);
   const [contracts, setContracts] = useState<BrokerageContractFormValue[]>(() => {
     const initialContracts = listing?.brokerageContracts?.length ? listing?.brokerageContracts : [null];
@@ -913,6 +919,7 @@ function CommercialListingDialog({
       setDealThrough(listing?.dealThrough ?? DEAL_THROUGH_OWNER);
       setHasKey(Boolean(listing?.hasKey));
       setIsOfficeListing(Boolean(listing?.isOfficeListing));
+      setPublicVisible(Boolean(listing?.publicVisible));
       setParentId(listing?.parentId ?? null);
       setContracts(listing?.brokerageContracts?.length
         ? listing.brokerageContracts.map((contract) => ({
@@ -1022,6 +1029,10 @@ function CommercialListingDialog({
             {/* Office Listing checkbox - only visible to admin/staff */}
             <OfficeListingCheckbox isOfficeListing={isOfficeListing} setIsOfficeListing={setIsOfficeListing} readOnly={readOnly} />
             <input type="hidden" name="isOfficeListing" value={String(isOfficeListing)} />
+          </div>
+          <div className="flex items-center gap-3">
+            <PublicVisibleCheckbox publicVisible={publicVisible} setPublicVisible={setPublicVisible} readOnly={readOnly} />
+            <input type="hidden" name="publicVisible" value={String(publicVisible)} />
           </div>
         </div>
       </div>
@@ -1245,6 +1256,18 @@ function TextareaField({ id, label, defaultValue, readOnly, className }: { id: s
   );
 }
 
+function PublicVisibleCheckbox({ publicVisible, setPublicVisible, readOnly }: { publicVisible: boolean; setPublicVisible: (v: boolean) => void; readOnly: boolean; }) {
+  const { t } = useTranslation();
+  return (
+    <div className="flex items-center gap-3 rounded-lg border border-border bg-background px-3 py-3">
+      <Checkbox id="publicVisible" checked={publicVisible} onCheckedChange={(checked) => setPublicVisible(checked === true)} disabled={readOnly} />
+      <div className="space-y-1">
+        <Label htmlFor="publicVisible" className="text-sm font-medium">{t("commercialListings.publicVisible")}</Label>
+      </div>
+    </div>
+  );
+}
+
 function OfficeListingCheckbox({ isOfficeListing, setIsOfficeListing, readOnly }: { isOfficeListing: boolean; setIsOfficeListing: (v: boolean) => void; readOnly: boolean; }) {
   const auth = useAuth();
   const { t } = useTranslation();
@@ -1253,10 +1276,12 @@ function OfficeListingCheckbox({ isOfficeListing, setIsOfficeListing, readOnly }
   if (!show) return <></>;
 
   return (
-    <label className="flex items-center gap-2">
-      <input type="checkbox" checked={isOfficeListing} onChange={(e) => setIsOfficeListing(e.target.checked)} disabled={readOnly} />
-      <span className="text-sm">{t("commercialListings.officeListing")}</span>
-    </label>
+    <div className="flex items-center gap-3 rounded-lg border border-border bg-background px-3 py-3">
+      <Checkbox id="isOfficeListing" checked={isOfficeListing} onCheckedChange={(checked) => setIsOfficeListing(checked === true)} disabled={readOnly} />
+      <div className="space-y-1">
+        <Label htmlFor="isOfficeListing" className="text-sm font-medium">{t("commercialListings.officeListing")}</Label>
+      </div>
+    </div>
   );
 }
 

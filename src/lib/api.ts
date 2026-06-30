@@ -448,6 +448,7 @@ export interface CommercialListing {
   prefix?: string | null;
   offerCode?: string | null;
   isOfficeListing?: boolean | null;
+  publicVisible?: boolean;
   roomsCount?: string | null;
   buildingAge?: string | null;
   hasElevator?: string | null;
@@ -499,6 +500,38 @@ export interface CommercialListingBrokerageContract {
   brokerageContract?: string | null;
   licenseNumber?: string | null;
   contractExpiry?: string | null;
+  sortOrder: number;
+}
+
+export interface PublicListing {
+  id: number;
+  offerCode?: string | null;
+  contactDate?: string | null;
+  listingCategory?: string | null;
+  listingType?: string | null;
+  propertyType?: string | null;
+  propertyStatus?: string | null;
+  adText1?: string | null;
+  adText2?: string | null;
+  rentAmount?: string | null;
+  paymentType?: string | null;
+  location?: string | null;
+  coordinates?: string | null;
+  roomsCount?: string | null;
+  buildingAge?: string | null;
+  hasElevator?: string | null;
+  hasKey?: string | null;
+  availableUnits?: string | null;
+  images?: PublicListingImage[];
+  createdAt: string;
+  updatedAt?: string | null;
+}
+
+export interface PublicListingImage {
+  id: number;
+  originalFileName: string;
+  url: string;
+  isPrimary: boolean;
   sortOrder: number;
 }
 

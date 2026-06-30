@@ -368,6 +368,7 @@ const en = {
     statusUnavailable: "Unavailable",
     statusRented: "Rented",
     officeListing: "Office Listing",
+    publicVisible: "Show on public page",
 
     channels: {
       tahmid: "Tahmid",
@@ -900,6 +901,7 @@ const ar = {
     statusUnavailable: "غير متاح",
     statusRented: "تم التأجير",
     officeListing: "عرض مكتب عقاري",
+    publicVisible: "عرض في الصفحة العامة",
 
     channels: {
       tahmid: "تعميد",

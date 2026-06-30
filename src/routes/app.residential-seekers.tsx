@@ -464,7 +464,7 @@ function ResidentialSeekersPage() {
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">{t("residentialSeekers.preferredLocation")}</span>
-                    <span className="truncate max-w-[120px]" title={r.preferredLocation}>{r.preferredLocation || t("common.notProvided")}</span>
+                    <span className="truncate max-w-[120px]" title={r.preferredLocation ?? undefined}>{r.preferredLocation || t("common.notProvided")}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">{t("residentialSeekers.maxBudget")}</span>
