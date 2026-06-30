@@ -458,7 +458,7 @@ export interface CommercialListing {
   paymentType?: string | null;
   location?: string | null;
   coordinates?: string | null;
-  hasKey?: string | null;
+  hasKey?: boolean | null;
   publishedTahmid?: string | null;
   publishedBoard?: string | null;
   publishedDesigns?: string | null;
@@ -476,6 +476,7 @@ export interface CommercialListing {
   publishedInstagram?: string | null;
   publishedTiktok?: string | null;
   notes?: string | null;
+  amenities?: Amenity[];
   brokerageContracts?: CommercialListingBrokerageContract[] | null;
   parentId?: number | null;
   units?: CommercialListing[] | null;
@@ -520,8 +521,9 @@ export interface PublicListing {
   roomsCount?: string | null;
   buildingAge?: string | null;
   hasElevator?: string | null;
-  hasKey?: string | null;
+  hasKey?: boolean | null;
   availableUnits?: string | null;
+  amenities?: Amenity[];
   images?: PublicListingImage[];
   createdAt: string;
   updatedAt?: string | null;

@@ -386,11 +386,19 @@ function ListingCard({ listing }: { listing: PublicListing }) {
               {t("common.elevator")}
             </Badge>
           )}
-          {listing.hasKey && (
-            <Badge variant="outline" className="flex items-center gap-1">
-              <Key className="h-3 w-3" />
-              {t("commercialListings.hasKey")}
-            </Badge>
+          {listing.amenities && listing.amenities.length > 0 && (
+            <>
+              {listing.amenities.slice(0, 3).map((a) => (
+                <Badge key={a.id} variant="secondary" className="flex items-center gap-1 text-xs">
+                  {a.name}
+                </Badge>
+              ))}
+              {listing.amenities.length > 3 && (
+                <Badge variant="outline" className="text-xs text-muted-foreground">
+                  +{listing.amenities.length - 3}
+                </Badge>
+              )}
+            </>
           )}
         </div>
       </article>
@@ -516,6 +524,20 @@ function ImageLightbox({
   );
 }
 
+function RiyalIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 1124.14 1256.39"
+      fill="currentColor"
+    >
+      <path d="M699.62,1113.02h0c-20.06,44.48-33.32,92.75-38.4,143.37l424.51-90.24c20.06-44.47,33.31-92.75,38.4-143.37l-424.51,90.24Z" />
+      <path d="M1085.73,895.8c20.06-44.47,33.32-92.75,38.4-143.37l-330.68,70.33v-135.2l292.27-62.11c20.06-44.47,33.32-92.75,38.4-143.37l-330.68,70.27V66.13c-50.67,28.45-95.67,66.32-132.25,110.99v403.35l-132.25,28.11V0c-50.67,28.44-95.67,66.32-132.25,110.99v525.69l-295.91,62.88c-20.06,44.47-33.33,92.75-38.42,143.37l334.33-71.05v170.26l-358.3,76.14c-20.06,44.47-33.32,92.75-38.4,143.37l375.04-79.7c30.53-6.35,56.77-24.4,73.83-49.24l68.78-101.97v-.02c7.14-10.55,11.3-23.27,11.3-36.97v-149.98l132.25-28.11v270.4l424.53-90.28Z" />
+    </svg>
+  );
+}
+
 function PriceCard({ label, value }: { label: string; value?: string | null }) {
   const { t } = useTranslation();
   return (
@@ -525,7 +547,12 @@ function PriceCard({ label, value }: { label: string; value?: string | null }) {
         {label}
       </div>
       <div className="mt-2 text-lg font-semibold">
-        {value ? value : "—"}
+        {value ? (
+          <span className="inline-flex items-center gap-1">
+            <span>{value}</span>
+            <RiyalIcon className="h-4 w-4" />
+          </span>
+        ) : "—"}
       </div>
     </div>
   );
@@ -552,8 +579,6 @@ function ListingDetailsDialog({
   const detailFields: { label: string; icon: React.ReactNode; value?: string | null }[] = [
     { label: t("common.rooms"), icon: <DoorOpen className="h-4 w-4" />, value: listing.roomsCount },
     { label: t("common.buildingAge"), icon: <Building2 className="h-4 w-4" />, value: listing.buildingAge },
-    { label: t("common.elevator"), icon: <Layers className="h-4 w-4" />, value: listing.hasElevator ? t("common.yes") : t("common.no") },
-    { label: t("commercialListings.hasKey"), icon: <Key className="h-4 w-4" />, value: listing.hasKey ? t("common.yes") : t("common.no") },
     { label: t("commercialListings.availableUnits"), icon: <Layers className="h-4 w-4" />, value: listing.availableUnits },
     { label: t("common.paymentType"), icon: <BadgeDollarSign className="h-4 w-4" />, value: listing.paymentType },
     { label: t("common.coordinates"), icon: <MapPin className="h-4 w-4" />, value: listing.coordinates },
@@ -610,37 +635,60 @@ function ListingDetailsDialog({
                   <div className="grid gap-4 sm:grid-cols-2">
                     <div>
                       <div className="text-xs uppercase text-muted-foreground">{priceLabel}</div>
-                      <div className="text-lg font-medium">{listing.rentAmount || "—"}</div>
+                      <div className="text-lg font-medium">{listing.rentAmount ? <span className="inline-flex items-center gap-1"><span>{listing.rentAmount}</span><RiyalIcon className="h-4 w-4" /></span> : "—"}</div>
                     </div>
                   </div>
                 </div>
 
-                {listing.adText2 && (
-                  <div className="rounded-xl border border-border bg-background p-5 shadow-sm">
-                    <h3 className="mb-4 flex items-center gap-2 font-semibold">
-                      <Info className="h-5 w-5 text-gold" />
-                      {t("common.description")}
-                    </h3>
-                    <p className="text-sm text-muted-foreground whitespace-pre-wrap">{listing.adText2}</p>
-                  </div>
-                )}
-
-                {detailFields.length > 0 && (
+                {(detailFields.length > 0 || listing.adText2) && (
                   <div className="rounded-xl border border-border bg-background p-5 shadow-sm">
                     <h3 className="mb-4 flex items-center gap-2 font-semibold">
                       <Info className="h-5 w-5 text-gold" />
                       {t("common.details")}
                     </h3>
-                    <div className="grid gap-4 sm:grid-cols-2">
-                      {detailFields.map((f, i) => (
-                        <div key={i}>
-                          <div className="flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-                            {f.icon}
-                            <span>{f.label}</span>
+                    {detailFields.length > 0 && (
+                      <div className="grid gap-4 sm:grid-cols-2">
+                        {detailFields.map((f, i) => (
+                          <div key={i}>
+                            <div className="flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                              {f.icon}
+                              <span>{f.label}</span>
+                            </div>
+                            <div className="mt-1 text-sm font-medium">{f.value}</div>
                           </div>
-                          <div className="mt-1 text-sm font-medium">{f.value}</div>
+                        ))}
+                      </div>
+                    )}
+                    {listing.adText2 && (
+                      <div className={"text-sm whitespace-pre-wrap" + (detailFields.length > 0 ? " mt-4 border-t border-border pt-4" : "")}>
+                        {listing.adText2}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {((listing.amenities && listing.amenities.length > 0) || listing.hasElevator) && (
+                  <div className="rounded-xl border border-border bg-gradient-to-br from-background to-muted/30 p-5 shadow-sm">
+                    <h3 className="mb-4 flex items-center gap-2 font-semibold">
+                      <Tag className="h-5 w-5 text-gold" />
+                      {t("nav.amenities", { defaultValue: "Amenities" })}
+                    </h3>
+                    <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                      {listing.amenities?.map((a) => (
+                        <div
+                          key={a.id}
+                          className="flex items-center gap-2 rounded-lg border border-border/50 bg-background px-3 py-2 text-sm shadow-sm transition-colors hover:border-gold/30 hover:bg-gold/5"
+                        >
+                          <div className="h-2 w-2 rounded-full bg-gold" />
+                          {a.name}
                         </div>
                       ))}
+                      {listing.hasElevator && (
+                        <div className="flex items-center gap-2 rounded-lg border border-border/50 bg-background px-3 py-2 text-sm shadow-sm">
+                          <Layers className="h-4 w-4 text-gold" />
+                          {t("common.elevator")}
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}
@@ -662,7 +710,7 @@ function ListingDetailsDialog({
                       </span>
                     </div>
                     <div className="flex items-center justify-between border-b border-border pb-2 text-sm">
-                      <span className="text-muted-foreground">{t("common.offerCode")}</span>
+                      <span className="text-muted-foreground">{t("commercialListings.offerCode")}</span>
                       <span className="font-medium">{listing.offerCode || "—"}</span>
                     </div>
                     <div className="flex items-center justify-between border-b border-border pb-2 text-sm">

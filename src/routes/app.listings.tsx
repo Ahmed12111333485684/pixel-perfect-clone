@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { memo, useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { api, fetchPartners, type CommercialListing, type Partner, type CommercialListingImage, type UserDto } from "@/lib/api";
+import { api, fetchPartners, type CommercialListing, type Partner, type CommercialListingImage, type UserDto, type Amenity } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { PageHeader, StatusBadge } from "@/components/PageHeader";
 import { DataTable, type Column } from "@/components/DataTable";
@@ -60,7 +60,6 @@ const COMMERCIAL_FIELDS = [
   "paymentType",
   "location",
   "coordinates",
-  "hasKey",
   "notes",
 ] as const;
 
@@ -263,12 +262,24 @@ function buildCommercialPayload(
     payload.publicVisible = publicVisible;
   }
 
+  const hasKey = readBooleanField(fd, "hasKey");
+  if (!original || hasKey !== Boolean(original.hasKey)) {
+    payload.hasKey = hasKey;
+  }
+
   const parentIdStr = fd.get("parentId");
   if (parentIdStr) {
     payload.parentId = parseInt(parentIdStr as string, 10);
   }
 
   payload.brokerageContracts = normalizeBrokerageContracts(contracts);
+
+  const amenityIdsStr = fd.get("amenityIds");
+  if (amenityIdsStr) {
+    payload.amenityIds = String(amenityIdsStr).split(",").map(Number).filter(n => n > 0);
+  } else {
+    payload.amenityIds = [];
+  }
 
   return payload;
 }
@@ -338,6 +349,7 @@ function CommercialListingsPage() {
 
   const partners = useQuery({ queryKey: ["partners", "lookup"], queryFn: fetchPartners, enabled: hasAccess });
   const users = useQuery({ queryKey: ["users", "lookup"], queryFn: () => api<UserDto[]>("/users"), enabled: hasAccess });
+  const amenities = useQuery({ queryKey: ["amenities"], queryFn: () => api<Amenity[]>("/amenities"), enabled: hasAccess });
 
   const handleReset = () => {
     setQ("");
@@ -440,6 +452,11 @@ function CommercialListingsPage() {
     { key: "rentAmount", header: t("commercialListings.rentAmount"), cell: (r) => r.rentAmount || t("common.notProvided") },
     { key: "paymentType", header: t("commercialListings.paymentType"), cell: (r) => r.paymentType || t("common.notProvided") },
     { key: "location", header: t("commercialListings.location"), cell: (r) => r.location || t("common.notProvided") },
+    { key: "amenities", header: t("nav.amenities", { defaultValue: "Amenities" }), cell: (r) => r.amenities && r.amenities.length > 0 ? (
+      <div className="flex flex-wrap gap-1">
+        {r.amenities.map(a => <span key={a.id} className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">{a.name}</span>)}
+      </div>
+    ) : t("common.notProvided") },
     { key: "employee", header: t("common.employee"), cell: (r) => r.employee || t("common.notProvided") },
   ];
 
@@ -682,6 +699,20 @@ function CommercialListingsPage() {
                     <span className="text-muted-foreground">{t("commercialListings.rentAmount")}</span>
                     <span>{r.rentAmount || t("common.notProvided")}</span>
                   </div>
+                  {r.amenities && r.amenities.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mt-2">
+                      {r.amenities.slice(0, 4).map((a) => (
+                        <span key={a.id} className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+                          {a.name}
+                        </span>
+                      ))}
+                      {r.amenities.length > 4 && (
+                        <span className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
+                          +{r.amenities.length - 4}
+                        </span>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -750,6 +781,7 @@ function CommercialListingsPage() {
         partnersLoading={partners.isLoading}
         users={users.data ?? []}
         usersLoading={users.isLoading}
+        amenities={amenities.data ?? []}
         readOnly={!canManage}
         submitting={submitting}
         title={`${t("common.add")} ${t("nav.commercialListings")}`}
@@ -768,6 +800,7 @@ function CommercialListingsPage() {
         partnersLoading={partners.isLoading}
         users={users.data ?? []}
         usersLoading={users.isLoading}
+        amenities={amenities.data ?? []}
         readOnly={!canManage}
         submitting={submitting}
         title={canManage ? t("common.edit") : t("common.details")}
@@ -794,6 +827,7 @@ function CommercialListingsPage() {
         partnersLoading={partners.isLoading}
         users={users.data ?? []}
         usersLoading={users.isLoading}
+        amenities={amenities.data ?? []}
         readOnly={!canManage}
         submitting={submitting}
         title={`${t("common.add")} ${t("common.unit")}`}
@@ -838,6 +872,7 @@ function CommercialListingDialog({
   partnersLoading,
   users,
   usersLoading,
+  amenities,
   readOnly,
   submitting,
   title,
@@ -855,6 +890,7 @@ function CommercialListingDialog({
   partnersLoading: boolean;
   users: UserDto[];
   usersLoading: boolean;
+  amenities: Amenity[];
   readOnly: boolean;
   submitting?: boolean;
   title: string;
@@ -877,6 +913,7 @@ function CommercialListingDialog({
   const [isOfficeListing, setIsOfficeListing] = useState<boolean>(Boolean(listing?.isOfficeListing));
   const [publicVisible, setPublicVisible] = useState<boolean>(Boolean(listing?.publicVisible));
   const [parentId, setParentId] = useState<number | null>(listing?.parentId ?? null);
+  const [selectedAmenityIds, setSelectedAmenityIds] = useState<number[]>(() => listing?.amenities?.map(a => a.id) ?? []);
   const [contracts, setContracts] = useState<BrokerageContractFormValue[]>(() => {
     const initialContracts = listing?.brokerageContracts?.length ? listing?.brokerageContracts : [null];
     return initialContracts.map((contract) => (contract ? {
@@ -921,6 +958,7 @@ function CommercialListingDialog({
       setIsOfficeListing(Boolean(listing?.isOfficeListing));
       setPublicVisible(Boolean(listing?.publicVisible));
       setParentId(listing?.parentId ?? null);
+      setSelectedAmenityIds(listing?.amenities?.map(a => a.id) ?? []);
       setContracts(listing?.brokerageContracts?.length
         ? listing.brokerageContracts.map((contract) => ({
           id: makeContractId(),
@@ -1125,6 +1163,32 @@ function CommercialListingDialog({
             </label>
           ))}
         </div>
+      </div>
+
+      <div className="space-y-4 rounded-lg border border-border bg-muted/30 p-4">
+        <Label className="text-sm font-medium">{t("nav.amenities", { defaultValue: "Amenities" })}</Label>
+        {amenities.length > 0 ? (
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {amenities.map((amenity) => (
+              <label key={amenity.id} className="flex items-center gap-2 text-sm">
+                <Checkbox
+                  checked={selectedAmenityIds.includes(amenity.id)}
+                  onCheckedChange={(checked) => {
+                    if (readOnly) return;
+                    setSelectedAmenityIds((prev) =>
+                      checked ? [...prev, amenity.id] : prev.filter((id) => id !== amenity.id)
+                    );
+                  }}
+                  disabled={readOnly}
+                />
+                <span>{amenity.name}</span>
+              </label>
+            ))}
+          </div>
+        ) : (
+          <div className="text-sm text-muted-foreground">{t("common.noData", { defaultValue: "No amenities available" })}</div>
+        )}
+        <input type="hidden" name="amenityIds" value={selectedAmenityIds.join(",")} />
       </div>
 
       <div className="space-y-4 rounded-lg border border-border bg-muted/30 p-4">
