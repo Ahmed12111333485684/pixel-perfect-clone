@@ -3,7 +3,7 @@ import { Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { api, resolveApiAssetUrl, type ResidentialSeeker, type RequestPropertySuggestion, fetchPartners, type UserDto } from "@/lib/api";
+import { api, resolveApiAssetUrl, type ResidentialSeeker, type RequestPropertySuggestion, fetchPartners, type UserDto, ApiError } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { PROPERTY_TYPES, localizePropertyType } from "@/lib/property-types";
 import { PageHeader, StatusBadge } from "@/components/PageHeader";

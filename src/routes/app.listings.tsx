@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { memo, useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { api, fetchPartners, type CommercialListing, type Partner, type CommercialListingImage, type UserDto, type Amenity } from "@/lib/api";
+import { api, fetchPartners, type CommercialListing, type Partner, type CommercialListingImage, type UserDto, type Amenity, ApiError } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { PageHeader, StatusBadge } from "@/components/PageHeader";
 import { DataTable, type Column } from "@/components/DataTable";
@@ -369,7 +369,11 @@ function CommercialListingsPage() {
       setCreating(false);
       qc.invalidateQueries({ queryKey: ["commercial-listings"] });
     } catch (error) {
-      toast.error(t("common.error"));
+      if (error instanceof ApiError) {
+        toast.error(error.message);
+      } else {
+        toast.error(t("common.error"));
+      }
     } finally {
       setSubmitting(false);
     }
@@ -391,7 +395,11 @@ function CommercialListingsPage() {
       setSelected(null);
       qc.invalidateQueries({ queryKey: ["commercial-listings"] });
     } catch (error) {
-      toast.error(t("common.error"));
+      if (error instanceof ApiError) {
+        toast.error(error.message);
+      } else {
+        toast.error(t("common.error"));
+      }
     } finally {
       setSubmitting(false);
     }
@@ -985,7 +993,12 @@ function CommercialListingDialog({
         <div className="grid gap-4 sm:grid-cols-2">
           {parentId && <input type="hidden" name="parentId" value={parentId} />}
           <DateField id="contactDate" label={t("commercialListings.contactDate")} defaultValue={listing?.contactDate || new Date().toISOString().split("T")[0]} readOnly={readOnly} />
-          <TextField id="offerCode" label={t("commercialListings.offerCode")} defaultValue={listing?.offerCode} readOnly={true} />
+          <div className="space-y-2">
+            <Label htmlFor="offerCode" className="text-xs font-medium">{t("commercialListings.offerCode")}</Label>
+            <div className="mt-1 rounded-md border-2 border-gold/30 bg-gold/5 px-3 py-2 text-sm font-bold tracking-wide text-foreground">
+              {listing?.offerCode || "—"}
+            </div>
+          </div>
           <div className="space-y-2">
             <Label htmlFor="listingCategory" className="text-xs font-medium">{t("commercialListings.listingCategory")}</Label>
             <Select value={listingCategory} onValueChange={(v) => setListingCategory(v as ListingCategoryValue)} disabled={readOnly}>
@@ -1223,7 +1236,7 @@ function CommercialListingDialog({
               {listing?.units?.map(u => (
                 <div key={u.id} className="flex items-center justify-between rounded-md border bg-card p-3 shadow-sm">
                   <div>
-                    <div className="font-medium text-sm">{u.offerCode || "-"}</div>
+                    <div className="text-sm font-bold tracking-wide">{u.offerCode || "-"}</div>
                     <div className="text-xs text-muted-foreground mt-1">
                       {t(`propertyType.${u.propertyType}`)} &bull; {u.rentAmount ? `${u.rentAmount} SAR` : "-"} &bull; {u.propertyStatus}
                     </div>

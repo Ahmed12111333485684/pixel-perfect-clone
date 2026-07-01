@@ -1057,10 +1057,10 @@ const ar = {
 const STORAGE_KEY = "nourconsultancy.lang";
 
 export function getInitialLang(): "en" | "ar" {
-  if (typeof window === "undefined") return "en";
+  if (typeof window === "undefined") return "ar";
   const saved = window.localStorage.getItem(STORAGE_KEY);
   if (saved === "en" || saved === "ar") return saved;
-  return "en";
+  return "ar";
 }
 
 export function applyLangToDocument(lang: "en" | "ar") {
