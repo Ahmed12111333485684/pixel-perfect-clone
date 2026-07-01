@@ -37,6 +37,7 @@ const STATUS_NOT_DONE = "لم يتم";
 const RESIDENTIAL_FIELDS = [
   "serialNumber",
   "requestDate",
+  "reviewDate",
   "status",
   "employee",
   "receiver",
@@ -141,8 +142,17 @@ function ResidentialSeekersPage() {
   const [status, setStatus] = useState<string>("all");
   const [page, setPage] = useState(1);
   const [pageSize] = useState(20);
-  const [sortBy] = useState<string>("createdAt");
-  const [sortDir] = useState<"asc" | "desc">("desc");
+  const [sortBy, setSortBy] = useState<string>("createdAt");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
+
+  const handleSort = (key: string) => {
+    if (sortBy === key) {
+      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortBy(key);
+      setSortDir("asc");
+    }
+  };
   const [creating, setCreating] = useState(false);
   const [selected, setSelected] = useState<ResidentialSeeker | null>(null);
   const [deleting, setDeleting] = useState<ResidentialSeeker | null>(null);
@@ -258,6 +268,13 @@ function ResidentialSeekersPage() {
       key: "requestDate",
       header: t("residentialSeekers.requestDate"),
       cell: (r) => r.requestDate || t("common.notProvided"),
+      sortable: true,
+    },
+    {
+      key: "reviewDate",
+      header: "تاريخ المراجعة",
+      cell: (r) => r.reviewDate || t("common.notProvided"),
+      sortable: true,
     },
     {
       key: "status",
@@ -265,11 +282,13 @@ function ResidentialSeekersPage() {
       cell: (r) => (
         <StatusBadge tone={statusTone(r.status)}>{statusLabel(r.status)}</StatusBadge>
       ),
+      sortable: true,
     },
     {
       key: "fullName",
       header: t("residentialSeekers.fullName"),
       cell: (r) => <span className="font-medium">{r.fullName || t("common.notProvided")}</span>,
+      sortable: true,
     },
     {
       key: "mobile",
@@ -315,8 +334,9 @@ function ResidentialSeekersPage() {
     },
     {
       key: "employee",
-      header: t("common.employee"),
+      header: t("residentialSeekers.employee"),
       cell: (r) => r.employee || t("common.notProvided"),
+      sortable: true,
     },
   ];
 
@@ -382,6 +402,31 @@ function ResidentialSeekersPage() {
               </SelectContent>
             </Select>
           </div>
+          
+          <div className="w-full">
+            <Label className="text-xs font-medium">ترتيب حسب</Label>
+            <Select
+              value={`${sortBy}-${sortDir}`}
+              onValueChange={(val) => {
+                const [k, d] = val.split("-");
+                setSortBy(k);
+                setSortDir(d as "asc" | "desc");
+                setPage(1);
+              }}
+            >
+              <SelectTrigger className="mt-1 w-full">
+                <SelectValue placeholder="ترتيب حسب" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="createdAt-desc">الأحدث</SelectItem>
+                <SelectItem value="createdAt-asc">الأقدم</SelectItem>
+                <SelectItem value="requestDate-desc">تاريخ الطلب (الأحدث)</SelectItem>
+                <SelectItem value="requestDate-asc">تاريخ الطلب (الأقدم)</SelectItem>
+                <SelectItem value="fullName-asc">الاسم (أ-ي)</SelectItem>
+                <SelectItem value="fullName-desc">الاسم (ي-أ)</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
         <div className="flex items-center justify-between">
@@ -433,7 +478,10 @@ function ResidentialSeekersPage() {
           rowKey={(r) => r.id}
           onEdit={canManage ? (row) => setSelected(row) : undefined}
           onDelete={canManage ? (row) => setDeleting(row) : undefined}
-          onRowClick={(row) => setSelected(row)}
+          onRowClick={auth.isPartner ? undefined : (row) => setSelected(row)}
+          sortKey={sortBy}
+          sortDir={sortDir}
+          onSort={handleSort}
         />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
@@ -480,36 +528,41 @@ function ResidentialSeekersPage() {
                 </div>
               </div>
 
-              <div className="mt-4 pt-4 border-t border-border flex items-center justify-between text-xs text-muted-foreground">
-                <div>
-                  {t("residentialSeekers.requestDate")}: {r.requestDate || t("common.notProvided")}
-                </div>
-                {canManage && (
-                  <div className="flex gap-1">
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      className="h-7 px-2"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setSelected(r);
-                      }}
-                    >
-                      {t("common.edit")}
-                    </Button>
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      className="h-7 px-2 text-destructive hover:text-destructive/90 hover:bg-destructive/10"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setDeleting(r);
-                      }}
-                    >
-                      {t("common.delete")}
-                    </Button>
+              <div className="mt-4 pt-4 border-t border-border flex flex-col gap-1 text-xs text-muted-foreground">
+                <div className="flex items-center justify-between">
+                  <div>
+                    {t("residentialSeekers.requestDate")}: {r.requestDate || t("common.notProvided")}
                   </div>
-                )}
+                  {canManage && (
+                    <div className="flex gap-1">
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="h-7 px-2"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelected(r);
+                        }}
+                      >
+                        {t("common.edit")}
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="h-7 px-2 text-destructive hover:text-destructive/90 hover:bg-destructive/10"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setDeleting(r);
+                        }}
+                      >
+                        {t("common.delete")}
+                      </Button>
+                    </div>
+                  )}
+                </div>
+                <div>
+                  تاريخ المراجعة: {r.reviewDate || t("common.notProvided")}
+                </div>
               </div>
             </div>
           ))}
@@ -650,6 +703,7 @@ function ResidentialSeekerDialog({
         <div className="grid gap-4 sm:grid-cols-2">
           {/* <TextField id="serialNumber" label={t("residentialSeekers.serialNumber")} defaultValue={seeker?.serialNumber} readOnly={readOnly} /> */}
           <DateField id="requestDate" label={t("residentialSeekers.requestDate")} defaultValue={seeker?.requestDate || new Date().toISOString().split("T")[0]} readOnly={readOnly} className="mt-1 w-full [color-scheme:light] [&::-webkit-calendar-picker-indicator]:ml-auto" />
+          <DateField id="reviewDate" label="تاريخ المراجعة" defaultValue={seeker?.reviewDate} readOnly={readOnly} className="mt-1 w-full [color-scheme:light] [&::-webkit-calendar-picker-indicator]:ml-auto" />
           <SelectField
             id="status"
             label={t("residentialSeekers.status")}

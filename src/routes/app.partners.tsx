@@ -44,6 +44,17 @@ function PartnersPage() {
   const [deleting, setDeleting] = useState<Partner | null>(null);
   const [accountFor, setAccountFor] = useState<Partner | null>(null);
   const [search, setSearch] = useState("");
+  const [sortBy, setSortBy] = useState<string>("created");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
+
+  const handleSort = (key: string) => {
+    if (sortBy === key) {
+      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortBy(key);
+      setSortDir("asc");
+    }
+  };
 
   const upsert = useMutation({
     mutationFn: async (vals: {
@@ -137,26 +148,30 @@ function PartnersPage() {
       key: "name",
       header: t("common.fullName"),
       cell: (r) => <span className="font-medium">{r.fullName}</span>,
+      sortable: true,
     },
-    { key: "phone", header: t("common.phone"), cell: (r) => r.phone ?? "—" },
+    { key: "phone", header: t("common.phone"), cell: (r) => r.phone ?? "—", sortable: true },
     {
       key: "falLicenseNumber",
       header: t("common.falLicenseNumber"),
       cell: (r) => r.falLicenseNumber ?? "—",
+      sortable: true,
     },
     {
       key: "commercialRegistrationNumber",
       header: t("common.commercialRegistrationNumber"),
       cell: (r) => r.commercialRegistrationNumber ?? "—",
+      sortable: true,
     },
-    { key: "location", header: t("common.partnerLocation"), cell: (r) => r.location ?? "—" },
-    { key: "email", header: t("common.email"), cell: (r) => r.email ?? "—" },
+    { key: "location", header: t("common.partnerLocation"), cell: (r) => r.location ?? "—", sortable: true },
+    { key: "email", header: t("common.email"), cell: (r) => r.email ?? "—", sortable: true },
     {
       key: "nid",
       header: t("common.nationalId"),
       cell: (r) => <span className="font-mono text-xs">{r.nationalId ?? "—"}</span>,
+      sortable: true,
     },
-    { key: "created", header: t("common.createdAt"), cell: (r) => formatDate(r.createdAt) },
+    { key: "created", header: t("common.createdAt"), cell: (r) => formatDate(r.createdAt), sortable: true },
     {
       key: "account",
       header: "",
@@ -178,20 +193,46 @@ function PartnersPage() {
   ];
 
   const filtered = useMemo(() => {
-    if (!search.trim()) return list.data ?? [];
-    const lower = search.toLowerCase();
-    return (list.data ?? []).filter((p) => {
-      return (
-        p.fullName.toLowerCase().includes(lower) ||
-        (p.phone ?? "").toLowerCase().includes(lower) ||
-        (p.falLicenseNumber ?? "").toLowerCase().includes(lower) ||
-        (p.commercialRegistrationNumber ?? "").toLowerCase().includes(lower) ||
-        (p.location ?? "").toLowerCase().includes(lower) ||
-        (p.email ?? "").toLowerCase().includes(lower) ||
-        (p.nationalId ?? "").toLowerCase().includes(lower)
-      );
+    let result = list.data ?? [];
+    if (search.trim()) {
+      const lower = search.toLowerCase();
+      result = result.filter((p) => {
+        return (
+          p.fullName.toLowerCase().includes(lower) ||
+          (p.phone ?? "").toLowerCase().includes(lower) ||
+          (p.falLicenseNumber ?? "").toLowerCase().includes(lower) ||
+          (p.commercialRegistrationNumber ?? "").toLowerCase().includes(lower) ||
+          (p.location ?? "").toLowerCase().includes(lower) ||
+          (p.email ?? "").toLowerCase().includes(lower) ||
+          (p.nationalId ?? "").toLowerCase().includes(lower)
+        );
+      });
+    }
+
+    result = [...result].sort((a, b) => {
+      let cmp = 0;
+      if (sortBy === "created") {
+        cmp = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+      } else if (sortBy === "name") {
+        cmp = (a.fullName || "").localeCompare(b.fullName || "");
+      } else if (sortBy === "phone") {
+        cmp = (a.phone || "").localeCompare(b.phone || "");
+      } else if (sortBy === "email") {
+        cmp = (a.email || "").localeCompare(b.email || "");
+      } else if (sortBy === "nid") {
+        cmp = (a.nationalId || "").localeCompare(b.nationalId || "");
+      } else if (sortBy === "falLicenseNumber") {
+        cmp = (a.falLicenseNumber || "").localeCompare(b.falLicenseNumber || "");
+      } else if (sortBy === "commercialRegistrationNumber") {
+        cmp = (a.commercialRegistrationNumber || "").localeCompare(b.commercialRegistrationNumber || "");
+      } else if (sortBy === "location") {
+        cmp = (a.location || "").localeCompare(b.location || "");
+      }
+      return sortDir === "asc" ? cmp : -cmp;
     });
-  }, [list.data, search]);
+
+    return result;
+  }, [list.data, search, sortBy, sortDir]);
 
   if (!auth.hasRole("Admin")) {
     return (
@@ -230,6 +271,9 @@ function PartnersPage() {
         onRowClick={(r) => setEditing(r)}
         onEdit={(r) => setEditing(r)}
         onDelete={(r) => setDeleting(r)}
+        sortKey={sortBy}
+        sortDir={sortDir}
+        onSort={handleSort}
       />
 
       <PartnerDialog

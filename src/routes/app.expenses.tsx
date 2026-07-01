@@ -61,6 +61,18 @@ function ExpensesPage() {
   const [submitting, setSubmitting] = useState(false);
   const [deletingRecord, setDeletingRecord] = useState(false);
 
+  const [sortKey, setSortKey] = useState<string>("date");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
+
+  const handleSort = (key: string) => {
+    if (sortKey === key) {
+      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortKey(key);
+      setSortDir("asc");
+    }
+  };
+
   const hasAccess =
     auth.hasRole("Admin") ||
     auth.user?.screenPermissions.includes("/app/expenses");
@@ -139,31 +151,37 @@ function ExpensesPage() {
       key: "date",
       header: t("expenses.date"),
       cell: (row) => formatDate(row.date),
+      sortable: true,
     },
     {
       key: "category",
       header: t("expenses.category"),
       cell: (row) => <span className="font-medium">{row.category}</span>,
+      sortable: true,
     },
     {
       key: "amount",
       header: t("expenses.amount"),
       cell: (row) => row.amount.toLocaleString(),
+      sortable: true,
     },
     {
       key: "employeeName",
       header: t("expenses.employee"),
       cell: (row) => row.employeeName || "-",
+      sortable: true,
     },
     {
       key: "paymentMethod",
       header: t("expenses.paymentMethod"),
       cell: (row) => row.paymentMethod,
+      sortable: true,
     },
     {
       key: "reference",
       header: t("expenses.reference"),
       cell: (row) => row.reference || "-",
+      sortable: true,
     },
   ];
 
@@ -174,6 +192,21 @@ function ExpensesPage() {
       </div>
     );
   }
+
+  const sortedExpenses = useMemo(() => {
+    if (!expenses.data) return [];
+    return [...expenses.data].sort((a, b) => {
+      let aVal = a[sortKey as keyof Expense] ?? "";
+      let bVal = b[sortKey as keyof Expense] ?? "";
+      if (typeof aVal === "string" && typeof bVal === "string") {
+        return sortDir === "asc" ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
+      }
+      if (typeof aVal === "number" && typeof bVal === "number") {
+        return sortDir === "asc" ? aVal - bVal : bVal - aVal;
+      }
+      return 0;
+    });
+  }, [expenses.data, sortKey, sortDir]);
 
   const years = Array.from({ length: 5 }, (_, i) => currentDate.getFullYear() - i);
   const months = Array.from({ length: 12 }, (_, i) => i + 1);
@@ -240,13 +273,16 @@ function ExpensesPage() {
 
       <DataTable
         columns={columns}
-        rows={expenses.data ?? []}
+        rows={sortedExpenses}
         loading={expenses.isLoading}
         error={expenses.error}
         rowKey={(row) => row.id}
         onEdit={canManage ? (row) => setSelected(row) : undefined}
         onDelete={canManage ? (row) => setDeleting(row) : undefined}
         onRowClick={(row) => setSelected(row)}
+        sortKey={sortKey}
+        sortDir={sortDir}
+        onSort={handleSort}
       />
 
       <ExpenseDialog

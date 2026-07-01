@@ -7,7 +7,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Pencil, Trash2 } from "lucide-react";
+import { Pencil, Trash2, ArrowUpDown, ArrowDown, ArrowUp } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { EmptyState, LoadingBlock, ErrorBlock } from "./PageHeader";
 
@@ -16,6 +16,7 @@ export interface Column<T> {
   header: string;
   cell: (row: T) => React.ReactNode;
   className?: string;
+  sortable?: boolean;
 }
 
 interface DataTableProps<T> {
@@ -27,6 +28,9 @@ interface DataTableProps<T> {
   onEdit?: (row: T) => void;
   onDelete?: (row: T) => void;
   onRowClick?: (row: T) => void;
+  sortKey?: string;
+  sortDir?: "asc" | "desc";
+  onSort?: (key: string) => void;
 }
 
 export function DataTable<T>({
@@ -38,6 +42,9 @@ export function DataTable<T>({
   onEdit,
   onDelete,
   onRowClick,
+  sortKey,
+  sortDir,
+  onSort,
 }: DataTableProps<T>) {
   const { t } = useTranslation();
   if (loading) return <LoadingBlock />;
@@ -53,8 +60,23 @@ export function DataTable<T>({
           <TableHeader>
             <TableRow className="bg-muted/50">
               {columns.map((c) => (
-                <TableHead key={c.key} className={c.className}>
-                  {c.header}
+                <TableHead
+                  key={c.key}
+                  className={`${c.className ?? ""} ${c.sortable && onSort ? "cursor-pointer select-none hover:bg-muted" : ""}`}
+                  onClick={c.sortable && onSort ? () => onSort(c.key) : undefined}
+                >
+                  <div className="flex items-center gap-1">
+                    {c.header}
+                    {c.sortable && onSort && (
+                      <span className="text-muted-foreground/50">
+                        {sortKey === c.key ? (
+                          sortDir === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
+                        ) : (
+                          <ArrowUpDown className="h-3 w-3" />
+                        )}
+                      </span>
+                    )}
+                  </div>
                 </TableHead>
               ))}
               {showActions && (

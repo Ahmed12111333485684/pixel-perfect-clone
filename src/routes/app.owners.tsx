@@ -32,6 +32,17 @@ function OwnersPage() {
   const [accountFor, setAccountFor] = useState<Owner | null>(null);
   const [statsFor, setStatsFor] = useState<Owner | null>(null);
   const [search, setSearch] = useState("");
+  const [sortBy, setSortBy] = useState<string>("created");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
+
+  const handleSort = (key: string) => {
+    if (sortBy === key) {
+      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortBy(key);
+      setSortDir("asc");
+    }
+  };
 
   const upsert = useMutation({
     mutationFn: async (vals: Partial<Owner> & { id?: number }) => {
@@ -78,28 +89,50 @@ function OwnersPage() {
       key: "name",
       header: t("common.fullName"),
       cell: (r) => <span className="font-medium">{r.fullName}</span>,
+      sortable: true,
     },
-    { key: "phone", header: t("common.phone"), cell: (r) => r.phone },
-    { key: "email", header: t("common.email"), cell: (r) => r.email },
+    { key: "phone", header: t("common.phone"), cell: (r) => r.phone, sortable: true },
+    { key: "email", header: t("common.email"), cell: (r) => r.email, sortable: true },
     {
       key: "nid",
       header: t("common.nationalId"),
       cell: (r) => <span className="font-mono text-xs">{r.nationalId}</span>,
+      sortable: true,
     },
-    { key: "created", header: t("common.createdAt"), cell: (r) => formatDate(r.createdAt) },
+    { key: "created", header: t("common.createdAt"), cell: (r) => formatDate(r.createdAt), sortable: true },
   ];
 
   const filteredOwners = useMemo(() => {
-    if (!search.trim()) return list.data ?? [];
-    const lowerSearch = search.toLowerCase();
-    return (list.data ?? []).filter((owner) => {
-      const nameMatch = owner.fullName.toLowerCase().includes(lowerSearch);
-      const phoneMatch = owner.phone.toLowerCase().includes(lowerSearch);
-      const emailMatch = owner.email.toLowerCase().includes(lowerSearch);
-      const nidMatch = owner.nationalId.toLowerCase().includes(lowerSearch);
-      return nameMatch || phoneMatch || emailMatch || nidMatch;
+    let result = list.data ?? [];
+    if (search.trim()) {
+      const lowerSearch = search.toLowerCase();
+      result = result.filter((owner) => {
+        const nameMatch = (owner.fullName || "").toLowerCase().includes(lowerSearch);
+        const phoneMatch = (owner.phone || "").toLowerCase().includes(lowerSearch);
+        const emailMatch = (owner.email || "").toLowerCase().includes(lowerSearch);
+        const nidMatch = (owner.nationalId || "").toLowerCase().includes(lowerSearch);
+        return nameMatch || phoneMatch || emailMatch || nidMatch;
+      });
+    }
+
+    result = [...result].sort((a, b) => {
+      let cmp = 0;
+      if (sortBy === "created") {
+        cmp = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+      } else if (sortBy === "name") {
+        cmp = (a.fullName || "").localeCompare(b.fullName || "");
+      } else if (sortBy === "phone") {
+        cmp = (a.phone || "").localeCompare(b.phone || "");
+      } else if (sortBy === "email") {
+        cmp = (a.email || "").localeCompare(b.email || "");
+      } else if (sortBy === "nid") {
+        cmp = (a.nationalId || "").localeCompare(b.nationalId || "");
+      }
+      return sortDir === "asc" ? cmp : -cmp;
     });
-  }, [list.data, search]);
+
+    return result;
+  }, [list.data, search, sortBy, sortDir]);
 
   return (
     <div>
@@ -168,6 +201,9 @@ function OwnersPage() {
         rowKey={(r) => r.id}
         onEdit={(r) => setEditing(r)}
         onDelete={auth.isStaff ? (r) => setDeleting(r) : undefined}
+        sortKey={sortBy}
+        sortDir={sortDir}
+        onSort={handleSort}
       />
 
       <OwnerDialog

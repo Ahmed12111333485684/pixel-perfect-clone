@@ -1,6 +1,6 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { api, getStoredToken, type UserDto, type Role } from "@/lib/api";
 import type { AppNavItem } from "@/lib/navigation";
@@ -64,6 +64,35 @@ function UsersPage() {
   const [editing, setEditing] = useState<UserDto | null>(null);
   const [deleting, setDeleting] = useState<UserDto | null>(null);
   const [resetting, setResetting] = useState<UserDto | null>(null);
+
+  const [sortBy, setSortBy] = useState<string>("created");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
+
+  const handleSort = (key: string) => {
+    if (sortBy === key) {
+      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortBy(key);
+      setSortDir("asc");
+    }
+  };
+
+  const sortedUsers = useMemo(() => {
+    if (!list.data) return [];
+    return [...list.data].sort((a, b) => {
+      let cmp = 0;
+      if (sortBy === "created") {
+        cmp = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+      } else if (sortBy === "username") {
+        cmp = (a.username || "").localeCompare(b.username || "");
+      } else if (sortBy === "role") {
+        cmp = (a.role || "").localeCompare(b.role || "");
+      } else if (sortBy === "owner") {
+        cmp = (a.ownerFullName || "").localeCompare(b.ownerFullName || "");
+      }
+      return sortDir === "asc" ? cmp : -cmp;
+    });
+  }, [list.data, sortBy, sortDir]);
 
   const upsert = useMutation({
     mutationFn: async (vals: {
@@ -140,6 +169,7 @@ function UsersPage() {
       key: "username",
       header: t("common.username"),
       cell: (r) => <span className="font-medium">{r.username}</span>,
+      sortable: true,
     },
     {
       key: "role",
@@ -151,6 +181,7 @@ function UsersPage() {
           {t(`role.${r.role}`)}
         </StatusBadge>
       ),
+      sortable: true,
     },
     {
       key: "owner",
@@ -164,8 +195,9 @@ function UsersPage() {
         ) : (
           <span className="text-muted-foreground">—</span>
         ),
+      sortable: true,
     },
-    { key: "created", header: t("common.createdAt"), cell: (r) => formatDate(r.createdAt) },
+    { key: "created", header: t("common.createdAt"), cell: (r) => formatDate(r.createdAt), sortable: true },
     {
       key: "reset",
       header: "",
@@ -199,12 +231,15 @@ function UsersPage() {
       />
       <DataTable
         columns={cols}
-        rows={list.data}
+        rows={sortedUsers}
         loading={list.isLoading}
         error={list.error}
         rowKey={(r) => r.id}
         onEdit={setEditing}
         onDelete={setDeleting}
+        sortKey={sortBy}
+        sortDir={sortDir}
+        onSort={handleSort}
       />
 
       <UserDialog

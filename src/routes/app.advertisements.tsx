@@ -142,6 +142,18 @@ function AdvertisementsPage() {
   const [status, setStatus] = useState<string>("all");
   const [page, setPage] = useState(1);
   const [pageSize] = useState(20);
+  const [sortBy, setSortBy] = useState<string>("createdAt");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
+
+  const handleSort = (key: string) => {
+    if (sortBy === key) {
+      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortBy(key);
+      setSortDir("asc");
+    }
+    setPage(1);
+  };
   const [creating, setCreating] = useState(false);
   const [selected, setSelected] = useState<Advertisement | null>(null);
   const [deleting, setDeleting] = useState<Advertisement | null>(null);
@@ -162,8 +174,8 @@ function AdvertisementsPage() {
           query: {
             page: pageNumber,
             pageSize: 100,
-            sortBy: "createdAt",
-            sortDir: "desc",
+            sortBy: sortBy || undefined,
+            sortDir: sortDir || undefined,
           },
         });
 
@@ -303,11 +315,13 @@ function AdvertisementsPage() {
       key: "code",
       header: t("advertisements.code"),
       cell: (row) => <span className="font-medium">{row.code}</span>,
+      sortable: true,
     },
     {
       key: "status",
       header: t("advertisements.status"),
       cell: (row) => <StatusBadge tone={statusTone(row.status)}>{row.status}</StatusBadge>,
+      sortable: true,
     },
     {
       key: "propertyCodeOrFallback",
@@ -318,51 +332,61 @@ function AdvertisementsPage() {
       key: "propertyType",
       header: t("advertisements.propertyType"),
       cell: (row) => row.propertyType,
+      sortable: true,
     },
     {
       key: "adType",
       header: t("advertisements.adType"),
       cell: (row) => row.adType,
+      sortable: true,
     },
     {
       key: "installationType",
       header: t("advertisements.installationType"),
       cell: (row) => row.installationType,
+      sortable: true,
     },
     {
       key: "quantity",
       header: t("advertisements.quantity"),
       cell: (row) => row.quantity,
+      sortable: true,
     },
     {
       key: "locationChangeCount",
       header: t("advertisements.locationChangeCount"),
       cell: (row) => row.locationChangeCount,
+      sortable: true,
     },
     {
       key: "visitDate",
       header: t("advertisements.visitDate"),
       cell: (row) => (row.visitDate ? formatDate(row.visitDate) : "-"),
+      sortable: true,
     },
     {
       key: "expiryDate",
       header: t("advertisements.expiryDate"),
       cell: (row) => (row.expiryDate ? formatDate(row.expiryDate) : "-"),
+      sortable: true,
     },
     {
       key: "boardPrice",
       header: t("advertisements.boardPrice"),
       cell: (row) => row.boardPrice ?? "-",
+      sortable: true,
     },
     {
       key: "remainingAmount",
       header: t("advertisements.remainingAmount"),
       cell: (row) => row.remainingAmount ?? "-",
+      sortable: true,
     },
     {
       key: "officeName",
       header: t("advertisements.officeName"),
       cell: (row) => row.officeName || t("common.notProvided"),
+      sortable: true,
     },
   ];
 
@@ -450,6 +474,9 @@ function AdvertisementsPage() {
         onEdit={canManage ? (row) => setSelected(row) : undefined}
         onDelete={canManage ? (row) => setDeleting(row) : undefined}
         onRowClick={(row) => setSelected(row)}
+        sortKey={sortBy}
+        sortDir={sortDir}
+        onSort={handleSort}
       />
 
       {filteredAdvertisements.length > 0 && (

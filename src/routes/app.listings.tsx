@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
+import { ListingLocationMap } from "@/components/ListingLocationMap";
 import { Plus, X, LayoutGrid, List, FileImage } from "lucide-react";
 import { toast } from "sonner";
 import { PhoneField } from "@/components/form/PhoneField";
@@ -294,8 +295,18 @@ function CommercialListingsPage() {
   const [status, setStatus] = useState<string>("all");
   const [page, setPage] = useState(1);
   const [pageSize] = useState(20);
-  const [sortBy] = useState<string>("createdAt");
-  const [sortDir] = useState<"asc" | "desc">("desc");
+  const [sortBy, setSortBy] = useState<string>("createdAt");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
+
+  const handleSort = (key: string) => {
+    if (sortBy === key) {
+      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortBy(key);
+      setSortDir("asc");
+    }
+    setPage(1);
+  };
   const [creating, setCreating] = useState(false);
   const [selected, setSelected] = useState<CommercialListing | null>(null);
   const [deleting, setDeleting] = useState<CommercialListing | null>(null);
@@ -440,9 +451,9 @@ function CommercialListingsPage() {
   const listingCategoryLabel = (value?: string | null) => t(`listingCategory.${normalizeListingCategory(value)}`);
 
   const columns: Column<CommercialListing>[] = [
-    { key: "contactDate", header: t("commercialListings.contactDate"), cell: (r) => r.contactDate || t("common.notProvided") },
-    { key: "listingCategory", header: t("commercialListings.listingCategory"), cell: (r) => listingCategoryLabel(r.listingCategory) },
-    { key: "propertyStatus", header: t("commercialListings.propertyStatus"), cell: (r) => <StatusBadge tone={statusTone(r.propertyStatus)}>{statusLabel(r.propertyStatus)}</StatusBadge> },
+    { key: "contactDate", header: t("commercialListings.contactDate"), cell: (r) => r.contactDate || t("common.notProvided"), sortable: true },
+    { key: "listingCategory", header: t("commercialListings.listingCategory"), cell: (r) => listingCategoryLabel(r.listingCategory), sortable: true },
+    { key: "propertyStatus", header: t("commercialListings.propertyStatus"), cell: (r) => <StatusBadge tone={statusTone(r.propertyStatus)}>{statusLabel(r.propertyStatus)}</StatusBadge>, sortable: true },
     {
       key: "dealThrough", header: t("commercialListings.dealThrough"), cell: (r) => {
         const normalized = normalizeValue(r.dealThrough);
@@ -450,22 +461,22 @@ function CommercialListingsPage() {
         if (normalized === DEAL_THROUGH_OWNER) return t("commercialListings.dealThroughOwner");
         if (normalized === DEAL_THROUGH_OFFICE) return t("commercialListings.dealThroughOffice");
         return r.dealThrough || t("common.notProvided");
-      }
+      }, sortable: true
     },
     { key: "brokerageContractsCount", header: t("commercialListings.brokerageContracts"), cell: (r) => { const count = r.brokerageContracts?.length ?? 0; return count > 0 ? `${count}` : t("common.notProvided"); } },
-    { key: "ownerName", header: t("commercialListings.ownerName"), cell: (r) => <span className="font-medium">{r.ownerName || t("common.notProvided")}</span> },
+    { key: "ownerName", header: t("commercialListings.ownerName"), cell: (r) => <span className="font-medium">{r.ownerName || t("common.notProvided")}</span>, sortable: true },
     { key: "deedNumber", header: t("commercialListings.deedNumber"), cell: (r) => (r.deedNumber ? <span className="font-mono text-sm">{r.deedNumber}</span> : t("common.notProvided")) },
     { key: "mobile1", header: t("commercialListings.mobile1"), cell: (r) => r.mobile1 || t("common.notProvided") },
-    { key: "propertyType", header: t("commercialListings.propertyType"), cell: (r) => r.propertyType ? t(`propertyType.${r.propertyType}`, { defaultValue: r.propertyType }) : t("common.notProvided") },
-    { key: "rentAmount", header: t("commercialListings.rentAmount"), cell: (r) => r.rentAmount || t("common.notProvided") },
-    { key: "paymentType", header: t("commercialListings.paymentType"), cell: (r) => r.paymentType || t("common.notProvided") },
-    { key: "location", header: t("commercialListings.location"), cell: (r) => r.location || t("common.notProvided") },
+    { key: "propertyType", header: t("commercialListings.propertyType"), cell: (r) => r.propertyType ? t(`propertyType.${r.propertyType}`, { defaultValue: r.propertyType }) : t("common.notProvided"), sortable: true },
+    { key: "rentAmount", header: t("commercialListings.rentAmount"), cell: (r) => r.rentAmount || t("common.notProvided"), sortable: true },
+    { key: "paymentType", header: t("commercialListings.paymentType"), cell: (r) => r.paymentType || t("common.notProvided"), sortable: true },
+    { key: "location", header: t("commercialListings.location"), cell: (r) => r.location || t("common.notProvided"), sortable: true },
     { key: "amenities", header: t("nav.amenities", { defaultValue: "Amenities" }), cell: (r) => r.amenities && r.amenities.length > 0 ? (
       <div className="flex flex-wrap gap-1">
         {r.amenities.map(a => <span key={a.id} className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">{a.name}</span>)}
       </div>
     ) : t("common.notProvided") },
-    { key: "employee", header: t("common.employee"), cell: (r) => r.employee || t("common.notProvided") },
+    { key: "employee", header: t("common.employee"), cell: (r) => r.employee || t("common.notProvided"), sortable: true },
   ];
 
   if (!hasAccess) {
@@ -596,6 +607,30 @@ function CommercialListingsPage() {
               </SelectContent>
             </Select>
           </div>
+          <div className="w-full">
+            <Label className="text-xs font-medium">ترتيب حسب</Label>
+            <Select
+              value={`${sortBy}-${sortDir}`}
+              onValueChange={(val) => {
+                const [k, d] = val.split("-");
+                setSortBy(k);
+                setSortDir(d as "asc" | "desc");
+                setPage(1);
+              }}
+            >
+              <SelectTrigger className="mt-1 w-full">
+                <SelectValue placeholder="ترتيب حسب" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="createdAt-desc">الأحدث</SelectItem>
+                <SelectItem value="createdAt-asc">الأقدم</SelectItem>
+                <SelectItem value="contactDate-desc">تاريخ التواصل (الأحدث)</SelectItem>
+                <SelectItem value="contactDate-asc">تاريخ التواصل (الأقدم)</SelectItem>
+                <SelectItem value="rentAmount-desc">السعر (الأعلى)</SelectItem>
+                <SelectItem value="rentAmount-asc">السعر (الأقل)</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
         <div className="flex items-center justify-between">
@@ -648,6 +683,9 @@ function CommercialListingsPage() {
           onEdit={canManage ? (row) => setSelected(row) : undefined}
           onDelete={canManage ? (row) => setDeleting(row) : undefined}
           onRowClick={(row) => setSelected(row)}
+          sortKey={sortBy}
+          sortDir={sortDir}
+          onSort={handleSort}
         />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
@@ -921,6 +959,7 @@ function CommercialListingDialog({
   const [isOfficeListing, setIsOfficeListing] = useState<boolean>(Boolean(listing?.isOfficeListing));
   const [publicVisible, setPublicVisible] = useState<boolean>(Boolean(listing?.publicVisible));
   const [parentId, setParentId] = useState<number | null>(listing?.parentId ?? null);
+  const [coordinates, setCoordinates] = useState<string>(listing?.coordinates ?? "");
   const [selectedAmenityIds, setSelectedAmenityIds] = useState<number[]>(() => listing?.amenities?.map(a => a.id) ?? []);
   const [contracts, setContracts] = useState<BrokerageContractFormValue[]>(() => {
     const initialContracts = listing?.brokerageContracts?.length ? listing?.brokerageContracts : [null];
@@ -966,6 +1005,7 @@ function CommercialListingDialog({
       setIsOfficeListing(Boolean(listing?.isOfficeListing));
       setPublicVisible(Boolean(listing?.publicVisible));
       setParentId(listing?.parentId ?? null);
+      setCoordinates(listing?.coordinates ?? "");
       setSelectedAmenityIds(listing?.amenities?.map(a => a.id) ?? []);
       setContracts(listing?.brokerageContracts?.length
         ? listing.brokerageContracts.map((contract) => ({
@@ -1155,7 +1195,21 @@ function CommercialListingDialog({
           <TextField id="rentAmount" label={listingType === "Sale" ? t("commercialListings.salePrice") : t("commercialListings.rentAmount")} defaultValue={listing?.rentAmount} readOnly={readOnly} type="number" min={0} />
           <TextField id="paymentType" label={t("commercialListings.paymentType")} defaultValue={listing?.paymentType} readOnly={readOnly} />
           <TextField id="location" label={t("commercialListings.location")} defaultValue={listing?.location} readOnly={readOnly} />
-          <TextField id="coordinates" label={t("commercialListings.coordinates")} defaultValue={listing?.coordinates} readOnly={readOnly} />
+          <div className="space-y-3 sm:col-span-2">
+            <TextField
+              id="coordinates"
+              label={t("commercialListings.coordinates")}
+              defaultValue={listing?.coordinates}
+              value={coordinates}
+              onChange={setCoordinates}
+              readOnly={readOnly}
+            />
+            <ListingLocationMap
+              coordinates={coordinates}
+              onCoordinatesChange={readOnly ? undefined : setCoordinates}
+              editable={!readOnly}
+            />
+          </div>
           <div className="flex items-center gap-3 rounded-lg border border-border bg-background px-3 py-3">
             <Checkbox id="hasKey" checked={hasKey} onCheckedChange={(checked) => setHasKey(checked === true)} disabled={readOnly} />
             <div className="space-y-1">
@@ -1294,6 +1348,8 @@ function TextField({
   id,
   label,
   defaultValue,
+  value,
+  onChange,
   readOnly,
   type = "text",
   min,
@@ -1301,6 +1357,8 @@ function TextField({
   id: string;
   label: string;
   defaultValue?: string | number | null;
+  value?: string | number;
+  onChange?: (value: string) => void;
   readOnly: boolean;
   type?: "text" | "number";
   min?: number;
@@ -1315,7 +1373,9 @@ function TextField({
         name={id}
         type={type}
         min={min}
-        defaultValue={defaultValue ?? ""}
+        defaultValue={value === undefined ? defaultValue ?? "" : undefined}
+        value={value}
+        onChange={onChange ? (e) => onChange(e.target.value) : undefined}
         readOnly={readOnly}
         disabled={readOnly}
         className="mt-1"

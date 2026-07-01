@@ -541,6 +541,7 @@ export interface ResidentialSeeker {
   id: number;
   serialNumber?: string | null;
   requestDate?: string | null;
+  reviewDate?: string | null;
   status?: string | null;
   employee?: string | null;
   receiver?: string | null;

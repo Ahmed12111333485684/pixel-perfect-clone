@@ -271,7 +271,8 @@ function LeadsPage() {
         lead.ownerNationalId,
         lead.partnerName,
         lead.propertyId == null ? "" : String(lead.propertyId),
-      ].some((value) => value.toLowerCase().includes(lowerSearch));
+      ].some((value) => !!value && value.toLowerCase().includes(lowerSearch))
+      // .some((value) => value.toLowerCase().includes(lowerSearch));
 
       return intentMatch && statusMatch && searchMatch;
     });
@@ -463,9 +464,9 @@ function LeadsPage() {
                   <div className="font-medium">
                     {selected.listedPrice
                       ? new Intl.NumberFormat(undefined, {
-                          style: "currency",
-                          currency: "USD",
-                        }).format(selected.listedPrice)
+                        style: "currency",
+                        currency: "USD",
+                      }).format(selected.listedPrice)
                       : t("common.notProvided")}
                   </div>
                 </div>
@@ -652,11 +653,11 @@ function LeadsPage() {
             notes: String(fd.get("notes") ?? "") || undefined,
             commissionAmount: editing.partnerId
               ? (() => {
-                  const value = String(fd.get("commissionAmount") ?? "").trim();
-                  if (!value) return null;
-                  const parsed = Number(value);
-                  return Number.isNaN(parsed) ? null : parsed;
-                })()
+                const value = String(fd.get("commissionAmount") ?? "").trim();
+                if (!value) return null;
+                const parsed = Number(value);
+                return Number.isNaN(parsed) ? null : parsed;
+              })()
               : undefined,
             commissionStatus: editing.partnerId
               ? String(fd.get("commissionStatus") ?? "").trim() || null

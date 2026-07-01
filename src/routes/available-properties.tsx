@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
 import { api, resolveApiAssetUrl, type PublicListing } from "@/lib/api";
 import { BrandLogo } from "@/components/BrandLogo";
@@ -35,6 +36,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ListingLocationMap } from "@/components/ListingLocationMap";
 
 export const Route = createFileRoute("/available-properties")({
   head: () => ({
@@ -403,7 +405,7 @@ function ListingCard({ listing }: { listing: PublicListing }) {
         </div>
       </article>
 
-      {lightboxOpen && activeImage && (
+      {lightboxOpen && activeImage && typeof document !== "undefined" && createPortal(
         <ImageLightbox
           images={images.map((i) => ({
             url: resolveApiAssetUrl(i.url),
@@ -413,13 +415,19 @@ function ListingCard({ listing }: { listing: PublicListing }) {
           index={activeIndex}
           onIndexChange={setActiveIndex}
           onClose={() => setLightboxOpen(false)}
-        />
+        />,
+        document.body,
       )}
 
       <ListingDetailsDialog
         listing={listing}
         open={detailsOpen}
         onOpenChange={setDetailsOpen}
+        isLightboxOpen={lightboxOpen}
+        onOpenImage={(index) => {
+          setActiveIndex(index);
+          setLightboxOpen(true);
+        }}
       />
     </>
   );
@@ -459,7 +467,7 @@ function ImageLightbox({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4"
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 p-4 pointer-events-auto"
       onClick={onClose}
       role="dialog"
       aria-modal="true"
@@ -470,7 +478,7 @@ function ImageLightbox({
           e.stopPropagation();
           onClose();
         }}
-        className="absolute end-4 top-4 grid h-10 w-10 place-items-center rounded-full bg-white/10 text-white transition hover:bg-white/20"
+        className="absolute end-4 top-4 z-20 grid h-10 w-10 place-items-center rounded-full bg-white/10 text-white transition hover:bg-white/20"
         aria-label={t("common.close", { defaultValue: "Close" })}
       >
         <X className="h-5 w-5" />
@@ -484,7 +492,7 @@ function ImageLightbox({
               e.stopPropagation();
               onIndexChange((index - 1 + images.length) % images.length);
             }}
-            className="absolute start-4 top-1/2 grid h-12 w-12 -translate-y-1/2 place-items-center rounded-full bg-white/10 text-white transition hover:bg-white/20 rtl:rotate-180"
+            className="absolute start-4 top-1/2 z-20 grid h-12 w-12 -translate-y-1/2 place-items-center rounded-full bg-white/10 text-white transition hover:bg-white/20 rtl:rotate-180"
             aria-label={t("common.previous", { defaultValue: "Previous" })}
           >
             <ChevronLeft className="h-6 w-6" />
@@ -495,7 +503,7 @@ function ImageLightbox({
               e.stopPropagation();
               onIndexChange((index + 1) % images.length);
             }}
-            className="absolute end-4 top-1/2 grid h-12 w-12 -translate-y-1/2 place-items-center rounded-full bg-white/10 text-white transition hover:bg-white/20 rtl:rotate-180"
+            className="absolute end-4 top-1/2 z-20 grid h-12 w-12 -translate-y-1/2 place-items-center rounded-full bg-white/10 text-white transition hover:bg-white/20 rtl:rotate-180"
             aria-label={t("common.next", { defaultValue: "Next" })}
           >
             <ChevronRight className="h-6 w-6" />
@@ -504,7 +512,7 @@ function ImageLightbox({
       )}
 
       <figure
-        className="flex max-h-full max-w-6xl flex-col items-center"
+        className="relative z-10 flex max-h-full max-w-6xl flex-col items-center"
         onClick={(e) => e.stopPropagation()}
       >
         <MediaPreview
@@ -562,10 +570,14 @@ function ListingDetailsDialog({
   listing,
   open,
   onOpenChange,
+  isLightboxOpen,
+  onOpenImage,
 }: {
   listing: PublicListing;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  isLightboxOpen?: boolean;
+  onOpenImage?: (index: number) => void;
 }) {
   const { t } = useTranslation();
 
@@ -575,28 +587,50 @@ function ListingDetailsDialog({
     .slice()
     .sort((a, b) => a.sortOrder - b.sortOrder || a.id - b.id);
   const primary = images.find((i) => i.isPrimary) ?? images[0];
+  const primaryIndex = primary ? images.findIndex((i) => i.id === primary.id) : 0;
 
   const detailFields: { label: string; icon: React.ReactNode; value?: string | null }[] = [
     { label: t("common.rooms"), icon: <DoorOpen className="h-4 w-4" />, value: listing.roomsCount },
     { label: t("common.buildingAge"), icon: <Building2 className="h-4 w-4" />, value: listing.buildingAge },
     { label: t("commercialListings.availableUnits"), icon: <Layers className="h-4 w-4" />, value: listing.availableUnits },
     { label: t("common.paymentType"), icon: <BadgeDollarSign className="h-4 w-4" />, value: listing.paymentType },
-    { label: t("common.coordinates"), icon: <MapPin className="h-4 w-4" />, value: listing.coordinates },
+    // { label: t("common.coordinates"), icon: <MapPin className="h-4 w-4" />, value: listing.coordinates },
   ].filter(f => f.value != null && f.value !== "");
 
   const priceLabel = listing.listingType === "Sale" ? t("common.salePrice") : t("common.monthlyRent");
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl p-0 overflow-hidden bg-card/95 backdrop-blur-md">
+      <DialogContent
+        className="max-w-4xl p-0 overflow-hidden bg-card/95 backdrop-blur-md"
+        onPointerDownOutside={(event) => {
+          if (isLightboxOpen) event.preventDefault();
+        }}
+        onInteractOutside={(event) => {
+          if (isLightboxOpen) event.preventDefault();
+        }}
+        onEscapeKeyDown={(event) => {
+          if (isLightboxOpen) event.preventDefault();
+        }}
+      >
         <ScrollArea className="max-h-[90vh] overflow-y-auto">
           <div className="relative aspect-video w-full bg-muted lg:aspect-[21/9]">
             {primary ? (
-              <MediaPreview
-                src={resolveApiAssetUrl(primary.url)}
-                alt={primary.originalFileName || listing.offerCode || ""}
-                className="h-full w-full object-cover"
-              />
+              <button
+                type="button"
+                className="group relative h-full w-full cursor-zoom-in"
+                onClick={() => onOpenImage?.(primaryIndex >= 0 ? primaryIndex : 0)}
+                aria-label={t("publicProperties.zoomImage", { defaultValue: "Zoom image" })}
+              >
+                <MediaPreview
+                  src={resolveApiAssetUrl(primary.url)}
+                  alt={primary.originalFileName || listing.offerCode || ""}
+                  className="h-full w-full object-cover transition group-hover:scale-[1.02]"
+                />
+                <span className="pointer-events-none absolute end-3 top-3 grid h-9 w-9 place-items-center rounded-full bg-black/45 text-white opacity-0 backdrop-blur transition group-hover:opacity-100">
+                  <ZoomIn className="h-4 w-4" />
+                </span>
+              </button>
             ) : (
               <div className="flex h-full w-full flex-col items-center justify-center gap-2 text-muted-foreground">
                 <ImagePlus className="h-8 w-8" />
@@ -667,13 +701,13 @@ function ListingDetailsDialog({
                   </div>
                 )}
 
-                {((listing.amenities && listing.amenities.length > 0) || listing.hasElevator) && (
+                {/* {((listing.amenities && listing.amenities.length > 0) || listing.hasElevator) && (
                   <div className="rounded-xl border border-border bg-gradient-to-br from-background to-muted/30 p-5 shadow-sm">
                     <h3 className="mb-4 flex items-center gap-2 font-semibold">
                       <Tag className="h-5 w-5 text-gold" />
                       {t("nav.amenities", { defaultValue: "Amenities" })}
                     </h3>
-                    <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                       {listing.amenities?.map((a) => (
                         <div
                           key={a.id}
@@ -688,8 +722,36 @@ function ListingDetailsDialog({
                           <Layers className="h-4 w-4 text-gold" />
                           {t("common.elevator")}
                         </div>
-                      )}
+                      )}  
                     </div>
+                  </div>
+                )} */}
+
+                {listing.coordinates && (
+                  <div className="rounded-xl border border-border bg-background p-5 shadow-sm">
+                    <h3 className="mb-4 flex items-center gap-2 font-semibold">
+                      <MapPin className="h-5 w-5 text-gold" />
+                      {t("commercialListings.coordinates")}
+                    </h3>
+                    <ListingLocationMap
+                      coordinates={listing.coordinates}
+                      className="space-y-2"
+                      heightClassName="h-[34rem]"
+                    />
+                    <Button
+                      asChild
+                      variant="outline"
+                      className="mt-4 w-full flex items-center justify-center gap-2"
+                    >
+                      <a
+                        href={`https://www.google.com/maps/search/?api=1&query=${listing.coordinates}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        <MapPin className="h-4 w-4 text-gold" />
+                        فتح في خرائط جوجل
+                      </a>
+                    </Button>
                   </div>
                 )}
               </div>
@@ -727,6 +789,32 @@ function ListingDetailsDialog({
                     </div>
                   </div>
                 </div>
+
+                {((listing.amenities && listing.amenities.length > 0) || listing.hasElevator) && (
+                  <div className="rounded-xl border border-border bg-gradient-to-br from-background to-muted/30 p-5 shadow-sm">
+                    <h3 className="mb-4 flex items-center gap-2 font-semibold">
+                      <Tag className="h-5 w-5 text-gold" />
+                      {t("nav.amenities", { defaultValue: "Amenities" })}
+                    </h3>
+                    <div className="grid grid-cols-1 gap-2">
+                      {listing.amenities?.map((a) => (
+                        <div
+                          key={a.id}
+                          className="flex items-center gap-2 rounded-lg border border-border/50 bg-background px-3 py-2 text-sm shadow-sm transition-colors hover:border-gold/30 hover:bg-gold/5"
+                        >
+                          <div className="h-2 w-2 rounded-full bg-gold" />
+                          {a.name}
+                        </div>
+                      ))}
+                      {listing.hasElevator && (
+                        <div className="flex items-center gap-2 rounded-lg border border-border/50 bg-background px-3 py-2 text-sm shadow-sm">
+                          <Layers className="h-4 w-4 text-gold" />
+                          {t("common.elevator")}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
