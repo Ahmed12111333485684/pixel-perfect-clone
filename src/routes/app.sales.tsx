@@ -19,7 +19,8 @@ import {
 import { FormDialog } from "@/components/FormDialog";
 import { Plus } from "lucide-react";
 import { toast } from "sonner";
-import { formatDate, formatMoney } from "@/lib/format";
+import { Money } from "@/components/icons/RiyalIcon";
+import { formatDate } from "@/lib/format";
 
 export const Route = createFileRoute("/app/sales")({ component: SalesPage });
 
@@ -87,7 +88,7 @@ function SalesPage() {
     {
       key: "price",
       header: t("common.salePrice"),
-      cell: (r) => <span className="font-medium">{formatMoney(r.salePrice)}</span>,
+      cell: (r) => <span className="font-medium"><Money amount={r.salePrice} /></span>,
     },
     { key: "sold", header: t("common.soldAt"), cell: (r) => formatDate(r.soldAt) },
   ];

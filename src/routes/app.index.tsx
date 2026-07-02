@@ -23,21 +23,23 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   TrendingUp,
-  DollarSign,
   AlertTriangle,
   CheckCircle2,
   Clock,
   Plus,
-  BadgeDollarSign,
   Percent,
   Wallet,
   Activity,
+  Tag,
+  Receipt,
+  CreditCard,
 } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Money } from "@/components/icons/RiyalIcon";
 import { formatMoney, formatDate } from "@/lib/format";
 import {
   ResponsiveContainer,
@@ -497,17 +499,17 @@ function Dashboard() {
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <KpiCard
           label={t("dashboard.totalRevenue")}
-          value={formatMoney(stats.periodRevenue)}
+          value={<Money amount={stats.periodRevenue} />}
           delta={stats.revenueDelta}
-          icon={<DollarSign className="h-5 w-5" />}
+          icon={<Wallet className="h-5 w-5" />}
           accent="gold"
           loading={loading}
         />
         <KpiCard
           label={t("dashboard.salesVolume")}
-          value={formatMoney(stats.periodSales)}
+          value={<Money amount={stats.periodSales} />}
           delta={stats.salesDelta}
-          icon={<BadgeDollarSign className="h-5 w-5" />}
+          icon={<TrendingUp className="h-5 w-5" />}
           loading={loading}
         />
         <KpiCard
@@ -760,17 +762,17 @@ function Dashboard() {
         <DetailStat
           icon={<Wallet className="h-5 w-5" />}
           label={t("dashboard.avgRent")}
-          value={formatMoney(stats.avgRent)}
+          value={<Money amount={stats.avgRent} />}
         />
         <DetailStat
-          icon={<BadgeDollarSign className="h-5 w-5" />}
+          icon={<Tag className="h-5 w-5" />}
           label={t("dashboard.avgSalePrice")}
-          value={formatMoney(stats.avgSalePrice)}
+          value={<Money amount={stats.avgSalePrice} />}
         />
         <DetailStat
           icon={<TrendingUp className="h-5 w-5" />}
           label={t("dashboard.portfolioValue")}
-          value={formatMoney(stats.portfolioValue)}
+          value={<Money amount={stats.portfolioValue} />}
           accent
         />
       </div>
@@ -898,11 +900,9 @@ function Dashboard() {
           </div>
           <div className="mt-4">
             <DetailStat
-              icon={<DollarSign className="h-5 w-5" />}
+              icon={<Receipt className="h-5 w-5" />}
               label={t("expenses.totalThisMonth")}
-              value={formatMoney(
-                (expenses.data ?? []).reduce((sum, e) => sum + Number(e.amount || 0), 0)
-              )}
+              value={<Money amount={(expenses.data ?? []).reduce((sum, e) => sum + Number(e.amount || 0), 0)} />}
               accent
             />
           </div>
@@ -938,7 +938,7 @@ function Dashboard() {
           loading={payments.isLoading}
           items={upcomingPayments.map((p) => ({
             key: p.id,
-            primary: formatMoney(p.amount),
+            primary: <Money amount={p.amount} />,
             secondary: `#${p.contractId} · ${t("common.dueDate")}: ${formatDate(p.dueDate)}`,
             meta: (
               <Badge
@@ -959,7 +959,7 @@ function Dashboard() {
           loading={sales.isLoading}
           items={recentSales.map((s) => ({
             key: s.id,
-            primary: formatMoney(s.salePrice),
+            primary: <Money amount={s.salePrice} />,
             secondary: `#${s.deedNumber}`,
             meta: <CheckCircle2 className="h-3.5 w-3.5 text-success" />,
             tail: formatDate(s.soldAt),
@@ -1041,7 +1041,7 @@ function Dashboard() {
             )}
             <QuickAction
               to="/app/payments"
-              icon={<DollarSign className="h-4 w-4" />}
+              icon={<CreditCard className="h-4 w-4" />}
               label={t("dashboard.collectPayment")}
               badge={stats.overdue > 0 ? String(stats.overdue) : undefined}
               destructive={stats.overdue > 0}
@@ -1067,7 +1067,7 @@ function KpiCard({
   help,
 }: {
   label: string;
-  value: string;
+  value: React.ReactNode;
   delta?: number;
   subtitle?: string;
   icon: React.ReactNode;
@@ -1179,7 +1179,7 @@ function DetailStat({
 }: {
   icon: React.ReactNode;
   label: string;
-  value: string;
+  value: React.ReactNode;
   accent?: boolean;
 }) {
   return (

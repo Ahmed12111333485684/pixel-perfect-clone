@@ -19,7 +19,8 @@ import {
 import { FormDialog, ConfirmDialog } from "@/components/FormDialog";
 import { Plus } from "lucide-react";
 import { toast } from "sonner";
-import { paymentStatusTone, formatDate, formatMoney } from "@/lib/format";
+import { Money } from "@/components/icons/RiyalIcon";
+import { paymentStatusTone, formatDate } from "@/lib/format";
 
 const STATUSES: PaymentStatusT[] = ["Pending", "Paid", "Overdue"];
 
@@ -78,7 +79,7 @@ function PaymentsPage() {
     {
       key: "amount",
       header: t("common.amount"),
-      cell: (r) => <span className="font-medium">{formatMoney(r.amount)}</span>,
+      cell: (r) => <span className="font-medium"><Money amount={r.amount} /></span>,
     },
     { key: "due", header: t("common.dueDate"), cell: (r) => formatDate(r.dueDate) },
     { key: "paid", header: t("common.paidDate"), cell: (r) => formatDate(r.paidDate) },

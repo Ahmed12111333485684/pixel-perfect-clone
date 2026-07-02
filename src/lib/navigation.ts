@@ -1,5 +1,4 @@
 import {
-  BadgeDollarSign,
   Building2,
   ClipboardList,
   ContactRound,
@@ -15,6 +14,7 @@ import {
   Users,
   Users2,
 } from "lucide-react";
+import { RiyalIcon } from "@/components/icons/RiyalIcon";
 import type { ComponentType } from "react";
 
 import type { Role } from "./api";
@@ -49,7 +49,7 @@ export const APP_NAV_ITEMS: AppNavItem[] = [
   { to: "/app/payments", label: "nav.payments", icon: CreditCard },
   { to: "/app/expenses", label: "nav.expenses", icon: Receipt },
   { to: "/app/buyers", label: "nav.buyers", icon: ShoppingBag, staffOnly: true },
-  { to: "/app/sales", label: "nav.sales", icon: BadgeDollarSign },
+  { to: "/app/sales", label: "nav.sales", icon: RiyalIcon },
   { to: "/app/leads", label: "nav.leads", icon: Inbox, staffOnly: true },
   { to: "/app/listings", label: "nav.listings", icon: Building2 },
   { to: "/app/residential-seekers", label: "nav.residentialSeekers", icon: Users2 },

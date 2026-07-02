@@ -50,8 +50,7 @@ export function formatDateTime(d?: string | null) {
 export function formatMoney(n: number | undefined | null) {
   if (n === undefined || n === null) return "—";
   return new Intl.NumberFormat(undefined, {
-    style: "currency",
-    currency: "USD",
+    minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(Number(n));
 }

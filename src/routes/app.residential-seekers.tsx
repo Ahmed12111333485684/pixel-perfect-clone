@@ -15,7 +15,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { BadgeDollarSign, Building2, MapPin, Plus, Sparkles, X, LayoutGrid, List } from "lucide-react";
+import { Building2, MapPin, Plus, Sparkles, X, LayoutGrid, List } from "lucide-react";
+import { RiyalIcon } from "@/components/icons/RiyalIcon";
 import { toast } from "sonner";
 import { ComboboxField } from "@/components/form/ComboboxField";
 import { PhoneField } from "@/components/form/PhoneField";
@@ -884,7 +885,7 @@ function ResidentialSeekerDialog({
                         {property.district && <span>{property.district}</span>}
                         {(property.rentPrice ?? property.salePrice) != null && (
                           <span className="inline-flex items-center gap-1">
-                            <BadgeDollarSign className="h-3.5 w-3.5" />
+                            <RiyalIcon className="h-3.5 w-3.5" />
                             {(property.rentPrice ?? property.salePrice)!.toLocaleString()}
                           </span>
                         )}

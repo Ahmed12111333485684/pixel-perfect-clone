@@ -19,7 +19,8 @@ import {
 import { FormDialog, ConfirmDialog } from "@/components/FormDialog";
 import { Plus } from "lucide-react";
 import { toast } from "sonner";
-import { contractStatusTone, formatDate, formatMoney } from "@/lib/format";
+import { Money } from "@/components/icons/RiyalIcon";
+import { contractStatusTone, formatDate } from "@/lib/format";
 import { FormField } from "./app.owners";
 
 const STATUSES: ContractStatus[] = ["Active", "Expired", "Terminated", "Pending"];
@@ -111,7 +112,7 @@ function ContractsPage() {
       header: t("nav.tenants"),
       cell: (r) => tenantLabelById.get(r.tenantId) ?? `#${r.tenantId}`,
     },
-    { key: "rent", header: t("common.monthlyRent"), cell: (r) => formatMoney(r.monthlyRent) },
+    { key: "rent", header: t("common.monthlyRent"), cell: (r) => <Money amount={r.monthlyRent} /> },
     { key: "start", header: t("common.startDate"), cell: (r) => formatDate(r.startDate) },
     { key: "end", header: t("common.endDate"), cell: (r) => formatDate(r.endDate) },
     {
