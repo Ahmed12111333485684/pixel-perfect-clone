@@ -59,12 +59,12 @@ export function PublicFooter() {
                 <span>عروض الإيجارات العقارية</span>
               </a>
             </li>
-            <li>
+            {/* <li>
               <a href="https://wa.me/966597948787" target="_blank" rel="noreferrer" className="flex items-center gap-2 group hover:text-foreground transition">
                 <span className="text-base">📞</span>
                 <span>خدمة العملاء</span>
               </a>
-            </li>
+            </li> */}
             <li>
               <a href="https://whatsapp.com/channel/0029VbBAa2yL7UVPVVQosX2i" target="_blank" rel="noreferrer" className="flex items-center gap-2 group hover:text-foreground transition">
                 <span className="text-base">☀️</span>

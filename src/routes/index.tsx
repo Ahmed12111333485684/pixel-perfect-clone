@@ -33,10 +33,10 @@ function Landing() {
     <div className="min-h-screen bg-background">
       <header className="absolute inset-x-0 top-0 z-20">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-5">
-          <div className="text-white">
+          <div className="max-w-7xl px-6 py-5 backdrop-blur-sm ">
             <BrandLogo />
           </div>
-          <div className="flex items-center gap-2 text-white">
+          <div className="flex items-center gap-2 backdrop-blur-sm text-white">
             <LanguageToggle />
             <Link
               to="/login"
