@@ -80,7 +80,6 @@ export function ListingLocationMap({
         doubleClickZoom: editable,
         boxZoom: editable,
         keyboard: editable,
-        tap: false,
       });
 
       leaflet
