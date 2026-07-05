@@ -149,7 +149,7 @@ export default function PropertyDetailsForm({
                   <Label>{f.label}</Label>
                   <Input
                     type="number"
-                    value={val ?? ""}
+                    value={(val ?? "") as string | number}
                     onChange={(e) => {
                       const next = { ...value };
                       const nextValue = e.target.value === "" ? null : Number(e.target.value);
