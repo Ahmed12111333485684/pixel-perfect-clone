@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { BrandLogo } from "@/components/BrandLogo";
 import { LanguageToggle } from "@/components/LanguageToggle";
 import { PublicFooter } from "@/components/PublicFooter";
+import { Card } from "@/components/ui/card";
 import heroImg from "@/assets/hero-property.png";
 
 export const Route = createFileRoute("/")({
@@ -36,11 +37,11 @@ function Landing() {
           <div className="relative inline-flex items-center justify-center">
             <div
               aria-hidden
-              className="absolute inset-x-[-32px] inset-y-[-24px] -z-10 rounded-full bg-white/30 blur-[48px]"
+              className="absolute inset-x-[-32px] inset-y-[-24px] -z-10 rounded-full bg-white/30 blur-[48px] motion-safe:animate-pulse"
             />
             <BrandLogo />
           </div>
-          <div className="flex items-center gap-2 text-white motion-safe:animate-in motion-safe:fade-in-0 duration-500 delay-150">
+          <div className="flex items-center gap-2 text-white motion-safe:animate-in motion-safe:fade-in-0 motion-safe:zoom-in-95 duration-500 delay-150">
             <LanguageToggle />
             <Link
               to="/login"
@@ -64,17 +65,17 @@ function Landing() {
           aria-hidden
         />
         <div className="mx-auto flex max-w-7xl flex-col items-start gap-8 px-6 pb-24 pt-40 text-white md:pt-56">
-          <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-medium backdrop-blur motion-safe:animate-in motion-safe:fade-in-0 duration-700">
+          <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-medium backdrop-blur motion-safe:animate-in motion-safe:fade-in-0 motion-safe:zoom-in-95 duration-700">
             <Sparkles className="h-3.5 w-3.5 text-gold" />
             {t("brand.tagline")}
           </span>
-          <h1 className="max-w-3xl text-balance font-display text-5xl font-bold leading-tight tracking-tight md:text-7xl motion-safe:animate-in motion-safe:fade-in-0 duration-700 delay-100">
+          <h1 className="max-w-3xl text-balance font-display text-5xl font-bold leading-tight tracking-tight md:text-7xl motion-safe:animate-in motion-safe:fade-in-0 motion-safe:zoom-in-95 duration-700 delay-100">
             {t("landing.heroTitle")}
           </h1>
-          <p className="max-w-2xl text-balance text-lg text-white/85 md:text-xl motion-safe:animate-in motion-safe:fade-in-0 duration-700 delay-200">
+          <p className="max-w-2xl text-balance text-lg text-white/85 md:text-xl motion-safe:animate-in motion-safe:fade-in-0 motion-safe:zoom-in-95 duration-700 delay-200">
             {t("landing.heroSubtitle")}
           </p>
-          <div className="flex flex-wrap gap-3 motion-safe:animate-in motion-safe:fade-in-0 duration-700 delay-300">
+          <div className="flex flex-wrap gap-3 motion-safe:animate-in motion-safe:fade-in-0 motion-safe:zoom-in-95 duration-700 delay-300">
             <Button
               asChild
               size="lg"
@@ -135,9 +136,9 @@ function Landing() {
               body: t("landing.feature3Body"),
             },
           ].map((f, i) => (
-            <div
+            <Card
               key={i}
-              className="group relative overflow-hidden rounded-2xl border border-border bg-card p-7 shadow-card transition hover:shadow-elegant motion-safe:animate-in motion-safe:fade-in-0 duration-700"
+              className="group relative overflow-hidden p-7 shadow-card transition hover:-translate-y-1 hover:shadow-elegant"
               style={{ animationDelay: `${i * 120}ms` }}
             >
               <div className="mb-5 inline-flex h-11 w-11 items-center justify-center rounded-xl bg-accent text-accent-foreground">
@@ -146,7 +147,7 @@ function Landing() {
               <h3 className="font-display text-xl font-semibold">{f.title}</h3>
               <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{f.body}</p>
               <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-gold/40 to-transparent opacity-0 transition group-hover:opacity-100" />
-            </div>
+            </Card>
           ))}
         </div>
       </section>
