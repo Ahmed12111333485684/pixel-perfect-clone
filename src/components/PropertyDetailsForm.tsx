@@ -178,7 +178,7 @@ export default function PropertyDetailsForm({
               <div key={key} className="space-y-2">
                 <Label>{f.label}</Label>
                 <Input
-                  value={val ?? ""}
+                  value={(val ?? "") as string | number}
                   onChange={(e) => {
                     const next = { ...value };
                     next[key] = e.target.value;
