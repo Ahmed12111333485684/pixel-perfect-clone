@@ -99,7 +99,7 @@ function Landing() {
               asChild
               size="lg"
               variant="outline"
-              className="border-white/40 bg-white/15 text-white shadow-lg shadow-black/10 backdrop-blur hover:bg-white/25 hover:text-white"
+              className="border-white/40 bg-white/15 text-white shadow-lg shadow-black/10 backdrop-blur transition-all duration-300 hover:-translate-y-0.5 hover:bg-white/25 hover:text-white"
             >
               <Link to="/available-properties">{t("publicProperties.browse")}</Link>
             </Button>
@@ -107,7 +107,7 @@ function Landing() {
               asChild
               size="lg"
               variant="outline"
-              className="border-white/40 bg-white/15 text-white shadow-lg shadow-black/10 backdrop-blur hover:bg-white/25 hover:text-white"
+              className="border-white/40 bg-white/15 text-white shadow-lg shadow-black/10 backdrop-blur transition-all duration-300 hover:-translate-y-0.5 hover:bg-white/25 hover:text-white"
             >
               <Link to="/property-request">
                 {t("landing.findProperty") || "Find Your Property"}
@@ -125,10 +125,10 @@ function Landing() {
               asChild
               size="lg"
               variant="outline"
-              className="border-white/40 bg-white/15 text-white shadow-lg shadow-black/10 backdrop-blur hover:bg-white/25 hover:text-white"
+              className="group/btn border-white/40 bg-white/15 text-white shadow-lg shadow-black/10 backdrop-blur transition-all duration-300 hover:-translate-y-0.5 hover:bg-white/25 hover:text-white"
             >
               <a href="#contact">
-                <Mail className="h-4 w-4" />
+                <Mail className="h-4 w-4 transition-transform duration-300 group-hover/btn:-rotate-12" />
                 {t("footer.contactCta")}
               </a>
             </Button>
@@ -150,10 +150,11 @@ function Landing() {
           ].map((f, i) => (
             <Card
               key={i}
-              className="group relative overflow-hidden p-7 shadow-card transition hover:-translate-y-1 hover:shadow-elegant"
-              style={{ animationDelay: `${i * 120}ms` }}
+              className="group relative overflow-hidden p-7 shadow-card transition-all duration-500 hover:-translate-y-2 hover:shadow-elegant motion-safe:animate-rise-in"
+              style={{ animationDelay: `${i * 150}ms` }}
             >
-              <div className="mb-5 inline-flex h-11 w-11 items-center justify-center rounded-xl bg-accent text-accent-foreground">
+              <div className="absolute inset-0 -z-10 bg-gradient-to-br from-gold/0 via-gold/0 to-gold/10 opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
+              <div className="mb-5 inline-flex h-11 w-11 items-center justify-center rounded-xl bg-accent text-accent-foreground transition-transform duration-500 group-hover:scale-110 group-hover:rotate-6">
                 <f.icon className="h-5 w-5" />
               </div>
               <h3 className="font-display text-xl font-semibold">{f.title}</h3>
