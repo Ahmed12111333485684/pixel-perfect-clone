@@ -87,11 +87,11 @@ function Landing() {
           <p className="max-w-2xl text-balance text-lg text-white/85 md:text-xl motion-safe:animate-in motion-safe:fade-in-0 motion-safe:slide-in-from-bottom-4 duration-1000 delay-300">
             {t("landing.heroSubtitle")}
           </p>
-          <div className="flex flex-wrap gap-3 motion-safe:animate-in motion-safe:fade-in-0 motion-safe:zoom-in-95 duration-700 delay-300">
+          <div className="flex flex-wrap gap-3 motion-safe:animate-in motion-safe:fade-in-0 motion-safe:slide-in-from-bottom-4 duration-1000 delay-500">
             <Button
               asChild
               size="lg"
-              className="bg-gold-gradient text-gold-foreground shadow-gold hover:opacity-95"
+              className="group bg-gold-gradient text-gold-foreground shadow-gold transition-all duration-300 hover:-translate-y-0.5 hover:opacity-95 hover:shadow-elegant"
             >
               <Link to="/list-property">{t("landing.listProperty")}</Link>
             </Button>
