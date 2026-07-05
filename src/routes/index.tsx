@@ -56,7 +56,7 @@ function Landing() {
       {/* Hero */}
       <section className="relative isolate overflow-hidden">
         <div
-          className="absolute inset-0 -z-10 bg-cover bg-center"
+          className="absolute inset-0 -z-10 bg-cover bg-center motion-safe:animate-ken-burns"
           style={{ backgroundImage: `url(${heroImg})` }}
           aria-hidden
         />
@@ -64,15 +64,27 @@ function Landing() {
           className="absolute inset-0 -z-10 bg-gradient-to-b from-primary/85 via-primary/70 to-primary/40"
           aria-hidden
         />
+        {/* Floating ambient orbs */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute -top-24 -left-24 -z-10 h-72 w-72 rounded-full bg-gold/20 blur-3xl motion-safe:animate-float-slow"
+        />
+        <div
+          aria-hidden
+          className="pointer-events-none absolute bottom-10 right-0 -z-10 h-80 w-80 rounded-full bg-primary/40 blur-3xl motion-safe:animate-float-slow"
+          style={{ animationDelay: "1.5s" }}
+        />
         <div className="mx-auto flex max-w-7xl flex-col items-start gap-8 px-6 pb-24 pt-40 text-white md:pt-56">
           <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-medium backdrop-blur motion-safe:animate-in motion-safe:fade-in-0 motion-safe:zoom-in-95 duration-700">
-            <Sparkles className="h-3.5 w-3.5 text-gold" />
-            {t("brand.tagline")}
+            <Sparkles className="h-3.5 w-3.5 text-gold motion-safe:animate-spin-slow" />
+            <span className="motion-safe:animate-shimmer bg-gradient-to-r from-white/70 via-white to-white/70 bg-clip-text text-transparent">
+              {t("brand.tagline")}
+            </span>
           </span>
-          <h1 className="max-w-3xl text-balance font-display text-5xl font-bold leading-tight tracking-tight md:text-7xl motion-safe:animate-in motion-safe:fade-in-0 motion-safe:zoom-in-95 duration-700 delay-100">
+          <h1 className="max-w-3xl text-balance font-display text-5xl font-bold leading-tight tracking-tight md:text-7xl motion-safe:animate-in motion-safe:fade-in-0 motion-safe:slide-in-from-bottom-4 duration-1000 delay-100">
             {t("landing.heroTitle")}
           </h1>
-          <p className="max-w-2xl text-balance text-lg text-white/85 md:text-xl motion-safe:animate-in motion-safe:fade-in-0 motion-safe:zoom-in-95 duration-700 delay-200">
+          <p className="max-w-2xl text-balance text-lg text-white/85 md:text-xl motion-safe:animate-in motion-safe:fade-in-0 motion-safe:slide-in-from-bottom-4 duration-1000 delay-300">
             {t("landing.heroSubtitle")}
           </p>
           <div className="flex flex-wrap gap-3 motion-safe:animate-in motion-safe:fade-in-0 motion-safe:zoom-in-95 duration-700 delay-300">
