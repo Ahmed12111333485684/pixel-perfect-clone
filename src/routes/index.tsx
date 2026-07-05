@@ -74,7 +74,7 @@ function Landing() {
           className="pointer-events-none absolute bottom-10 right-0 -z-10 h-80 w-80 rounded-full bg-primary/40 blur-3xl motion-safe:animate-float-slow"
           style={{ animationDelay: "1.5s" }}
         />
-        <div className="mx-auto flex max-w-7xl flex-col items-start gap-8 px-6 pb-40 pt-40 text-white md:pt-56">
+        <div className="mx-auto flex max-w-7xl flex-col items-start gap-8 px-6 pb-24 pt-40 text-white md:pt-56">
           <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-medium backdrop-blur motion-safe:animate-in motion-safe:fade-in-0 motion-safe:zoom-in-95 duration-700">
             <Sparkles className="h-3.5 w-3.5 text-gold motion-safe:animate-spin-slow" />
             <span className="motion-safe:animate-shimmer bg-gradient-to-r from-white/70 via-white to-white/70 bg-clip-text text-transparent">
@@ -113,6 +113,14 @@ function Landing() {
                 {t("landing.findProperty") || "Find Your Property"}
               </Link>
             </Button>
+            {/* <Button
+              asChild
+              size="lg"
+              variant="outline"
+              className="border-white/40 bg-white/15 text-white shadow-lg shadow-black/10 backdrop-blur hover:bg-white/25 hover:text-white"
+            >
+              <Link to="/login">{t("landing.backofficeSignIn")}</Link>
+            </Button> */}
             <Button
               asChild
               size="lg"
@@ -126,15 +134,10 @@ function Landing() {
             </Button>
           </div>
         </div>
-        {/* Soft transition into the card section */}
-        <div
-          className="pointer-events-none absolute inset-x-0 bottom-0 -z-10 h-48 bg-gradient-to-t from-background via-background/80 to-transparent"
-          aria-hidden
-        />
       </section>
 
       {/* Features */}
-      <section className="relative z-10 mx-auto -mt-24 max-w-7xl px-6 pb-20">
+      <section className="mx-auto max-w-7xl px-6 py-20">
         <div className="grid gap-6 md:grid-cols-3">
           {[
             { icon: ImagePlus, title: t("landing.feature1Title"), body: t("landing.feature1Body") },
