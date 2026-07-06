@@ -272,7 +272,7 @@ const en = {
     explore: "Explore",
     address: "Saudi Arabia",
     rights: "All rights reserved.",
-    madeWith: "Crafted with care.",
+    // madeWith: "Crafted with care.",
     contactCta: "Contact us",
   },
   lead: {
@@ -803,7 +803,7 @@ const ar = {
     explore: "استكشف",
     address: "المملكة العربية السعودية",
     rights: "جميع الحقوق محفوظة.",
-    madeWith: "صُنع بعناية.",
+    // madeWith: "صُنع بعناية.",
     contactCta: "تواصل معنا",
   },
   lead: {
