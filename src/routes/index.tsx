@@ -59,8 +59,54 @@ function Landing() {
     };
   }, []);
 
-  return (
-    <div className="min-h-screen bg-background">
+  const footerRef = useRef<HTMLElement | null>(null);
+  const [footerVisible, setFooterVisible] = useState(false);
+
+  useEffect(() => {
+    const section = cardsSectionRef.current;
+
+    if (!section) {
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setCardsVisible(true);
+        }
+      },
+      {
+        threshold: 0.35,
+        rootMargin: "0px 0px -12% 0px",
+      },
+    );
+
+    observer.observe(section);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, []);
+
+  useEffect(() => {
+    const footer = footerRef.current;
+    if (!footer) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setFooterVisible(true);
+        }
+      },
+      { threshold: 0.2 },
+    );
+
+    observer.observe(footer);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, []);
       <header className="absolute inset-x-0 top-0 z-22">
         <div className="relative h-[6.5rem] w-full">
           <div className="absolute -right-6 top-5 inline-flex items-center justify-center">
