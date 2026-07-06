@@ -144,47 +144,50 @@ function Landing() {
             {t("landing.heroSubtitle")}
           </p>
           <div className="flex flex-wrap gap-3">
-            {[
-              { to: "/list-property", label: t("landing.listProperty"), icon: null, variant: "gold" as const },
-              { to: "/available-properties", label: t("publicProperties.browse"), icon: null, variant: "outline" as const },
-              { to: "/property-request", label: t("landing.findProperty") || "Find Your Property", icon: null, variant: "outline" as const },
-              { href: "#contact", label: t("footer.contactCta"), icon: Mail, variant: "outline" as const },
-            ].map((action, i) => (
-              <div
-                key={i}
-                className="motion-safe:animate-rise-in"
-                style={{ animationDelay: `${0.5 + i * 0.12}s` }}
+            <div className="motion-safe:animate-rise-in" style={{ animationDelay: "0.5s" }}>
+              <Button
+                asChild
+                size="lg"
+                className="bg-gold-gradient text-gold-foreground shadow-gold transition-all hover:opacity-95 hover:-translate-y-0.5 hover:scale-105"
               >
-                {action.variant === "gold" ? (
-                  <Button
-                    asChild
-                    size="lg"
-                    className="bg-gold-gradient text-gold-foreground shadow-gold transition-all hover:opacity-95 hover:-translate-y-0.5 hover:scale-105"
-                  >
-                    <Link to={action.to!}>{action.label}</Link>
-                  </Button>
-                ) : (
-                  <Button
-                    asChild
-                    size="lg"
-                    variant="outline"
-                    className="border-white/40 bg-white/15 text-white shadow-lg shadow-black/10 backdrop-blur transition-all hover:bg-white/25 hover:text-white hover:-translate-y-0.5 hover:scale-105"
-                  >
-                    {action.to ? (
-                      <Link to={action.to}>
-                        {action.icon && <action.icon className="h-4 w-4" />}
-                        {action.label}
-                      </Link>
-                    ) : (
-                      <a href={action.href}>
-                        {action.icon && <action.icon className="h-4 w-4" />}
-                        {action.label}
-                      </a>
-                    )}
-                  </Button>
-                )}
-              </div>
-            ))}
+                <Link to="/list-property">{t("landing.listProperty")}</Link>
+              </Button>
+            </div>
+            <div className="motion-safe:animate-rise-in" style={{ animationDelay: "0.62s" }}>
+              <Button
+                asChild
+                size="lg"
+                variant="outline"
+                className="border-white/40 bg-white/15 text-white shadow-lg shadow-black/10 backdrop-blur transition-all hover:bg-white/25 hover:text-white hover:-translate-y-0.5 hover:scale-105"
+              >
+                <Link to="/available-properties">{t("publicProperties.browse")}</Link>
+              </Button>
+            </div>
+            <div className="motion-safe:animate-rise-in" style={{ animationDelay: "0.74s" }}>
+              <Button
+                asChild
+                size="lg"
+                variant="outline"
+                className="border-white/40 bg-white/15 text-white shadow-lg shadow-black/10 backdrop-blur transition-all hover:bg-white/25 hover:text-white hover:-translate-y-0.5 hover:scale-105"
+              >
+                <Link to="/property-request">
+                  {t("landing.findProperty") || "Find Your Property"}
+                </Link>
+              </Button>
+            </div>
+            <div className="motion-safe:animate-rise-in" style={{ animationDelay: "0.86s" }}>
+              <Button
+                asChild
+                size="lg"
+                variant="outline"
+                className="border-white/40 bg-white/15 text-white shadow-lg shadow-black/10 backdrop-blur transition-all hover:bg-white/25 hover:text-white hover:-translate-y-0.5 hover:scale-105"
+              >
+                <a href="#contact">
+                  <Mail className="h-4 w-4" />
+                  {t("footer.contactCta")}
+                </a>
+              </Button>
+            </div>
           </div>
         </div>
       </section>
