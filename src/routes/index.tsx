@@ -31,14 +31,13 @@ export const Route = createFileRoute("/")({
 function Landing() {
   const { t } = useTranslation();
   const cardsSectionRef = useRef<HTMLElement | null>(null);
+  const footerRef = useRef<HTMLElement | null>(null);
   const [cardsVisible, setCardsVisible] = useState(false);
+  const [footerVisible, setFooterVisible] = useState(false);
 
   useEffect(() => {
     const section = cardsSectionRef.current;
-
-    if (!section) {
-      return;
-    }
+    if (!section) return;
 
     const observer = new IntersectionObserver(
       ([entry]) => {
@@ -53,6 +52,26 @@ function Landing() {
     );
 
     observer.observe(section);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, []);
+
+  useEffect(() => {
+    const footer = footerRef.current;
+    if (!footer) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setFooterVisible(true);
+        }
+      },
+      { threshold: 0.2 },
+    );
+
+    observer.observe(footer);
 
     return () => {
       observer.disconnect();
@@ -74,7 +93,7 @@ function Landing() {
             <LanguageToggle />
             <Link
               to="/login"
-              className="hidden rounded-md border border-white/20 px-4 py-2 text-sm font-medium backdrop-blur-md transition hover:bg-white/10 sm:inline-flex"
+              className="hidden rounded-md border border-white/20 px-4 py-2 text-sm font-medium backdrop-blur-md transition-all hover:bg-white/10 hover:scale-105 sm:inline-flex"
             >
               {t("nav.signIn")}
             </Link>
@@ -124,43 +143,51 @@ function Landing() {
           >
             {t("landing.heroSubtitle")}
           </p>
-          <div className="flex flex-wrap gap-3 motion-safe:animate-rise-in" style={{ animationDelay: "0.5s" }}>
-            <Button
-              asChild
-              size="lg"
-              className="bg-gold-gradient text-gold-foreground shadow-gold transition-all hover:opacity-95 hover:-translate-y-0.5"
-            >
-              <Link to="/list-property">{t("landing.listProperty")}</Link>
-            </Button>
-            <Button
-              asChild
-              size="lg"
-              variant="outline"
-              className="border-white/40 bg-white/15 text-white shadow-lg shadow-black/10 backdrop-blur transition-all hover:bg-white/25 hover:text-white hover:-translate-y-0.5"
-            >
-              <Link to="/available-properties">{t("publicProperties.browse")}</Link>
-            </Button>
-            <Button
-              asChild
-              size="lg"
-              variant="outline"
-              className="border-white/40 bg-white/15 text-white shadow-lg shadow-black/10 backdrop-blur transition-all hover:bg-white/25 hover:text-white hover:-translate-y-0.5"
-            >
-              <Link to="/property-request">
-                {t("landing.findProperty") || "Find Your Property"}
-              </Link>
-            </Button>
-            <Button
-              asChild
-              size="lg"
-              variant="outline"
-              className="border-white/40 bg-white/15 text-white shadow-lg shadow-black/10 backdrop-blur transition-all hover:bg-white/25 hover:text-white hover:-translate-y-0.5"
-            >
-              <a href="#contact">
-                <Mail className="h-4 w-4" />
-                {t("footer.contactCta")}
-              </a>
-            </Button>
+          <div className="flex flex-wrap gap-3">
+            <div className="motion-safe:animate-rise-in" style={{ animationDelay: "0.5s" }}>
+              <Button
+                asChild
+                size="lg"
+                className="bg-gold-gradient text-gold-foreground shadow-gold transition-all hover:opacity-95 hover:-translate-y-0.5 hover:scale-105"
+              >
+                <Link to="/list-property">{t("landing.listProperty")}</Link>
+              </Button>
+            </div>
+            <div className="motion-safe:animate-rise-in" style={{ animationDelay: "0.62s" }}>
+              <Button
+                asChild
+                size="lg"
+                variant="outline"
+                className="border-white/40 bg-white/15 text-white shadow-lg shadow-black/10 backdrop-blur transition-all hover:bg-white/25 hover:text-white hover:-translate-y-0.5 hover:scale-105"
+              >
+                <Link to="/available-properties">{t("publicProperties.browse")}</Link>
+              </Button>
+            </div>
+            <div className="motion-safe:animate-rise-in" style={{ animationDelay: "0.74s" }}>
+              <Button
+                asChild
+                size="lg"
+                variant="outline"
+                className="border-white/40 bg-white/15 text-white shadow-lg shadow-black/10 backdrop-blur transition-all hover:bg-white/25 hover:text-white hover:-translate-y-0.5 hover:scale-105"
+              >
+                <Link to="/property-request">
+                  {t("landing.findProperty") || "Find Your Property"}
+                </Link>
+              </Button>
+            </div>
+            <div className="motion-safe:animate-rise-in" style={{ animationDelay: "0.86s" }}>
+              <Button
+                asChild
+                size="lg"
+                variant="outline"
+                className="border-white/40 bg-white/15 text-white shadow-lg shadow-black/10 backdrop-blur transition-all hover:bg-white/25 hover:text-white hover:-translate-y-0.5 hover:scale-105"
+              >
+                <a href="#contact">
+                  <Mail className="h-4 w-4" />
+                  {t("footer.contactCta")}
+                </a>
+              </Button>
+            </div>
           </div>
         </div>
       </section>
@@ -183,7 +210,7 @@ function Landing() {
               style={{ animationDelay: cardsVisible ? `${i * 150 + 200}ms` : "0ms" }}
             >
               <div className="mb-5 inline-flex h-11 w-11 items-center justify-center rounded-xl bg-accent text-accent-foreground transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6">
-                <f.icon className="h-5 w-5" />
+                <f.icon className="h-5 w-5 transition-transform duration-300 group-hover:scale-110" />
               </div>
               <h3 className="font-display text-xl font-semibold">{f.title}</h3>
               <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{f.body}</p>
@@ -193,7 +220,14 @@ function Landing() {
         </div>
       </section>
 
-      <PublicFooter />
+      <div
+        ref={footerRef as React.RefObject<HTMLDivElement>}
+        className={`transition-all duration-700 ease-out motion-reduce:transition-none ${
+          footerVisible ? "translate-y-0 opacity-100" : "translate-y-10 opacity-0"
+        }`}
+      >
+        <PublicFooter />
+      </div>
     </div>
   );
 }
