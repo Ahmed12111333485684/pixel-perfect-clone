@@ -232,6 +232,25 @@
     animation: shimmer 3.5s linear infinite;
   }
 
+  @keyframes fade-in {
+    0% {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  .animate-fade-in {
+    animation: fade-in 0.8s ease-out both;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .animate-fade-in {
+      animation: none;
+    }
+  }
+
   @keyframes rise-in {
     0% {
       opacity: 0;

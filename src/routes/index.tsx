@@ -136,13 +136,13 @@ function Landing() {
             {t("brand.tagline")}
           </span>
           <h1
-            className="max-w-3xl text-balance font-display text-5xl font-bold leading-tight tracking-tight drop-shadow-[0_10px_26px_rgba(0,0,0,0.55)] md:text-7xl motion-safe:animate-rise-in"
+            className="max-w-3xl text-balance font-display text-5xl font-bold leading-tight tracking-tight drop-shadow-[0_10px_26px_rgba(0,0,0,0.55)] md:text-7xl animate-fade-in"
             style={{ animationDelay: "0.2s" }}
           >
             {t("landing.heroTitle")}
           </h1>
           <p
-            className="max-w-2xl text-balance text-lg text-white/90 drop-shadow-[0_6px_18px_rgba(0,0,0,0.45)] md:text-xl motion-safe:animate-rise-in"
+            className="max-w-2xl text-balance text-lg text-white/90 drop-shadow-[0_6px_18px_rgba(0,0,0,0.45)] md:text-xl animate-fade-in"
             style={{ animationDelay: "0.35s" }}
           >
             {t("landing.heroSubtitle")}
