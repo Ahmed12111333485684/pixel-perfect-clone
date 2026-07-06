@@ -5,8 +5,8 @@ import { BrandLogo } from "@/components/BrandLogo";
 
 export function PublicFooter() {
   const { t } = useTranslation();
-  const email = "hello@nourconsultancy.com";
-  const phone = "+966 50 000 0000";
+  const email = "Light0consultation@gmail.com";
+  const phone = "+966 0597948787";
   const address = t("footer.address");
 
   return (

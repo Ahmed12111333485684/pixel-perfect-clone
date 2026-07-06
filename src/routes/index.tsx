@@ -63,7 +63,7 @@ function Landing() {
     <div className="min-h-screen bg-background">
       <header className="absolute inset-x-0 top-0 z-20">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-5">
-          <div className="relative inline-flex translate-x-4 items-center justify-center sm:translate-x-5">
+          <div className="relative inline-flex -translate-x-2 items-center justify-center sm:translate-x-15">
             <div
               aria-hidden
               className="absolute inset-x-[-32px] inset-y-[-24px] -z-10 rounded-full bg-white/30 blur-[48px] motion-safe:animate-pulse"
