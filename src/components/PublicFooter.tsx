@@ -163,7 +163,6 @@ export function PublicFooter() {
           <p>
             © {new Date().getFullYear()} {t("brand.name")}. {t("footer.rights")}
           </p>
-          <p>{t("footer.madeWith")}</p>
         </div>
       </div>
     </footer>
