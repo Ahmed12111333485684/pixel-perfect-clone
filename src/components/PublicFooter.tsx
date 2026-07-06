@@ -123,12 +123,12 @@ export function PublicFooter() {
               <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-primary">
                 <Globe className="h-3.5 w-3.5" />
               </span>
-              الصفحة الرسمية
+              {/* الصفحة الرسمية */}
             </h3>
-            <a href="https://linkfaal.com/hashim" target="_blank" rel="noreferrer" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition">
+            {/* <a href="https://linkfaal.com/hashim" target="_blank" rel="noreferrer" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition">
               <span className="text-base">🔗</span>
               <span>linkfaal.com/hashim</span>
-            </a>
+            </a> */}
           </div>
         </div>
 
