@@ -166,7 +166,7 @@ function Landing() {
       </section>
 
       {/* Features */}
-      <section ref={cardsSectionRef} className="relative z-10 mx-auto -mt-24 max-w-7xl px-6 py-20">
+      <section ref={cardsSectionRef} className="mx-auto max-w-7xl px-6 py-20">
         <div className="grid gap-6 md:grid-cols-3">
           {[
             { icon: Search, title: t("landing.feature1Title"), body: t("landing.feature1Body") },
