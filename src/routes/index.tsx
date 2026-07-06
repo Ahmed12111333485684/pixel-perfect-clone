@@ -85,7 +85,7 @@ function Landing() {
       {/* Hero */}
       <section className="relative isolate overflow-hidden">
         <div
-          className="absolute inset-0 -z-10 scale-112 bg-cover bg-center animate-ken-burns"
+          className="absolute inset-0 -z-10 bg-cover bg-center"
           style={{ backgroundImage: `url(${heroImg})` }}
           aria-hidden
         />
@@ -104,12 +104,7 @@ function Landing() {
           className="absolute -right-16 bottom-1/3 h-48 w-48 rounded-full bg-gold/20 blur-[64px] motion-safe:animate-float-slow"
           style={{ animationDelay: "2s" }}
         />
-        {/* Soft gradient transition into the page body */}
-        <div
-          className="absolute inset-x-0 bottom-0 -z-10 h-48 bg-gradient-to-t from-background via-background/80 to-transparent"
-          aria-hidden
-        />
-        <div className="mx-auto flex max-w-7xl flex-col items-start gap-8 px-6 pb-40 pt-56 text-white md:pt-56">
+        <div className="mx-auto flex max-w-7xl flex-col items-start gap-8 px-6 pb-24 pt-40 text-white md:pt-56">
           <span
             className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 bg-[linear-gradient(90deg,transparent_0%,rgba(255,255,255,0.15)_50%,transparent_100%)] bg-[length:200%_100%] px-3 py-1 text-xs font-medium backdrop-blur motion-safe:animate-shimmer"
             style={{ animationDelay: "0.1s" }}
@@ -171,7 +166,7 @@ function Landing() {
       </section>
 
       {/* Features */}
-      <section ref={cardsSectionRef} className="relative z-10 mx-auto -mt-24 max-w-7xl px-6 py-20">
+      <section ref={cardsSectionRef} className="mx-auto max-w-7xl px-6 py-20">
         <div className="grid gap-6 md:grid-cols-3">
           {[
             { icon: Search, title: t("landing.feature1Title"), body: t("landing.feature1Body") },
