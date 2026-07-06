@@ -120,9 +120,9 @@ export function PublicFooter() {
 
           <div className="space-y-4 pt-2 border-t border-border/50">
             <h3 className="font-display text-base font-semibold flex items-center gap-2">
-              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-primary">
+              {/* <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-primary">
                 <Globe className="h-3.5 w-3.5" />
-              </span>
+              </span> */}
               {/* الصفحة الرسمية */}
             </h3>
             {/* <a href="https://linkfaal.com/hashim" target="_blank" rel="noreferrer" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition">
