@@ -11,6 +11,15 @@ import {
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 
+function normalizeSearch(text: string): string {
+  return text
+    .normalize("NFKC")
+    .replace(/[أإآ]/g, "ا")
+    .replace(/ة/g, "ه")
+    .replace(/ى/g, "ي")
+    .replace(/[\u064B-\u065F]/g, "");
+}
+
 type Option = {
     value: string;
     label: string;
@@ -66,7 +75,7 @@ export function ComboboxField({
                             {options.map((option) => (
                                 <CommandItem
                                     key={option.value}
-                                    value={option.label}
+                                    value={normalizeSearch(option.label)}
                                     onSelect={() => {
                                         setValue(option.value);
                                         setOpen(false);

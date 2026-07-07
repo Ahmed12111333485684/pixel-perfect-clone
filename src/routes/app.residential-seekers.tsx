@@ -6,6 +6,8 @@ import { useTranslation } from "react-i18next";
 import { api, resolveApiAssetUrl, type ResidentialSeeker, type RequestPropertySuggestion, fetchPartners, type UserDto, ApiError } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { PROPERTY_TYPES, localizePropertyType } from "@/lib/property-types";
+import { NATIONALITIES } from "@/lib/nationalities";
+import { PAYMENT_TYPES } from "@/lib/payment-types";
 import { PageHeader, StatusBadge } from "@/components/PageHeader";
 import { DataTable, type Column } from "@/components/DataTable";
 import { FormDialog, ConfirmDialog } from "@/components/FormDialog";
@@ -58,53 +60,7 @@ const RESIDENTIAL_FIELDS = [
   "requestCategory",
 ] as const;
 
-const NATIONALITIES = [
-  "سعودي",
-  "مصري",
-  "إماراتي",
-  "كويتي",
-  "قطري",
-  "بحريني",
-  "عماني",
-  "يمني",
-  "أردني",
-  "سوري",
-  "لبناني",
-  "فلسطيني",
-  "عراقي",
-  "سوداني",
-  "ليبي",
-  "تونسي",
-  "جزائري",
-  "مغربي",
-  "موريتاني",
-  "صومالي",
-  "جيبوتي",
-  "إريتري",
-  "إثيوبي",
-  "تركي",
-  "إيراني",
-  "باكستاني",
-  "هندي",
-  "بنغلاديشي",
-  "نيبالي",
-  "سريلانكي",
-  "فلبيني",
-  "إندونيسي",
-  "ماليزي",
-  "صيني",
-  "ياباني",
-  "كوري",
-  "أمريكي",
-  "كندي",
-  "بريطاني",
-  "فرنسي",
-  "ألماني",
-  "إيطالي",
-  "إسباني",
-  "روسي",
-  "أسترالي",
-];
+
 
 type ResidentialFieldKey = (typeof RESIDENTIAL_FIELDS)[number];
 
@@ -804,7 +760,13 @@ function ResidentialSeekerDialog({
             className="sm:col-span-2"
           />
           <TextField id="maxBudget" label={maxBudgetLabel} defaultValue={seeker?.maxBudget} readOnly={readOnly} type="number" />
-          <TextField id="paymentType" label={t("residentialSeekers.paymentType")} defaultValue={seeker?.paymentType} readOnly={readOnly} />
+          <SelectField
+            id="paymentType"
+            label={t("residentialSeekers.paymentType")}
+            defaultValue={seeker?.paymentType ?? ""}
+            readOnly={readOnly}
+            options={PAYMENT_TYPES.map((p) => ({ value: p, label: p }))}
+          />
           <TextField id="preferredLocation" label={t("residentialSeekers.preferredLocation")} defaultValue={seeker?.preferredLocation} readOnly={readOnly} />
         </div>
       </div>

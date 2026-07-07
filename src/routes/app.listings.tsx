@@ -17,6 +17,7 @@ import { ListingLocationMap } from "@/components/ListingLocationMap";
 import { Plus, X, LayoutGrid, List, FileImage } from "lucide-react";
 import { toast } from "sonner";
 import { PhoneField } from "@/components/form/PhoneField";
+import { PAYMENT_TYPES } from "@/lib/payment-types";
 import { CommercialListingImageManager } from "@/components/CommercialListingImageManager";
 import { resolveApiAssetUrl } from "@/lib/api";
 import { MediaLightbox } from "@/components/MediaLightbox";
@@ -157,7 +158,7 @@ function normalizePropertyType(value: string | null | undefined): PropertyTypeKe
   if (v === "استراحة" || v === "resthouse" || v === "rest house") return "RestHouse";
   if (v === "فيلا" || v === "villa") return "Villa";
   if (v === "مستودع" || v === "warehouse") return "Warehouse";
-  if (v === "اخري" || v === "أخرى" || v === "other") return "Other";
+  if (v === "اخري" || v === "أخرى" || v === "اخري" || v === "other") return "Other";
   // If value already matches a key (case-insensitive), return it normalized
   const mapping: Record<string, PropertyTypeKey> = {
     apartment: "Apartment",
@@ -1193,7 +1194,19 @@ function CommercialListingDialog({
           <TextareaField id="adText1" label={t("commercialListings.adText1")} defaultValue={listing?.adText1} readOnly={readOnly} className="sm:col-span-2" />
           <TextareaField id="adText2" label={t("commercialListings.adText2")} defaultValue={listing?.adText2} readOnly={readOnly} className="sm:col-span-2" />
           <TextField id="rentAmount" label={listingType === "Sale" ? t("commercialListings.salePrice") : t("commercialListings.rentAmount")} defaultValue={listing?.rentAmount} readOnly={readOnly} type="number" min={0} />
-          <TextField id="paymentType" label={t("commercialListings.paymentType")} defaultValue={listing?.paymentType} readOnly={readOnly} />
+          <div className="space-y-2">
+            <Label htmlFor="paymentType" className="text-xs font-medium">{t("commercialListings.paymentType")}</Label>
+            <Select name="paymentType" defaultValue={listing?.paymentType ?? ""} disabled={readOnly}>
+              <SelectTrigger id="paymentType" className="mt-1">
+                <SelectValue placeholder={t("commercialListings.paymentType")} />
+              </SelectTrigger>
+              <SelectContent>
+                {PAYMENT_TYPES.map((p) => (
+                  <SelectItem key={p} value={p}>{p}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
           <TextField id="location" label={t("commercialListings.location")} defaultValue={listing?.location} readOnly={readOnly} />
           <div className="space-y-3 sm:col-span-2">
             <TextField

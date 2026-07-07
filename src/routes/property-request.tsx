@@ -19,6 +19,9 @@ import { PublicFooter } from "@/components/PublicFooter";
 import { CheckCircle2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { PROPERTY_TYPES, localizePropertyType } from "@/lib/property-types";
+import { NATIONALITIES } from "@/lib/nationalities";
+import { PAYMENT_TYPES } from "@/lib/payment-types";
+import { ComboboxField } from "@/components/form/ComboboxField";
 
 export const Route = createFileRoute("/property-request")({
   head: () => ({
@@ -252,12 +255,16 @@ function PropertyRequestPage() {
                   <Label htmlFor="paymentType" className="text-xs font-medium">
                     {t("common.paymentType")}
                   </Label>
-                  <Input
-                    id="paymentType"
-                    name="paymentType"
-                    placeholder={t("common.paymentType")}
-                    className="mt-1"
-                  />
+                  <Select name="paymentType" defaultValue="">
+                    <SelectTrigger id="paymentType" className="mt-1">
+                      <SelectValue placeholder={t("common.paymentType")} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {PAYMENT_TYPES.map((p) => (
+                        <SelectItem key={p} value={p}>{p}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
             </div>
@@ -293,14 +300,13 @@ function PropertyRequestPage() {
                 </div>
 
                 <div>
-                  <Label htmlFor="nationality" className="text-xs font-medium">
-                    {t("common.nationality")}
-                  </Label>
-                  <Input
+                  <ComboboxField
                     id="nationality"
-                    name="nationality"
-                    placeholder={t("common.nationality")}
-                    className="mt-1"
+                    label={t("common.nationality")}
+                    options={NATIONALITIES.map((n) => ({
+                      value: n,
+                      label: n,
+                    }))}
                   />
                 </div>
 
