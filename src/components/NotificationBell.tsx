@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Bell } from "lucide-react";
-import { useNavigate } from "@tanstack/react-router";
+import { Bell, X } from "lucide-react";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import {
   Popover,
@@ -26,7 +26,7 @@ function timeAgo(dateStr: string, lang: string): string {
 
 export function NotificationBell() {
   const { t, i18n } = useTranslation();
-  const { items, unreadCount, markRead, markAllRead } = useNotifications();
+  const { items, unreadCount, markRead, markAllRead, remove } = useNotifications();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
 
@@ -62,33 +62,53 @@ export function NotificationBell() {
             </div>
           ) : (
             items.map((item) => (
-              <button
+              <div
                 key={item.id}
-                onClick={() => handleItemClick(item)}
-                className={`flex w-full items-start gap-3 border-b border-border px-4 py-3 text-left text-sm transition hover:bg-muted/50 ${
-                  !item.read ? "font-medium" : ""
-                }`}
+                className="group relative border-b border-border"
               >
-                <div className="flex-1 min-w-0">
-                  <div className="truncate">
-                    {isAr ? item.title : item.titleEn}
+                <button
+                  onClick={() => handleItemClick(item)}
+                  className={`flex w-full items-start gap-3 px-4 py-3 pr-8 text-left text-sm transition hover:bg-muted/50 ${
+                    !item.read ? "font-medium" : ""
+                  }`}
+                >
+                  <div className="flex-1 min-w-0">
+                    <div className="truncate">
+                      {isAr ? item.title : item.titleEn}
+                    </div>
+                    <div className="mt-0.5 truncate text-xs text-muted-foreground">
+                      {isAr ? item.summary : item.summaryEn}
+                    </div>
+                    <div className="mt-1 text-xs text-muted-foreground/60">
+                      {timeAgo(item.createdAt, i18n.language)}
+                    </div>
                   </div>
-                  <div className="mt-0.5 truncate text-xs text-muted-foreground">
-                    {isAr ? item.summary : item.summaryEn}
-                  </div>
-                  <div className="mt-1 text-xs text-muted-foreground/60">
-                    {timeAgo(item.createdAt, i18n.language)}
-                  </div>
-                </div>
-                {!item.read && (
-                  <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-blue-500" />
-                )}
-              </button>
+                  {!item.read && (
+                    <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-blue-500" />
+                  )}
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    remove(item.id);
+                  }}
+                  className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded text-muted-foreground/40 opacity-0 transition hover:text-foreground group-hover:opacity-100"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </div>
             ))
           )}
         </div>
-        {items.length > 0 && (
-          <div className="border-t border-border p-2">
+        <div className="border-t border-border p-2">
+          <Link
+            to="/app/notifications"
+            onClick={() => setOpen(false)}
+            className="mb-1 flex w-full items-center justify-center rounded-md px-2 py-1.5 text-xs text-muted-foreground transition hover:bg-muted hover:text-foreground"
+          >
+            {t("notifications.viewAll")}
+          </Link>
+          {items.length > 0 && (
             <Button
               variant="ghost"
               size="sm"
@@ -100,8 +120,8 @@ export function NotificationBell() {
             >
               {t("notifications.markAllRead")}
             </Button>
-          </div>
-        )}
+          )}
+        </div>
       </PopoverContent>
     </Popover>
   );

@@ -26,6 +26,7 @@ import { Route as AppPropertiesRouteImport } from './routes/app.properties'
 import { Route as AppPaymentsRouteImport } from './routes/app.payments'
 import { Route as AppPartnersRouteImport } from './routes/app.partners'
 import { Route as AppOwnersRouteImport } from './routes/app.owners'
+import { Route as AppNotificationsRouteImport } from './routes/app.notifications'
 import { Route as AppListingsRouteImport } from './routes/app.listings'
 import { Route as AppLeadsRouteImport } from './routes/app.leads'
 import { Route as AppExpensesRouteImport } from './routes/app.expenses'
@@ -122,6 +123,11 @@ const AppOwnersRoute = AppOwnersRouteImport.update({
   path: '/owners',
   getParentRoute: () => AppRoute,
 } as any)
+const AppNotificationsRoute = AppNotificationsRouteImport.update({
+  id: '/notifications',
+  path: '/notifications',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppListingsRoute = AppListingsRouteImport.update({
   id: '/listings',
   path: '/listings',
@@ -188,6 +194,7 @@ export interface FileRoutesByFullPath {
   '/app/expenses': typeof AppExpensesRoute
   '/app/leads': typeof AppLeadsRouteWithChildren
   '/app/listings': typeof AppListingsRoute
+  '/app/notifications': typeof AppNotificationsRoute
   '/app/owners': typeof AppOwnersRoute
   '/app/partners': typeof AppPartnersRoute
   '/app/payments': typeof AppPaymentsRoute
@@ -216,6 +223,7 @@ export interface FileRoutesByTo {
   '/app/expenses': typeof AppExpensesRoute
   '/app/leads': typeof AppLeadsRouteWithChildren
   '/app/listings': typeof AppListingsRoute
+  '/app/notifications': typeof AppNotificationsRoute
   '/app/owners': typeof AppOwnersRoute
   '/app/partners': typeof AppPartnersRoute
   '/app/payments': typeof AppPaymentsRoute
@@ -246,6 +254,7 @@ export interface FileRoutesById {
   '/app/expenses': typeof AppExpensesRoute
   '/app/leads': typeof AppLeadsRouteWithChildren
   '/app/listings': typeof AppListingsRoute
+  '/app/notifications': typeof AppNotificationsRoute
   '/app/owners': typeof AppOwnersRoute
   '/app/partners': typeof AppPartnersRoute
   '/app/payments': typeof AppPaymentsRoute
@@ -277,6 +286,7 @@ export interface FileRouteTypes {
     | '/app/expenses'
     | '/app/leads'
     | '/app/listings'
+    | '/app/notifications'
     | '/app/owners'
     | '/app/partners'
     | '/app/payments'
@@ -305,6 +315,7 @@ export interface FileRouteTypes {
     | '/app/expenses'
     | '/app/leads'
     | '/app/listings'
+    | '/app/notifications'
     | '/app/owners'
     | '/app/partners'
     | '/app/payments'
@@ -334,6 +345,7 @@ export interface FileRouteTypes {
     | '/app/expenses'
     | '/app/leads'
     | '/app/listings'
+    | '/app/notifications'
     | '/app/owners'
     | '/app/partners'
     | '/app/payments'
@@ -481,6 +493,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppOwnersRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/notifications': {
+      id: '/app/notifications'
+      path: '/notifications'
+      fullPath: '/app/notifications'
+      preLoaderRoute: typeof AppNotificationsRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/listings': {
       id: '/app/listings'
       path: '/listings'
@@ -587,6 +606,7 @@ interface AppRouteChildren {
   AppExpensesRoute: typeof AppExpensesRoute
   AppLeadsRoute: typeof AppLeadsRouteWithChildren
   AppListingsRoute: typeof AppListingsRoute
+  AppNotificationsRoute: typeof AppNotificationsRoute
   AppOwnersRoute: typeof AppOwnersRoute
   AppPartnersRoute: typeof AppPartnersRoute
   AppPaymentsRoute: typeof AppPaymentsRoute
@@ -607,6 +627,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppExpensesRoute: AppExpensesRoute,
   AppLeadsRoute: AppLeadsRouteWithChildren,
   AppListingsRoute: AppListingsRoute,
+  AppNotificationsRoute: AppNotificationsRoute,
   AppOwnersRoute: AppOwnersRoute,
   AppPartnersRoute: AppPartnersRoute,
   AppPaymentsRoute: AppPaymentsRoute,

@@ -6,6 +6,7 @@ import {
   fetchNotifications,
   markNotificationRead,
   markAllNotificationsRead,
+  deleteNotification,
   type NotificationItem,
   type NotificationsResponse,
 } from "./api";
@@ -17,6 +18,7 @@ interface NotificationsContextValue {
   unreadCount: number;
   markRead: (id: number) => Promise<void>;
   markAllRead: () => Promise<void>;
+  remove: (id: number) => Promise<void>;
 }
 
 const NotificationsCtx = createContext<NotificationsContextValue | null>(null);
@@ -91,14 +93,23 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
     },
   });
 
+  const removeMut = useMutation<void, Error, number>({
+    mutationFn: (id: number) => deleteNotification(id) as Promise<void>,
+    onSuccess: (_data, id) => {
+      setItems((prev) => prev.filter((item) => item.id !== id));
+      setUnreadCount((prev) => Math.max(0, prev - 1));
+    },
+  });
+
   const value = useMemo<NotificationsContextValue>(
     () => ({
       items,
       unreadCount,
       markRead: async (id: number) => markReadMut.mutateAsync(id),
       markAllRead: async () => markAllReadMut.mutateAsync(),
+      remove: async (id: number) => removeMut.mutateAsync(id),
     }),
-    [items, unreadCount, markReadMut, markAllReadMut],
+    [items, unreadCount, markReadMut, markAllReadMut, removeMut],
   );
 
   return <NotificationsCtx.Provider value={value}>{children}</NotificationsCtx.Provider>;

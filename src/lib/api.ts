@@ -643,6 +643,21 @@ export function markAllNotificationsRead() {
   return api("/notifications/read-all", { method: "PUT" });
 }
 
+export function deleteNotification(id: number) {
+  return api(`/notifications/${id}`, { method: "DELETE" });
+}
+
+export interface NotificationListAllResponse {
+  notifications: NotificationItem[];
+  totalCount: number;
+}
+
+export function fetchAllNotifications(page: number, pageSize: number, read?: boolean) {
+  return api<NotificationListAllResponse>("/notifications/all", {
+    query: { page, pageSize, ...(read !== undefined ? { read } : {}) },
+  });
+}
+
 // ============ Partner helpers ============
 export function fetchPartners() {
   return api<Partner[]>("/api/partners");
