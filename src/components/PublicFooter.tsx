@@ -7,7 +7,8 @@ export function PublicFooter() {
   const { t } = useTranslation();
   const email = "Light0consultation@gmail.com";
   const phone = "+966 0597948787";
-  const address = t("footer.address");
+  const addressLine1 = t("footer.addressLine1");
+  const addressLine2 = t("footer.addressLine2")
 
   return (
     <footer id="contact" className="border-t border-border bg-card/50">
@@ -37,7 +38,10 @@ export function PublicFooter() {
               </li>
               <li className="flex items-start gap-2">
                 <MapPin className="mt-0.5 h-4 w-4 text-gold" />
-                <span>{address}</span>
+                <div>
+                <div>{addressLine1}</div>
+                <div>{addressLine2}</div>
+                </div>
               </li>
             </ul>
           </div>
