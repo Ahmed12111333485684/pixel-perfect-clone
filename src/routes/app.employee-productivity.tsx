@@ -22,7 +22,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { formatDate } from "@/lib/format";
+import { formatDate, todayLocal } from "@/lib/format";
 
 type MetricKey = keyof EmployeeProductivityUpsertDto;
 
@@ -73,7 +73,7 @@ function EmployeeProductivityPage() {
   });
 
   const rows = productivity.data ?? [];
-  const todayKey = new Date().toISOString().slice(0, 10);
+  const todayKey = todayLocal();
   const todayReport = rows.find((row) => row.workDate.slice(0, 10) === todayKey);
 
   const summary = useMemo(() => {

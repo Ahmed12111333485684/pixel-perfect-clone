@@ -41,7 +41,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Money } from "@/components/icons/RiyalIcon";
-import { formatMoney, formatDate } from "@/lib/format";
+import { formatMoney, formatDate, todayLocal } from "@/lib/format";
 import {
   ResponsiveContainer,
   AreaChart,
@@ -465,8 +465,7 @@ function Dashboard() {
       },
     );
 
-    const today = new Date();
-    const todayKey = today.toISOString().slice(0, 10);
+    const todayKey = todayLocal();
     const todayReports = rows.filter((row) => row.workDate.slice(0, 10) === todayKey);
     const recentEntries = [...rows]
       .sort((left, right) => new Date(right.workDate).getTime() - new Date(left.workDate).getTime())

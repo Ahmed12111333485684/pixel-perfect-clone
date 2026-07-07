@@ -5,6 +5,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { api, resolveApiAssetUrl, type ResidentialSeeker, type RequestPropertySuggestion, fetchPartners, type UserDto, ApiError } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
+import { todayLocal } from "@/lib/format";
 import { PROPERTY_TYPES, localizePropertyType } from "@/lib/property-types";
 import { NATIONALITIES } from "@/lib/nationalities";
 import { PAYMENT_TYPES } from "@/lib/payment-types";
@@ -659,7 +660,7 @@ function ResidentialSeekerDialog({
       <div className="space-y-4 rounded-lg border border-border bg-muted/30 p-4">
         <div className="grid gap-4 sm:grid-cols-2">
           {/* <TextField id="serialNumber" label={t("residentialSeekers.serialNumber")} defaultValue={seeker?.serialNumber} readOnly={readOnly} /> */}
-          <DateField id="requestDate" label={t("residentialSeekers.requestDate")} defaultValue={seeker?.requestDate || new Date().toISOString().split("T")[0]} readOnly={readOnly} className="mt-1 w-full [color-scheme:light] [&::-webkit-calendar-picker-indicator]:ml-auto" />
+          <DateField id="requestDate" label={t("residentialSeekers.requestDate")} defaultValue={seeker?.requestDate || todayLocal()} readOnly={readOnly} className="mt-1 w-full [color-scheme:light] [&::-webkit-calendar-picker-indicator]:ml-auto" />
           <DateField id="reviewDate" label="تاريخ المراجعة" defaultValue={seeker?.reviewDate} readOnly={readOnly} className="mt-1 w-full [color-scheme:light] [&::-webkit-calendar-picker-indicator]:ml-auto" />
           <SelectField
             id="status"
@@ -952,7 +953,7 @@ function DateField({
         name={id}
         type="date"
         defaultValue={
-          defaultValue ?? new Date().toISOString().split("T")[0]
+          defaultValue ?? todayLocal()
         }
         readOnly={readOnly}
         disabled={readOnly}

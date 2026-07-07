@@ -4,6 +4,7 @@ import { memo, useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { api, fetchPartners, type CommercialListing, type Partner, type CommercialListingImage, type UserDto, type Amenity, ApiError } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
+import { todayLocal } from "@/lib/format";
 import { PageHeader, StatusBadge } from "@/components/PageHeader";
 import { DataTable, type Column } from "@/components/DataTable";
 import { FormDialog, ConfirmDialog } from "@/components/FormDialog";
@@ -1033,7 +1034,7 @@ function CommercialListingDialog({
       <div className="space-y-4 rounded-lg border border-border bg-muted/30 p-4">
         <div className="grid gap-4 sm:grid-cols-2">
           {parentId && <input type="hidden" name="parentId" value={parentId} />}
-          <DateField id="contactDate" label={t("commercialListings.contactDate")} defaultValue={listing?.contactDate || new Date().toISOString().split("T")[0]} readOnly={readOnly} />
+          <DateField id="contactDate" label={t("commercialListings.contactDate")} defaultValue={listing?.contactDate || todayLocal()} readOnly={readOnly} />
           <div className="space-y-2">
             <Label htmlFor="offerCode" className="text-xs font-medium">{t("commercialListings.offerCode")}</Label>
             <div className="mt-1 rounded-md border-2 border-gold/30 bg-gold/5 px-3 py-2 text-sm font-bold tracking-wide text-foreground">
@@ -1346,7 +1347,7 @@ function DateField({
         name={id}
         type="date"
         defaultValue={
-          defaultValue ?? new Date().toISOString().split("T")[0]
+          defaultValue ?? todayLocal()
         }
         readOnly={readOnly}
         disabled={readOnly}
