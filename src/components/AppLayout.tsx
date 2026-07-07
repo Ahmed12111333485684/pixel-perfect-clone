@@ -2,7 +2,7 @@ import { Outlet, Link, useRouterState } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/lib/auth";
-import { Building2, ChevronRight, ChevronDown, LogOut } from "lucide-react";
+import { Building2, ChevronRight, ChevronDown, LogOut, Menu, X } from "lucide-react";
 import { BrandLogo } from "@/components/BrandLogo";
 import { LanguageToggle } from "@/components/LanguageToggle";
 import { Button } from "@/components/ui/button";
@@ -13,6 +13,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Sheet,
+  SheetTrigger,
+  SheetContent,
+  SheetClose,
+} from "@/components/ui/sheet";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { getVisibleNavItems, isCurrentPathAccessible } from "@/lib/navigation";
 import type { AppNavItem } from "@/lib/navigation";
 
@@ -65,7 +72,7 @@ export function AppLayout({ children }: { children?: React.ReactNode }) {
     setExpandedParents(newExpanded);
   };
 
-  const renderNavItem = (item: AppNavItem, depth = 0) => {
+  const renderNavItem = (item: AppNavItem, depth = 0, closeOnSelect = false) => {
     const isParentExpanded = expandedParents.has(item.to);
     const isActive =
       item.to === "/app"
@@ -93,14 +100,14 @@ export function AppLayout({ children }: { children?: React.ReactNode }) {
           </button>
           {isParentExpanded && (
             <div className="ml-2 space-y-0.5 border-l border-sidebar-border/50 py-1">
-              {item.children.map((child) => renderNavItem(child, depth + 1))}
+              {item.children.map((child) => renderNavItem(child, depth + 1, closeOnSelect))}
             </div>
           )}
         </div>
       );
     }
 
-    return (
+    const link = (
       <Link
         key={item.to}
         to={item.to}
@@ -117,11 +124,13 @@ export function AppLayout({ children }: { children?: React.ReactNode }) {
         {isActive && depth === 0 && <ChevronRight className="h-3.5 w-3.5 opacity-50" />}
       </Link>
     );
+
+    return closeOnSelect ? <SheetClose asChild key={item.to}>{link}</SheetClose> : link;
   };
 
   return (
     <div className="flex min-h-screen bg-muted/30">
-      {/* Sidebar */}
+      {/* Desktop Sidebar */}
       <aside className="hidden w-64 shrink-0 flex-col border-e border-sidebar-border bg-sidebar text-sidebar-foreground md:flex">
         <div className="flex h-16 items-center border-b border-sidebar-border px-5">
           <Link to="/app" className="flex items-center gap-2 text-sidebar-foreground">
@@ -141,11 +150,47 @@ export function AppLayout({ children }: { children?: React.ReactNode }) {
         </div>
       </aside>
 
+      {/* Mobile Sheet Sidebar */}
+      <Sheet>
+        <SheetTrigger asChild>
+          <button className="fixed bottom-4 left-4 z-50 grid h-12 w-12 place-items-center rounded-full bg-primary text-primary-foreground shadow-lg md:hidden">
+            <Menu className="h-5 w-5" />
+          </button>
+        </SheetTrigger>
+        <SheetContent side="left" hideClose className="flex w-72 flex-col border-e border-sidebar-border bg-sidebar p-0 text-sidebar-foreground">
+          <div className="flex h-16 items-center justify-between border-b border-sidebar-border px-5">
+            <SheetClose asChild>
+              <Link to="/app" className="flex items-center gap-2 text-sidebar-foreground">
+                <span className="grid h-8 w-8 place-items-center rounded-lg bg-gold-gradient text-gold-foreground">
+                  <Building2 className="h-4 w-4" />
+                </span>
+                <span className="font-display text-lg font-semibold">{t("brand.name")}</span>
+              </Link>
+            </SheetClose>
+            <SheetClose className="rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2">
+              <X className="h-4 w-4" />
+              <span className="sr-only">Close</span>
+            </SheetClose>
+          </div>
+          <nav className="flex-1 space-y-0.5 overflow-y-auto p-3">
+            {visible.map((item) => renderNavItem(item, 0, true))}
+          </nav>
+          <div className="border-t border-sidebar-border p-3 text-xs text-sidebar-foreground/60">
+            <span className="rounded-md bg-sidebar-accent/50 px-2 py-1 font-medium">
+              {auth.user?.role ? t(`role.${auth.user.role}`) : ""}
+            </span>
+          </div>
+        </SheetContent>
+      </Sheet>
+
       {/* Main */}
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="sticky top-0 z-10 flex h-16 items-center justify-between gap-3 border-b border-border bg-background/80 px-6 backdrop-blur">
+        <header className="sticky top-0 z-10 flex h-16 items-center justify-between gap-3 border-b border-border bg-background/80 px-4 backdrop-blur sm:px-6">
           <div className="md:hidden">
             <BrandLogo to="/app" />
+          </div>
+          <div className="hidden md:block">
+            <span className="font-display text-lg font-semibold">{t("brand.name")}</span>
           </div>
           <div className="flex-1" />
           <LanguageToggle />
@@ -176,31 +221,7 @@ export function AppLayout({ children }: { children?: React.ReactNode }) {
           </DropdownMenu>
         </header>
 
-        {/* Mobile bottom nav */}
-        <nav className="sticky top-16 z-[5] flex gap-1 overflow-x-auto border-b border-border bg-background px-3 py-2 md:hidden">
-          {visible.map((item) => {
-            const items = item.children ? [item, ...item.children] : [item];
-            return items.map((navItem) => {
-              const isActive =
-                navItem.to === "/app" ? pathname === "/app" : pathname.startsWith(navItem.to);
-              return (
-                <Link
-                  key={navItem.to}
-                  to={navItem.to}
-                  className={`shrink-0 rounded-md px-3 py-1.5 text-xs font-medium transition ${
-                    isActive
-                      ? "bg-primary text-primary-foreground"
-                      : "text-muted-foreground hover:bg-muted"
-                  }`}
-                >
-                  {t(navItem.label)}
-                </Link>
-              );
-            });
-          })}
-        </nav>
-
-        <main className="flex-1 p-6">
+        <main className="flex-1 p-4 sm:p-6">
           {canViewCurrentScreen ? (
             children ?? <Outlet />
           ) : (

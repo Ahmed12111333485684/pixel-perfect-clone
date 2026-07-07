@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { useMemo, useState } from "react";
+import { useIsMobile } from "@/hooks/use-mobile";
 import {
   api,
   type PropertyDto,
@@ -71,6 +72,7 @@ function Dashboard() {
   const { t, i18n } = useTranslation();
   const auth = useAuth();
   const isRtl = i18n.language === "ar";
+  const isMobile = useIsMobile();
   const [period, setPeriod] = useState<Period>("30d");
 
   const properties = useQuery({
@@ -482,7 +484,7 @@ function Dashboard() {
   }, [productivity.data]);
 
   return (
-    <div className="space-y-6">
+    <div className={isMobile ? "space-y-4" : "space-y-6"}>
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <PageHeader title={t("dashboard.title")} subtitle={t("dashboard.subtitle")} />
         <Tabs value={period} onValueChange={(v) => setPeriod(v as Period)}>
@@ -496,7 +498,7 @@ function Dashboard() {
       </div>
 
       {/* Hero KPIs */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className={`grid ${isMobile ? "gap-3" : "gap-4"} sm:grid-cols-2 lg:grid-cols-4`}>
         <KpiCard
           label={t("dashboard.totalRevenue")}
           value={<Money amount={stats.periodRevenue} />}
@@ -536,7 +538,7 @@ function Dashboard() {
       </div>
 
       {/* Secondary KPIs */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className={`grid ${isMobile ? "gap-3" : "gap-4"} sm:grid-cols-2 lg:grid-cols-4`}>
         <MiniStat
           icon={<Building2 className="h-4 w-4" />}
           label={t("dashboard.properties")}
@@ -577,7 +579,7 @@ function Dashboard() {
           {loading ? (
             <Skeleton className="h-[280px] w-full" />
           ) : (
-            <ResponsiveContainer width="100%" height={280}>
+            <ResponsiveContainer width="100%" height={isMobile ? 200 : 280}>
               <AreaChart data={revenueSeries} margin={{ left: 4, right: 12, top: 8, bottom: 0 }}>
                 <defs>
                   <linearGradient id="grad-rent" x1="0" y1="0" x2="0" y2="1">
@@ -635,7 +637,7 @@ function Dashboard() {
           ) : propertyStatusData.length === 0 ? (
             <EmptyChart label={t("dashboard.noData")} />
           ) : (
-            <ResponsiveContainer width="100%" height={280}>
+            <ResponsiveContainer width="100%" height={isMobile ? 200 : 280}>
               <PieChart>
                 <Pie
                   data={propertyStatusData}
@@ -666,7 +668,7 @@ function Dashboard() {
             {leads.isLoading ? (
               <Skeleton className="h-[240px] w-full" />
             ) : (
-              <ResponsiveContainer width="100%" height={240}>
+              <ResponsiveContainer width="100%" height={isMobile ? 180 : 240}>
                 <BarChart data={leadsFunnelData} margin={{ left: 4, right: 12, top: 8, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
                   <XAxis
@@ -698,7 +700,7 @@ function Dashboard() {
           ) : paymentsBreakdownData.length === 0 ? (
             <EmptyChart label={t("dashboard.noData")} />
           ) : (
-            <ResponsiveContainer width="100%" height={240}>
+            <ResponsiveContainer width="100%" height={isMobile ? 180 : 240}>
               <PieChart>
                 <Pie
                   data={paymentsBreakdownData}
@@ -725,7 +727,7 @@ function Dashboard() {
           ) : propertyTypeData.length === 0 ? (
             <EmptyChart label={t("dashboard.noData")} />
           ) : (
-            <ResponsiveContainer width="100%" height={240}>
+            <ResponsiveContainer width="100%" height={isMobile ? 180 : 240}>
               <BarChart
                 data={propertyTypeData}
                 layout="vertical"

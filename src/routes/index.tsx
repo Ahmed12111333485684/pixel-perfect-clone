@@ -93,7 +93,7 @@ function Landing() {
             <LanguageToggle />
             <Link
               to="/login"
-              className="hidden rounded-md border border-white/20 px-4 py-2 text-sm font-medium backdrop-blur-md transition-all hover:bg-white/10 hover:scale-105 sm:inline-flex"
+              className="rounded-md border border-white/20 px-4 py-2 text-sm font-medium backdrop-blur-md transition-all hover:bg-white/10 hover:scale-105"
             >
               {t("nav.signIn")}
             </Link>

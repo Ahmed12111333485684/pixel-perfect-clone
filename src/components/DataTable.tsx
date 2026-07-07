@@ -7,8 +7,10 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Pencil, Trash2, ArrowUpDown, ArrowDown, ArrowUp } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { EmptyState, LoadingBlock, ErrorBlock } from "./PageHeader";
 
 export interface Column<T> {
@@ -47,11 +49,59 @@ export function DataTable<T>({
   onSort,
 }: DataTableProps<T>) {
   const { t } = useTranslation();
+  const isMobile = useIsMobile();
+
   if (loading) return <LoadingBlock />;
   if (error) return <ErrorBlock message={(error as Error)?.message} />;
   if (!rows || rows.length === 0) return <EmptyState />;
 
   const showActions = !!onEdit || !!onDelete;
+
+  if (isMobile) {
+    return (
+      <div className="space-y-3">
+        {rows.map((row) => (
+          <div
+            key={rowKey(row)}
+            className={`rounded-xl border border-border bg-card p-4 shadow-sm ${onRowClick ? "cursor-pointer" : ""}`}
+            onClick={onRowClick ? () => onRowClick(row) : undefined}
+          >
+            <div className="space-y-2">
+              {columns.map((c) => (
+                <div key={c.key} className="flex items-start justify-between gap-2">
+                  <span className="text-xs font-medium text-muted-foreground shrink-0 min-w-[80px]">
+                    {c.header}
+                  </span>
+                  <span className="text-sm text-right">{c.cell(row)}</span>
+                </div>
+              ))}
+            </div>
+            {showActions && (
+              <div className="mt-3 flex justify-end gap-1 border-t border-border pt-3" onClick={(e) => e.stopPropagation()}>
+                {onEdit && (
+                  <Button variant="outline" size="sm" onClick={() => onEdit(row)}>
+                    <Pencil className="me-1 h-3.5 w-3.5" />
+                    {t("common.edit")}
+                  </Button>
+                )}
+                {onDelete && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => onDelete(row)}
+                    className="text-destructive hover:text-destructive"
+                  >
+                    <Trash2 className="me-1 h-3.5 w-3.5" />
+                    {t("common.delete")}
+                  </Button>
+                )}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    );
+  }
 
   return (
     <div className="overflow-hidden rounded-xl border border-border bg-card shadow-card">
