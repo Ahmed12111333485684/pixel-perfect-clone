@@ -108,6 +108,7 @@ function Landing() {
           style={{ backgroundImage: `url(${heroImg})` }}
           aria-hidden
         />
+        <div className="absolute inset-0 bg-black/40 pointer-events-none" />
         <div
           className="absolute inset-0 -z-10 bg-gradient-to-b from-primary/85 via-primary/70 to-primary/40"
           aria-hidden
@@ -123,8 +124,7 @@ function Landing() {
           className="absolute -right-16 bottom-1/3 h-48 w-48 rounded-full bg-gold/20 blur-[64px] motion-safe:animate-float-slow"
           style={{ animationDelay: "2s" }}
         />
-        <div className="mx-auto flex max-w-7xl flex-col items-start gap-8 px-6 pb-24 pt-40 text-white md:pt-56">
-          <div
+<div className="relative z-10 mx-auto flex max-w-7xl flex-col items-start gap-8 px-6 pb-24 pt-40 text-white md:pt-56">          <div
             aria-hidden
             className="absolute left-0 top-24 -z-10 h-[22rem] w-[44rem] max-w-[92vw] rounded-full bg-black/18 blur-3xl"
           />
