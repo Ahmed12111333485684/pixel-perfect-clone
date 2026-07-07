@@ -611,6 +611,38 @@ export interface ExpenseCreate {
   notes?: string;
 }
 
+// ============ Notification helpers ============
+export interface NotificationItem {
+  id: number;
+  type: "seeker" | "lead";
+  title: string;
+  titleEn: string;
+  summary: string;
+  summaryEn: string;
+  link: string;
+  createdAt: string;
+  read: boolean;
+}
+
+export interface NotificationsResponse {
+  notifications: NotificationItem[];
+  unreadCount: number;
+}
+
+export function fetchNotifications(since?: string) {
+  return api<NotificationsResponse>("/notifications", {
+    query: since ? { since } : undefined,
+  });
+}
+
+export function markNotificationRead(id: number) {
+  return api(`/notifications/${id}/read`, { method: "PUT" });
+}
+
+export function markAllNotificationsRead() {
+  return api("/notifications/read-all", { method: "PUT" });
+}
+
 // ============ Partner helpers ============
 export function fetchPartners() {
   return api<Partner[]>("/api/partners");

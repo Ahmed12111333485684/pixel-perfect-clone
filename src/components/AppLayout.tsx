@@ -5,6 +5,8 @@ import { useAuth } from "@/lib/auth";
 import { Building2, ChevronRight, ChevronDown, LogOut, Menu, X } from "lucide-react";
 import { BrandLogo } from "@/components/BrandLogo";
 import { LanguageToggle } from "@/components/LanguageToggle";
+import { NotificationBell } from "@/components/NotificationBell";
+import { NotificationsProvider } from "@/lib/notifications";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -129,6 +131,7 @@ export function AppLayout({ children }: { children?: React.ReactNode }) {
   };
 
   return (
+    <NotificationsProvider>
     <div className="flex min-h-screen bg-muted/30">
       {/* Desktop Sidebar */}
       <aside className="hidden w-64 shrink-0 flex-col border-e border-sidebar-border bg-sidebar text-sidebar-foreground md:flex">
@@ -193,6 +196,7 @@ export function AppLayout({ children }: { children?: React.ReactNode }) {
             <span className="font-display text-lg font-semibold">{t("brand.name")}</span>
           </div>
           <div className="flex-1" />
+          {auth.isStaff && <NotificationBell />}
           <LanguageToggle />
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -232,5 +236,6 @@ export function AppLayout({ children }: { children?: React.ReactNode }) {
         </main>
       </div>
     </div>
+    </NotificationsProvider>
   );
 }

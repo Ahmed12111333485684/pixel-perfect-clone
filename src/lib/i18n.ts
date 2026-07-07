@@ -528,6 +528,13 @@ const en = {
     noData: "No data for this period",
     viewAll: "View all",
   },
+  notifications: {
+    title: "Notifications",
+    empty: "No notifications",
+    markAllRead: "Mark all as read",
+    newSeeker: "New residential request",
+    newLead: "New lead",
+  },
   enums: {
     North: "North",
     South: "South",
@@ -1059,6 +1066,13 @@ const ar = {
     vsLastPeriod: "مقارنة بالفترة السابقة",
     noData: "لا توجد بيانات لهذه الفترة",
     viewAll: "عرض الكل",
+  },
+  notifications: {
+    title: "الإشعارات",
+    empty: "لا توجد إشعارات",
+    markAllRead: "تحديد الكل كمقروء",
+    newSeeker: "طلب سكني جديد",
+    newLead: "عميل جديد",
   },
 };
 
