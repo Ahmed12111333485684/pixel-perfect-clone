@@ -24,6 +24,7 @@ import { RiyalIcon } from "@/components/icons/RiyalIcon";
 import { toast } from "sonner";
 import { ComboboxField } from "@/components/form/ComboboxField";
 import { PhoneField } from "@/components/form/PhoneField";
+import { CITIES, getDistricts } from "@/lib/locations";
 
 export const Route = createFileRoute("/app/residential-seekers")({
   component: ResidentialSeekersPage,
@@ -58,6 +59,8 @@ const RESIDENTIAL_FIELDS = [
   "maxBudget",
   "paymentType",
   "preferredLocation",
+  "city",
+  "district",
   "notes",
   "requestCategory",
 ] as const;
@@ -330,6 +333,16 @@ function ResidentialSeekersPage() {
       cell: (r) => r.preferredLocation || t("common.notProvided"),
     },
     {
+      key: "city",
+      header: "المدينة",
+      cell: (r) => r.city || t("common.notProvided"),
+    },
+    {
+      key: "district",
+      header: "الحي",
+      cell: (r) => r.district || t("common.notProvided"),
+    },
+    {
       key: "employee",
       header: t("residentialSeekers.employee"),
       cell: (r) => r.employee || t("common.notProvided"),
@@ -510,6 +523,14 @@ function ResidentialSeekersPage() {
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">{t("residentialSeekers.preferredLocation")}</span>
                     <span className="truncate max-w-[120px]" title={r.preferredLocation ?? undefined}>{r.preferredLocation || t("common.notProvided")}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">المدينة</span>
+                    <span>{r.city || t("common.notProvided")}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">الحي</span>
+                    <span>{r.district || t("common.notProvided")}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">{t("residentialSeekers.maxBudget")}</span>
@@ -693,6 +714,7 @@ function ResidentialSeekerDialog({
 }) {
   const { t } = useTranslation();
   const [listingType, setListingType] = useState(seeker?.listingType ?? "Rental");
+  const [selectedCity, setSelectedCity] = useState(seeker?.city ?? "");
   const maxBudgetLabel = listingType === "Rental"
     ? t("residentialSeekers.maxRentalBudget")
     : t("residentialSeekers.maxBudget");
@@ -834,6 +856,27 @@ function ResidentialSeekerDialog({
             options={PAYMENT_TYPES.map((p) => ({ value: p, label: p }))}
           />
           <TextField id="preferredLocation" label={t("residentialSeekers.preferredLocation")} defaultValue={seeker?.preferredLocation} readOnly={readOnly} />
+          <ComboboxField
+            id="city"
+            label="المدينة"
+            defaultValue={seeker?.city ?? ""}
+            readOnly={readOnly}
+            options={CITIES.map((c) => ({ value: c, label: c }))}
+            onValueChange={setSelectedCity}
+          />
+          <ComboboxField
+            key={selectedCity}
+            id="district"
+            label="الحي"
+            defaultValue={seeker?.district ?? ""}
+            readOnly={readOnly}
+            disabled={!selectedCity}
+            options={
+              selectedCity
+                ? getDistricts(selectedCity).map((d) => ({ value: d, label: d }))
+                : []
+            }
+          />
         </div>
       </div>
 

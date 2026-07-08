@@ -31,6 +31,8 @@ type Props = {
     options: Option[];
     defaultValue?: string;
     readOnly?: boolean;
+    disabled?: boolean;
+    onValueChange?: (value: string) => void;
 };
 
 export function ComboboxField({
@@ -39,6 +41,8 @@ export function ComboboxField({
     options,
     defaultValue = "",
     readOnly = false,
+    disabled = false,
+    onValueChange,
 }: Props) {
     const [open, setOpen] = React.useState(false);
     const [value, setValue] = React.useState(defaultValue);
@@ -50,12 +54,12 @@ export function ComboboxField({
             {/* Hidden input so FormData works */}
             <input type="hidden" name={id} value={value} />
 
-            <Popover open={open} onOpenChange={setOpen}>
-                <PopoverTrigger asChild disabled={readOnly}>
+            <Popover open={open && !disabled} onOpenChange={setOpen}>
+                <PopoverTrigger asChild disabled={readOnly || disabled}>
                     <Button
                         variant="outline"
                         role="combobox"
-                        className="w-full justify-between"
+                        className={cn("w-full justify-between", disabled && "opacity-50 cursor-not-allowed")}
                     >
                         {value
                             ? options.find((o) => o.value === value)?.label
@@ -79,6 +83,7 @@ export function ComboboxField({
                                     onSelect={() => {
                                         setValue(option.value);
                                         setOpen(false);
+                                        onValueChange?.(option.value);
                                     }}
                                 >
                                     <Check

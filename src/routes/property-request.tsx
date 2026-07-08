@@ -22,6 +22,7 @@ import { PROPERTY_TYPES, localizePropertyType } from "@/lib/property-types";
 import { NATIONALITIES } from "@/lib/nationalities";
 import { PAYMENT_TYPES } from "@/lib/payment-types";
 import { ComboboxField } from "@/components/form/ComboboxField";
+import { CITIES, getDistricts } from "@/lib/locations";
 
 export const Route = createFileRoute("/property-request")({
   head: () => ({
@@ -54,6 +55,7 @@ function PropertyRequestPage() {
   const [requestType, setRequestType] = useState<string>("Rental");
   const [requestCategory, setRequestCategory] = useState<string>("سكني");
   const [propertyType, setPropertyType] = useState<string>(PROPERTY_TYPES[0]);
+  const [city, setCity] = useState<string>("");
   const formRef = useRef<HTMLFormElement>(null);
 
   const reset = () => {
@@ -61,6 +63,7 @@ function PropertyRequestPage() {
     setRequestType("Rental");
     setRequestCategory("سكني");
     setPropertyType(PROPERTY_TYPES[0]);
+    setCity("");
     formRef.current?.reset();
   };
 
@@ -96,6 +99,8 @@ function PropertyRequestPage() {
           maxBudget: formData.get("maxBudget") ? String(formData.get("maxBudget")) : undefined,
           paymentType: formData.get("paymentType") || undefined,
           preferredLocation: formData.get("location") || undefined,
+          city: formData.get("city") || undefined,
+          district: formData.get("district") || undefined,
           notes: formData.get("notes") || undefined,
         },
         anonymous: true,
@@ -211,14 +216,24 @@ function PropertyRequestPage() {
                 </div>
 
                 <div>
-                  <Label htmlFor="location" className="text-xs font-medium">
-                    {t("common.location")}
-                  </Label>
-                  <Input
-                    id="location"
-                    name="location"
-                    placeholder={t("common.location")}
-                    className="mt-1"
+                  <ComboboxField
+                    id="city"
+                    label="المدينة"
+                    options={CITIES.map((c) => ({ value: c, label: c }))}
+                    onValueChange={setCity}
+                  />
+                </div>
+                <div>
+                  <ComboboxField
+                    key={city}
+                    id="district"
+                    label="الحي"
+                    disabled={!city}
+                    options={
+                      city
+                        ? getDistricts(city).map((d) => ({ value: d, label: d }))
+                        : []
+                    }
                   />
                 </div>
 

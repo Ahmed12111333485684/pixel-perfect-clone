@@ -458,6 +458,8 @@ export interface CommercialListing {
   adText2?: string | null;
   rentAmount?: string | null;
   paymentType?: string | null;
+  city?: string | null;
+  district?: string | null;
   location?: string | null;
   coordinates?: string | null;
   hasKey?: boolean | null;
@@ -559,6 +561,8 @@ export interface ResidentialSeeker {
   maxBudget?: string | null;
   paymentType?: string | null;
   preferredLocation?: string | null;
+  city?: string | null;
+  district?: string | null;
   notes?: string | null;
   requestCategory?: string | null;
   createdAt: string;

@@ -19,6 +19,8 @@ import { ListingLocationMap } from "@/components/ListingLocationMap";
 import { Plus, X, LayoutGrid, List, FileImage } from "lucide-react";
 import { toast } from "sonner";
 import { PhoneField } from "@/components/form/PhoneField";
+import { ComboboxField } from "@/components/form/ComboboxField";
+import { CITIES, getDistricts } from "@/lib/locations";
 import { PAYMENT_TYPES } from "@/lib/payment-types";
 import { CommercialListingImageManager } from "@/components/CommercialListingImageManager";
 import { resolveApiAssetUrl } from "@/lib/api";
@@ -511,6 +513,8 @@ function CommercialListingsPage() {
     { key: "propertyType", header: t("commercialListings.propertyType"), cell: (r) => r.propertyType ? t(`propertyType.${r.propertyType}`, { defaultValue: r.propertyType }) : t("common.notProvided"), sortable: true },
     { key: "rentAmount", header: t("commercialListings.rentAmount"), cell: (r) => r.rentAmount || t("common.notProvided"), sortable: true },
     { key: "paymentType", header: t("commercialListings.paymentType"), cell: (r) => r.paymentType || t("common.notProvided"), sortable: true },
+    { key: "city", header: t("common.city"), cell: (r) => r.city || t("common.notProvided"), sortable: true },
+    { key: "district", header: t("common.district"), cell: (r) => r.district || t("common.notProvided"), sortable: true },
     { key: "location", header: t("commercialListings.location"), cell: (r) => r.location || t("common.notProvided"), sortable: true },
     { key: "amenities", header: t("nav.amenities", { defaultValue: "Amenities" }), cell: (r) => r.amenities && r.amenities.length > 0 ? (
       <div className="flex flex-wrap gap-1">
@@ -536,7 +540,7 @@ function CommercialListingsPage() {
     return items.filter((record) => {
       const qMatch =
         !lower ||
-        [record.ownerName, record.deedNumber, record.location, record.propertyType, record.propertyStatus, record.offerCode]
+        [record.ownerName, record.deedNumber, record.city, record.district, record.location, record.propertyType, record.propertyStatus, record.offerCode]
           .some((v) => (v ?? "").toLowerCase().includes(lower));
 
       const deedMatch = !deedLower || (record.deedNumber ?? "").toLowerCase().includes(deedLower);
@@ -559,21 +563,24 @@ function CommercialListingsPage() {
 
   const unitInitialState = useMemo(() => {
     if (!creatingUnitFor) return null;
+    const src = creatingUnitFor as any;
     return {
-      parentId: creatingUnitFor.id,
-      contactDate: creatingUnitFor.contactDate,
-      ownerName: creatingUnitFor.ownerName,
-      location: creatingUnitFor.location,
-      employee: creatingUnitFor.employee,
-      broker: creatingUnitFor.broker,
-      dealThrough: creatingUnitFor.dealThrough,
-      listingCategory: creatingUnitFor.listingCategory,
-      mobile1: creatingUnitFor.mobile1,
-      mobile2: creatingUnitFor.mobile2,
-      isOfficeListing: creatingUnitFor.isOfficeListing,
+      parentId: src.id,
+      contactDate: src.contactDate,
+      ownerName: src.ownerName,
+      city: src.city,
+      district: src.district,
+      location: src.location,
+      employee: src.employee,
+      broker: src.broker,
+      dealThrough: src.dealThrough,
+      listingCategory: src.listingCategory,
+      mobile1: src.mobile1,
+      mobile2: src.mobile2,
+      isOfficeListing: src.isOfficeListing,
       propertyType: "Apartment", // Default
       createdAt: new Date().toISOString(),
-    } as CommercialListing;
+    } as unknown as CommercialListing;
   }, [creatingUnitFor]);
 
   return (
@@ -777,6 +784,14 @@ function CommercialListingsPage() {
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">{t("commercialListings.listingCategory")}</span>
                     <span>{listingCategoryLabel(r.listingCategory)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">{t("common.city")}</span>
+                    <span className="truncate max-w-[120px]">{r.city || t("common.notProvided")}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">{t("common.district")}</span>
+                    <span className="truncate max-w-[120px]">{r.district || t("common.notProvided")}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">{t("commercialListings.location")}</span>
@@ -1012,6 +1027,7 @@ function CommercialListingDialog({
   const [hasKey, setHasKey] = useState<boolean>(Boolean(listing?.hasKey));
   const [isOfficeListing, setIsOfficeListing] = useState<boolean>(Boolean(listing?.isOfficeListing));
   const [publicVisible, setPublicVisible] = useState<boolean>(Boolean(listing?.publicVisible));
+  const [selectedCity, setSelectedCity] = useState(listing?.city ?? "");
   const [parentId, setParentId] = useState<number | null>(listing?.parentId ?? null);
   const [coordinates, setCoordinates] = useState<string>(listing?.coordinates ?? "");
   const [selectedAmenityIds, setSelectedAmenityIds] = useState<number[]>(() => listing?.amenities?.map(a => a.id) ?? []);
@@ -1058,6 +1074,7 @@ function CommercialListingDialog({
       setHasKey(Boolean(listing?.hasKey));
       setIsOfficeListing(Boolean(listing?.isOfficeListing));
       setPublicVisible(Boolean(listing?.publicVisible));
+      setSelectedCity(listing?.city ?? "");
       setParentId(listing?.parentId ?? null);
       setCoordinates(listing?.coordinates ?? "");
       setSelectedAmenityIds(listing?.amenities?.map(a => a.id) ?? []);
@@ -1273,6 +1290,31 @@ function CommercialListingDialog({
                 ))}
               </SelectContent>
             </Select>
+          </div>
+          <div className="space-y-2">
+            <ComboboxField
+              id="city"
+              label={t("common.city")}
+              defaultValue={listing?.city ?? ""}
+              readOnly={readOnly}
+              options={CITIES.map((c) => ({ value: c, label: c }))}
+              onValueChange={setSelectedCity}
+            />
+          </div>
+          <div className="space-y-2">
+            <ComboboxField
+              key={selectedCity}
+              id="district"
+              label={t("common.district")}
+              defaultValue={listing?.district ?? ""}
+              readOnly={readOnly}
+              disabled={!selectedCity}
+              options={
+                selectedCity
+                  ? getDistricts(selectedCity).map((d) => ({ value: d, label: d }))
+                  : []
+              }
+            />
           </div>
           <TextField id="location" label={t("commercialListings.location")} defaultValue={listing?.location} readOnly={readOnly} />
           <div className="space-y-3 sm:col-span-2">

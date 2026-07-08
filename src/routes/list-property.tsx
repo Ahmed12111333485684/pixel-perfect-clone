@@ -20,6 +20,8 @@ import { PublicFooter } from "@/components/PublicFooter";
 import { CheckCircle2, ImagePlus, Loader2, X } from "lucide-react";
 import { toast } from "sonner";
 import { PROPERTY_TYPES, localizePropertyType } from "@/lib/property-types";
+import { ComboboxField } from "@/components/form/ComboboxField";
+import { CITIES, getDistricts } from "@/lib/locations";
 
 export const Route = createFileRoute("/list-property")({
   head: () => ({
@@ -45,6 +47,8 @@ function LeadIntakePage() {
   const [files, setFiles] = useState<File[]>([]);
   const [intent, setIntent] = useState<LeadIntent>("Sell");
   const [type, setType] = useState<string>("Apartment");
+  const [city, setCity] = useState("");
+  const [district, setDistrict] = useState("");
   const formRef = useRef<HTMLFormElement>(null);
   const parseDateParts = (value?: string) => {
     const safe = value?.slice(0, 10) ?? "";
@@ -64,6 +68,8 @@ function LeadIntakePage() {
     setFiles([]);
     setIntent("Sell");
     setType("Apartment");
+    setCity("");
+    setDistrict("");
     formRef.current?.reset();
   };
 
@@ -72,6 +78,13 @@ function LeadIntakePage() {
     const fd = new FormData(e.currentTarget);
     fd.set("intent", intent);
     fd.set("propertyType", type);
+    // Prepend city/district to property address
+    const rawAddress = fd.get("propertyAddress") || "";
+    const locationParts = [city, district].filter(Boolean);
+    const fullAddress = locationParts.length > 0
+      ? `${locationParts.join(" - ")}${rawAddress ? " - " : ""}${rawAddress}`
+      : rawAddress;
+    fd.set("propertyAddress", fullAddress);
     // Append images under "images" key
     fd.delete("images");
     files.forEach((f) => fd.append("images", f));
@@ -188,6 +201,25 @@ function LeadIntakePage() {
                   </SelectContent>
                 </Select>
               </div>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <ComboboxField
+                id="city"
+                label={t("common.city")}
+                options={CITIES.map((c) => ({ value: c, label: c }))}
+                onValueChange={setCity}
+              />
+              <ComboboxField
+                key={city}
+                id="district"
+                label={t("common.district")}
+                disabled={!city}
+                options={
+                  city
+                    ? getDistricts(city).map((d) => ({ value: d, label: d }))
+                    : []
+                }
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="listedPrice">
