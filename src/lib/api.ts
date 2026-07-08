@@ -126,6 +126,7 @@ export interface UserDto {
   username: string;
   role: Role;
   screenPermissions: string[];
+  canDelete: boolean;
   ownerId?: number | null;
   ownerFullName?: string | null;
   createdAt: string;
@@ -136,6 +137,7 @@ export interface AuthResponse {
   username: string;
   role: Role;
   screenPermissions: string[];
+  canDelete: boolean;
 }
 
 export interface Owner {

@@ -295,8 +295,8 @@ function AdvertisementsPage() {
       toast.success(t("common.deleted"));
       setDeleting(null);
       qc.invalidateQueries({ queryKey: ["advertisements"] });
-    } catch {
-      toast.error(t("common.error"));
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : t("common.error"));
     } finally {
       setDeletingRecord(false);
     }

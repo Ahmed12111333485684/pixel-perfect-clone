@@ -426,8 +426,8 @@ function CommercialListingsPage() {
       toast.success(t("common.deleted"));
       setDeleting(null);
       qc.invalidateQueries({ queryKey: ["commercial-listings"] });
-    } catch (error) {
-      toast.error(t("common.error"));
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : t("common.error"));
     } finally {
       setDeletingRecord(false);
     }

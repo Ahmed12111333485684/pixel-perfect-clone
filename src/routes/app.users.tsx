@@ -101,11 +101,15 @@ function UsersPage() {
       password?: string;
       role: Role;
       screenPermissions?: string[];
+      canDelete?: boolean;
     }) => {
       if (vals.id) {
         const body: Record<string, unknown> = { username: vals.username, role: vals.role };
         if (vals.password) body.password = vals.password;
-        if (vals.role === "Employee") body.screenPermissions = vals.screenPermissions ?? [];
+        if (vals.role === "Employee") {
+          body.screenPermissions = vals.screenPermissions ?? [];
+          body.canDelete = vals.canDelete ?? false;
+        }
         await api(`/api/users/${vals.id}`, { method: "PUT", body });
         return;
       }
@@ -120,7 +124,9 @@ function UsersPage() {
           username: vals.username,
           password: vals.password,
           role: vals.role,
-          ...(vals.role === "Employee" ? { screenPermissions: vals.screenPermissions ?? [] } : {}),
+          ...(vals.role === "Employee"
+            ? { screenPermissions: vals.screenPermissions ?? [], canDelete: vals.canDelete ?? false }
+            : {}),
         },
       });
     },
@@ -289,6 +295,7 @@ function UserDialog({
     password?: string;
     role: Role;
     screenPermissions?: string[];
+    canDelete?: boolean;
   }) => void;
   submitting?: boolean;
 }) {
@@ -297,12 +304,14 @@ function UserDialog({
   const [screenPermissions, setScreenPermissions] = useState<string[]>(
     user?.screenPermissions ?? [],
   );
+  const [canDelete, setCanDelete] = useState(user?.canDelete ?? false);
   const key = `${user?.id ?? "new"}-${open}`;
 
   useEffect(() => {
     if (!open) return;
     setRole(user?.role ?? "Admin");
     setScreenPermissions(user?.screenPermissions ?? []);
+    setCanDelete(user?.canDelete ?? false);
   }, [open, user]);
 
   const employeeMode = role === "Employee";
@@ -339,7 +348,7 @@ function UserDialog({
           username: String(fd.get("username") ?? ""),
           role,
           ...(password ? { password } : {}),
-          ...(employeeMode ? { screenPermissions } : {}),
+          ...(employeeMode ? { screenPermissions, canDelete } : {}),
         });
       }}
     >
@@ -376,6 +385,14 @@ function UserDialog({
                 </span>
               </label>
             ))}
+          </div>
+          <div className="flex items-center gap-3 rounded-md border border-border bg-background px-3 py-2 text-sm">
+            <Checkbox
+              id="canDelete"
+              checked={canDelete}
+              onCheckedChange={(checked) => setCanDelete(checked === true)}
+            />
+            <Label htmlFor="canDelete" className="font-medium">{t("common.canDelete")}</Label>
           </div>
         </div>
       )}

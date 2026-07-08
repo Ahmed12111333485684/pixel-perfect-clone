@@ -28,6 +28,7 @@ interface AuthUser {
   username: string;
   role: Role;
   screenPermissions: string[];
+  canDelete?: boolean;
   ownerId?: number;
   partnerId?: string;
   exp?: number;
@@ -127,6 +128,10 @@ function userFromToken(
   const ownerId = ownerIdRaw !== undefined ? Number(ownerIdRaw) : undefined;
   const partnerIdRaw = payload.partner_id;
   const partnerId = typeof partnerIdRaw === "string" ? partnerIdRaw : undefined;
+  const canDeleteClaim = payload.can_delete;
+  const canDelete = typeof canDeleteClaim === "string"
+    ? canDeleteClaim.toLowerCase() === "true"
+    : false;
   return {
     username,
     role: finalRole,
@@ -134,6 +139,7 @@ function userFromToken(
       payload.screen_permissions,
       fallbackScreenPermissions,
     ),
+    canDelete,
     ownerId: Number.isNaN(ownerId) ? undefined : ownerId,
     partnerId,
     exp: payload.exp,
@@ -172,6 +178,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       username: res.username,
       role: res.role,
       screenPermissions: res.screenPermissions,
+      canDelete: res.canDelete,
     };
     setToken(res.token);
     setUser(u);

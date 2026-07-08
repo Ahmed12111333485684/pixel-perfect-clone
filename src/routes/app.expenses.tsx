@@ -139,8 +139,8 @@ function ExpensesPage() {
       toast.success(t("common.deleted"));
       setDeleting(null);
       qc.invalidateQueries({ queryKey: ["expenses"] });
-    } catch {
-      toast.error(t("common.error"));
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : t("common.error"));
     } finally {
       setDeletingRecord(false);
     }
