@@ -1,8 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { memo, useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { api, fetchPartners, type CommercialListing, type Partner, type CommercialListingImage, type UserDto, type Amenity, ApiError } from "@/lib/api";
+import { api, fetchPartners, createPartner, type CommercialListing, type Partner, type CommercialListingImage, type UserDto, type Amenity, ApiError } from "@/lib/api";
+import { PartnerDialog } from "@/components/partners/PartnerDialog";
 import { useAuth } from "@/lib/auth";
 import { todayLocal } from "@/lib/format";
 import { PageHeader, StatusBadge } from "@/components/PageHeader";
@@ -318,6 +319,44 @@ function CommercialListingsPage() {
   const [viewMode, setViewMode] = useState<"card" | "table">("card");
   const [lightboxImages, setLightboxImages] = useState<{ src: string; alt: string; mimeType?: string }[]>([]);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+  const [partnerDialogOpen, setPartnerDialogOpen] = useState(false);
+
+  const createPartnerMut = useMutation({
+    mutationFn: async (vals: {
+      fullName: string;
+      phone?: string;
+      email?: string;
+      nationalId?: string;
+      falLicenseNumber?: string;
+      commercialRegistrationNumber?: string;
+      location?: string;
+      notes?: string;
+      partnerType?: string;
+      companyName?: string;
+      photo?: File | null;
+    }) => {
+      const formData = new FormData();
+      formData.append("fullName", vals.fullName);
+      if (vals.phone) formData.append("phone", vals.phone);
+      if (vals.email) formData.append("email", vals.email);
+      if (vals.nationalId) formData.append("nationalId", vals.nationalId);
+      if (vals.falLicenseNumber) formData.append("falLicenseNumber", vals.falLicenseNumber);
+      if (vals.commercialRegistrationNumber)
+        formData.append("commercialRegistrationNumber", vals.commercialRegistrationNumber);
+      if (vals.location) formData.append("location", vals.location);
+      if (vals.notes) formData.append("notes", vals.notes);
+      if (vals.partnerType) formData.append("partnerType", vals.partnerType);
+      if (vals.companyName) formData.append("companyName", vals.companyName);
+      if (vals.photo) formData.append("photo", vals.photo);
+      await createPartner(formData);
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["partners", "lookup"] });
+      toast.success(t("common.success"));
+      setPartnerDialogOpen(false);
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
 
   const openLightbox = (listing: CommercialListing, startIndex: number) => {
     setLightboxImages(
@@ -836,6 +875,7 @@ function CommercialListingsPage() {
         submitLabel={t("common.create")}
         onSubmit={handleCreate}
         onImagesChange={() => qc.invalidateQueries({ queryKey: ["commercial-listings"] })}
+        onAddPartner={() => setPartnerDialogOpen(true)}
       />
 
       <CommercialListingDialog
@@ -863,6 +903,7 @@ function CommercialListingsPage() {
           const listing = listings.data?.find(l => l.id === selected?.id) || selected;
           if (listing) openLightbox(listing, index);
         }}
+        onAddPartner={() => setPartnerDialogOpen(true)}
       />
 
       <CommercialListingDialog
@@ -884,6 +925,15 @@ function CommercialListingsPage() {
           handleCreate(e, publishing, contracts).then(() => setCreatingUnitFor(null));
         }}
         isUnit={true}
+        onAddPartner={() => setPartnerDialogOpen(true)}
+      />
+
+      <PartnerDialog
+        open={partnerDialogOpen}
+        onOpenChange={setPartnerDialogOpen}
+        partner={null}
+        submitting={createPartnerMut.isPending}
+        onSubmit={(vals) => createPartnerMut.mutate(vals)}
       />
 
       <ConfirmDialog
@@ -930,6 +980,7 @@ function CommercialListingDialog({
   onImagesChange,
   isUnit,
   onImageZoom,
+  onAddPartner,
 }: {
   open: boolean;
   onOpenChange: (value: boolean) => void;
@@ -948,6 +999,7 @@ function CommercialListingDialog({
   onImagesChange?: () => void;
   isUnit?: boolean;
   onImageZoom?: (index: number) => void;
+  onAddPartner?: () => void;
 }) {
   const { t } = useTranslation();
   const [publishing, setPublishing] = useState<PublishingState>(() => buildPublishingState(listing));
@@ -1104,18 +1156,32 @@ function CommercialListingDialog({
           </div>
           <div className="space-y-2">
             <Label htmlFor="broker" className="text-xs font-medium">{t("commercialListings.broker")}</Label>
-            <Select value={broker || "none"} onValueChange={(value) => setBroker(value === "none" ? "" : value)} disabled={readOnly}>
-              <SelectTrigger id="broker" className="mt-1">
-                <SelectValue placeholder={partnersLoading ? "Loading partners..." : "Select partner"} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">{t("common.notProvided")}</SelectItem>
-                {partnerOptions.map((partner) => (
-                  <SelectItem key={partner.id} value={partner.fullName}>{partner.fullName}</SelectItem>
-                ))}
-                {broker && !hasCurrentBrokerInPartners && <SelectItem value={broker}>{broker}</SelectItem>}
-              </SelectContent>
-            </Select>
+            <div className="flex gap-2">
+              <div className="flex-1">
+                <Select value={broker || "none"} onValueChange={(value) => setBroker(value === "none" ? "" : value)} disabled={readOnly}>
+                  <SelectTrigger id="broker" className="mt-1">
+                    <SelectValue placeholder={partnersLoading ? "Loading partners..." : "Select partner"} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">{t("common.notProvided")}</SelectItem>
+                    {partnerOptions.map((partner) => (
+                      <SelectItem key={partner.id} value={partner.fullName}>{partner.fullName}</SelectItem>
+                    ))}
+                    {broker && !hasCurrentBrokerInPartners && <SelectItem value={broker}>{broker}</SelectItem>}
+                  </SelectContent>
+                </Select>
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                className="mt-1 shrink-0"
+                onClick={onAddPartner}
+                title={t("common.add")}
+              >
+                <Plus className="h-4 w-4" />
+              </Button>
+            </div>
             <input type="hidden" name="broker" value={broker} />
           </div>
           <div className="flex items-center gap-3">

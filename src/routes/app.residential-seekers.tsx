@@ -1,9 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Link } from "@tanstack/react-router";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { api, resolveApiAssetUrl, type ResidentialSeeker, type RequestPropertySuggestion, fetchPartners, type UserDto, ApiError } from "@/lib/api";
+import { api, resolveApiAssetUrl, createPartner, type ResidentialSeeker, type RequestPropertySuggestion, fetchPartners, type UserDto, type Partner, ApiError } from "@/lib/api";
+import { PartnerDialog } from "@/components/partners/PartnerDialog";
 import { useAuth } from "@/lib/auth";
 import { todayLocal } from "@/lib/format";
 import { PROPERTY_TYPES, localizePropertyType } from "@/lib/property-types";
@@ -116,6 +117,44 @@ function ResidentialSeekersPage() {
   const [deleting, setDeleting] = useState<ResidentialSeeker | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [deletingRecord, setDeletingRecord] = useState(false);
+  const [partnerDialogOpen, setPartnerDialogOpen] = useState(false);
+
+  const createPartnerMut = useMutation({
+    mutationFn: async (vals: {
+      fullName: string;
+      phone?: string;
+      email?: string;
+      nationalId?: string;
+      falLicenseNumber?: string;
+      commercialRegistrationNumber?: string;
+      location?: string;
+      notes?: string;
+      partnerType?: string;
+      companyName?: string;
+      photo?: File | null;
+    }) => {
+      const formData = new FormData();
+      formData.append("fullName", vals.fullName);
+      if (vals.phone) formData.append("phone", vals.phone);
+      if (vals.email) formData.append("email", vals.email);
+      if (vals.nationalId) formData.append("nationalId", vals.nationalId);
+      if (vals.falLicenseNumber) formData.append("falLicenseNumber", vals.falLicenseNumber);
+      if (vals.commercialRegistrationNumber)
+        formData.append("commercialRegistrationNumber", vals.commercialRegistrationNumber);
+      if (vals.location) formData.append("location", vals.location);
+      if (vals.notes) formData.append("notes", vals.notes);
+      if (vals.partnerType) formData.append("partnerType", vals.partnerType);
+      if (vals.companyName) formData.append("companyName", vals.companyName);
+      if (vals.photo) formData.append("photo", vals.photo);
+      await createPartner(formData);
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["partners"] });
+      toast.success(t("common.success"));
+      setPartnerDialogOpen(false);
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
   const [viewMode, setViewMode] = useState<"card" | "table">("card");
 
   const hasAccess = auth.hasRole("Admin")
@@ -572,6 +611,7 @@ function ResidentialSeekersPage() {
         title={`${t("common.add")} ${t("nav.residentialSeekers")}`}
         submitLabel={t("common.create")}
         onSubmit={handleCreate}
+        onAddPartner={() => setPartnerDialogOpen(true)}
       />
 
       <ResidentialSeekerDialog
@@ -593,6 +633,15 @@ function ResidentialSeekersPage() {
           e.preventDefault();
           setSelected(null);
         }}
+        onAddPartner={() => setPartnerDialogOpen(true)}
+      />
+
+      <PartnerDialog
+        open={partnerDialogOpen}
+        onOpenChange={setPartnerDialogOpen}
+        partner={null}
+        submitting={createPartnerMut.isPending}
+        onSubmit={(vals) => createPartnerMut.mutate(vals)}
       />
 
       <ConfirmDialog
@@ -625,6 +674,7 @@ function ResidentialSeekerDialog({
   title,
   submitLabel,
   onSubmit,
+  onAddPartner,
 }: {
   open: boolean;
   onOpenChange: (value: boolean) => void;
@@ -639,6 +689,7 @@ function ResidentialSeekerDialog({
   title: string;
   submitLabel: string;
   onSubmit: (e: React.FormEvent<HTMLFormElement>) => void | Promise<void>;
+  onAddPartner?: () => void;
 }) {
   const { t } = useTranslation();
   const [listingType, setListingType] = useState(seeker?.listingType ?? "Rental");
@@ -688,7 +739,21 @@ function ResidentialSeekerDialog({
               <Label htmlFor="sourceChannel" className="text-xs font-medium">
                 {t("residentialSeekers.sourceChannel")}
               </Label>
-              <PartnersSelect defaultValue={seeker?.sourceChannel} />
+              <div className="flex gap-2">
+                <div className="flex-1">
+                  <PartnersSelect defaultValue={seeker?.sourceChannel} />
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  className="mt-1 shrink-0"
+                  onClick={onAddPartner}
+                  title={t("common.add")}
+                >
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
           )}
         </div>
