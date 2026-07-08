@@ -18,7 +18,7 @@ import { LanguageToggle } from "@/components/LanguageToggle";
 import { PublicFooter } from "@/components/PublicFooter";
 import { CheckCircle2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { PROPERTY_TYPES, localizePropertyType } from "@/lib/property-types";
+import { PROPERTY_TYPES_BY_CATEGORY, PROPERTY_CATEGORIES, getPropertyTypesByCategory } from "@/lib/property-types";
 import { NATIONALITIES } from "@/lib/nationalities";
 import { PAYMENT_TYPES } from "@/lib/payment-types";
 import { ComboboxField } from "@/components/form/ComboboxField";
@@ -54,7 +54,7 @@ function PropertyRequestPage() {
   const [loading, setLoading] = useState(false);
   const [requestType, setRequestType] = useState<string>("Rental");
   const [requestCategory, setRequestCategory] = useState<string>("سكني");
-  const [propertyType, setPropertyType] = useState<string>(PROPERTY_TYPES[0]);
+  const [propertyType, setPropertyType] = useState<string>("");
   const [city, setCity] = useState<string>("");
   const formRef = useRef<HTMLFormElement>(null);
 
@@ -62,7 +62,7 @@ function PropertyRequestPage() {
     setSubmitted(null);
     setRequestType("Rental");
     setRequestCategory("سكني");
-    setPropertyType(PROPERTY_TYPES[0]);
+    setPropertyType("");
     setCity("");
     formRef.current?.reset();
   };
@@ -184,32 +184,35 @@ function PropertyRequestPage() {
 
                 <div>
                   <Label htmlFor="requestCategory" className="text-xs font-medium">
-                    تصنيف الطلب
+                    تصنيف العقار
                   </Label>
-                  <Select value={requestCategory} onValueChange={setRequestCategory}>
+                  <Select value={requestCategory} onValueChange={(v) => { setRequestCategory(v); setPropertyType(""); }}>
                     <SelectTrigger id="requestCategory" className="mt-1">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="سكني">سكني</SelectItem>
-                      <SelectItem value="تجاري">تجاري</SelectItem>
+                      {PROPERTY_CATEGORIES.map((cat) => (
+                        <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
 
                 <div>
                   <Label htmlFor="propertyType" className="text-xs font-medium">
-                    {t("lead.propertyType")}
+                    نوع العقار
                   </Label>
-                  <Select value={propertyType} onValueChange={setPropertyType}>
+                  <Select
+                    value={propertyType}
+                    onValueChange={setPropertyType}
+                    disabled={!requestCategory}
+                  >
                     <SelectTrigger id="propertyType" className="mt-1">
-                      <SelectValue />
+                      <SelectValue placeholder={requestCategory ? "اختر..." : "اختر تصنيف العقار أولاً"} />
                     </SelectTrigger>
                     <SelectContent>
-                      {PROPERTY_TYPES.map((type) => (
-                        <SelectItem key={type} value={type}>
-                          {localizePropertyType(t, type)}
-                        </SelectItem>
+                      {getPropertyTypesByCategory(requestCategory).map((type) => (
+                        <SelectItem key={type} value={type}>{type}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>

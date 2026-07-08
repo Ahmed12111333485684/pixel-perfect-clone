@@ -22,6 +22,7 @@ import { PhoneField } from "@/components/form/PhoneField";
 import { ComboboxField } from "@/components/form/ComboboxField";
 import { CITIES, getDistricts } from "@/lib/locations";
 import { PAYMENT_TYPES } from "@/lib/payment-types";
+import { PROPERTY_TYPES_BY_CATEGORY, getPropertyTypesByCategory } from "@/lib/property-types";
 import { CommercialListingImageManager } from "@/components/CommercialListingImageManager";
 import { resolveApiAssetUrl } from "@/lib/api";
 import { MediaLightbox } from "@/components/MediaLightbox";
@@ -150,6 +151,10 @@ type PropertyTypeKey =
   | "Villa"
   | "Warehouse"
   | "Other";
+
+function listingCategoryToArabic(cat: string): string {
+  return cat === LISTING_CATEGORY_RESIDENTIAL ? "سكني" : "تجاري";
+}
 
 function normalizePropertyType(value: string | null | undefined): PropertyTypeKey | "" {
   const v = normalizeValue(value).toLowerCase();
@@ -1022,7 +1027,7 @@ function CommercialListingDialog({
   const [listingCategory, setListingCategory] = useState<ListingCategoryValue>(normalizeListingCategory(listing?.listingCategory));
   const [propertyStatus, setPropertyStatus] = useState<string>(listing?.propertyStatus ?? STATUS_AVAILABLE);
   const [listingType, setListingType] = useState<ListingTypeValue>(normalizeListingType(listing?.listingType));
-  const [propertyType, setPropertyType] = useState<PropertyTypeKey | "">(normalizePropertyType(listing?.propertyType));
+  const [propertyType, setPropertyType] = useState<string>(listing?.propertyType ?? "");
   const [dealThrough, setDealThrough] = useState<string>(listing?.dealThrough ?? DEAL_THROUGH_OWNER);
   const [hasKey, setHasKey] = useState<boolean>(Boolean(listing?.hasKey));
   const [isOfficeListing, setIsOfficeListing] = useState<boolean>(Boolean(listing?.isOfficeListing));
@@ -1069,7 +1074,7 @@ function CommercialListingDialog({
       setListingCategory(normalizeListingCategory(listing?.listingCategory));
       setPropertyStatus(listing?.propertyStatus ?? STATUS_AVAILABLE);
       setListingType(normalizeListingType(listing?.listingType));
-      setPropertyType(normalizePropertyType(listing?.propertyType));
+      setPropertyType(listing?.propertyType ?? "");
       setDealThrough(listing?.dealThrough ?? DEAL_THROUGH_OWNER);
       setHasKey(Boolean(listing?.hasKey));
       setIsOfficeListing(Boolean(listing?.isOfficeListing));
@@ -1111,8 +1116,8 @@ function CommercialListingDialog({
             </div>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="listingCategory" className="text-xs font-medium">{t("commercialListings.listingCategory")}</Label>
-            <Select value={listingCategory} onValueChange={(v) => setListingCategory(v as ListingCategoryValue)} disabled={readOnly}>
+            <Label htmlFor="listingCategory" className="text-xs font-medium">تصنيف العقار</Label>
+            <Select value={listingCategory} onValueChange={(v) => { setListingCategory(v as ListingCategoryValue); setPropertyType(""); }} disabled={readOnly}>
               <SelectTrigger id="listingCategory" className="mt-1">
                 <SelectValue placeholder={t("commercialListings.listingCategory")} />
               </SelectTrigger>
@@ -1238,31 +1243,15 @@ function CommercialListingDialog({
           <TextField id="availableUnits" label={t("commercialListings.availableUnits")} defaultValue={listing?.availableUnits} readOnly={readOnly} type="number" min={0} />
           <TextField id="deedNumber" label={t("commercialListings.deedNumber")} defaultValue={listing?.deedNumber} readOnly={readOnly} />
           <div className="space-y-2">
-            <Label htmlFor="propertyType" className="text-xs font-medium">{t("commercialListings.propertyType")}</Label>
-            <Select value={propertyType} onValueChange={(v) => setPropertyType(v as PropertyTypeKey | "")} disabled={readOnly}>
+            <Label htmlFor="propertyType" className="text-xs font-medium">نوع العقار</Label>
+            <Select value={propertyType} onValueChange={setPropertyType} disabled={readOnly}>
               <SelectTrigger id="propertyType" className="mt-1">
-                <SelectValue placeholder={t("commercialListings.propertyType")} />
+                <SelectValue placeholder={listingCategory ? "اختر..." : "اختر تصنيف العقار أولاً"} />
               </SelectTrigger>
               <SelectContent>
-                {isUnit ? (
-                  <>
-                    <SelectItem value="Apartment">{t("propertyType.Apartment")}</SelectItem>
-                    <SelectItem value="Office">{t("propertyType.Office")}</SelectItem>
-                  </>
-                ) : (
-                  <>
-                    <SelectItem value="Apartment">{t("propertyType.Apartment")}</SelectItem>
-                    <SelectItem value="Shop">{t("propertyType.Shop")}</SelectItem>
-                    <SelectItem value="Office">{t("propertyType.Office")}</SelectItem>
-                    <SelectItem value="Showroom">{t("propertyType.Showroom")}</SelectItem>
-                    <SelectItem value="Building">{t("propertyType.Building")}</SelectItem>
-                    <SelectItem value="Land">{t("propertyType.Land")}</SelectItem>
-                    <SelectItem value="RestHouse">{t("propertyType.RestHouse")}</SelectItem>
-                    <SelectItem value="Villa">{t("propertyType.Villa")}</SelectItem>
-                    <SelectItem value="Warehouse">{t("propertyType.Warehouse")}</SelectItem>
-                    <SelectItem value="Other">{t("propertyType.Other")}</SelectItem>
-                  </>
-                )}
+                {getPropertyTypesByCategory(listingCategoryToArabic(listingCategory)).map((type) => (
+                  <SelectItem key={type} value={type}>{type}</SelectItem>
+                ))}
               </SelectContent>
             </Select>
             <input type="hidden" name="propertyType" value={propertyType} />

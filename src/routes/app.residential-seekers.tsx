@@ -7,7 +7,7 @@ import { api, resolveApiAssetUrl, createPartner, type ResidentialSeeker, type Re
 import { PartnerDialog } from "@/components/partners/PartnerDialog";
 import { useAuth } from "@/lib/auth";
 import { todayLocal } from "@/lib/format";
-import { PROPERTY_TYPES, localizePropertyType } from "@/lib/property-types";
+import { PROPERTY_TYPES_BY_CATEGORY, PROPERTY_CATEGORIES, getPropertyTypesByCategory, localizePropertyType } from "@/lib/property-types";
 import { NATIONALITIES } from "@/lib/nationalities";
 import { PAYMENT_TYPES } from "@/lib/payment-types";
 import { PageHeader, StatusBadge } from "@/components/PageHeader";
@@ -714,6 +714,8 @@ function ResidentialSeekerDialog({
 }) {
   const { t } = useTranslation();
   const [listingType, setListingType] = useState(seeker?.listingType ?? "Rental");
+  const [requestCategory, setRequestCategory] = useState(seeker?.requestCategory ?? "سكني");
+  const [propertyType, setPropertyType] = useState(seeker?.propertyType ?? "");
   const [selectedCity, setSelectedCity] = useState(seeker?.city ?? "");
   const maxBudgetLabel = listingType === "Rental"
     ? t("residentialSeekers.maxRentalBudget")
@@ -797,21 +799,22 @@ function ResidentialSeekerDialog({
           />
           <SelectField
             id="requestCategory"
-            label="تصنيف الطلب"
-            defaultValue={seeker?.requestCategory ?? "سكني"}
+            label="تصنيف العقار"
+            defaultValue={requestCategory}
             readOnly={readOnly}
-            options={[
-              { value: "سكني", label: "سكني" },
-              { value: "تجاري", label: "تجاري" },
-            ]}
+            onValueChange={(v) => { setRequestCategory(v); setPropertyType(""); }}
+            options={PROPERTY_CATEGORIES.map((cat) => ({ value: cat, label: cat }))}
           />
-          <SelectField
-            id="propertyType"
-            label={t("residentialSeekers.propertyType")}
-            defaultValue={seeker?.propertyType ?? PROPERTY_TYPES[0]}
-            readOnly={readOnly}
-            options={PROPERTY_TYPES.map((type) => ({ value: type, label: localizePropertyType(t, type) }))}
-          />
+          <div key={requestCategory}>
+            <SelectField
+              id="propertyType"
+              label="نوع العقار"
+              defaultValue={propertyType}
+              readOnly={readOnly || !requestCategory}
+              onValueChange={setPropertyType}
+              options={getPropertyTypesByCategory(requestCategory).map((type) => ({ value: type, label: type }))}
+            />
+          </div>
         </div>
       </div>
 
