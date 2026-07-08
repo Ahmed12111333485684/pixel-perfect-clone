@@ -391,7 +391,7 @@ function Header() {
           <Button
             asChild
             size="sm"
-            className="bg-gold-gradient text-gold-foreground hover:opacity-95"
+            className="hidden sm:inline-flex bg-gold-gradient text-gold-foreground hover:opacity-95"
           >
             <Link to="/available-properties">{t("publicProperties.browse")}</Link>
           </Button>

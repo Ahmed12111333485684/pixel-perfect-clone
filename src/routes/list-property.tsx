@@ -327,13 +327,13 @@ function Header() {
           <Button asChild variant="outline" size="sm">
             <Link to="/">{t("common.home")}</Link>
           </Button>
-          <Button asChild variant="outline" size="sm">
+          <Button asChild variant="outline" size="sm" className="hidden sm:inline-flex">
             <Link to="/available-properties">{t("publicProperties.browse")}</Link>
           </Button>
-          <Button asChild variant="outline" size="sm">
+          <Button asChild variant="outline" size="sm" className="hidden md:inline-flex">
             <Link to="/property-request">{t("landing.findProperty") || "Find Your Property"}</Link>
           </Button>
-          <Button asChild variant="outline" size="sm">
+          <Button asChild variant="outline" size="sm" className="hidden sm:inline-flex">
             <Link to="/login">{t("nav.signIn")}</Link>
           </Button>
         </div>

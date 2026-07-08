@@ -82,7 +82,7 @@ function Landing() {
     <div className="min-h-screen bg-background">
       <header className="absolute inset-x-0 top-0 z-22">
         <div className="relative h-[6.5rem] w-full">
-          <div className="absolute -right-6 top-5 inline-flex items-center justify-center motion-safe:animate-rise-in" style={{ animationDelay: "80ms" }}>
+            <div className="absolute right-2 top-5 inline-flex items-center justify-center motion-safe:animate-rise-in sm:-right-6" style={{ animationDelay: "80ms" }}>
             <div
               aria-hidden
               className="absolute inset-x-[-32px] inset-y-[-24px] -z-10 rounded-full bg-white/30 blur-[48px] motion-safe:animate-pulse"
@@ -132,7 +132,6 @@ function Landing() {
             className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 bg-[linear-gradient(90deg,transparent_0%,rgba(255,255,255,0.15)_50%,transparent_100%)] bg-[length:200%_100%] px-3 py-1 text-xs font-medium backdrop-blur shadow-[0_8px_24px_rgba(0,0,0,0.22)] motion-safe:animate-shimmer"
             style={{ animationDelay: "0.1s" }}
           >
-            <Sparkles className="h-3.5 w-3.5 text-gold motion-safe:animate-spin-slow" />
             {t("brand.tagline")}
           </span>
           <h1
