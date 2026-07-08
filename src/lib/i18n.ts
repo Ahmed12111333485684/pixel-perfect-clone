@@ -277,6 +277,7 @@ const en = {
     rights: "All rights reserved.",
     // madeWith: "Crafted with care.",
     contactCta: "Contact us",
+    followUs: "Follow us",
   },
   lead: {
     pageTitle: "List your property",
@@ -830,6 +831,7 @@ const ar = {
     rights: "جميع الحقوق محفوظة.",
     // madeWith: "صُنع بعناية.",
     contactCta: "تواصل معنا",
+    followUs: "تابعنا على",
   },
   lead: {
     pageTitle: "اعرض عقارك",
