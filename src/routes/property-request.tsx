@@ -22,6 +22,7 @@ import { PROPERTY_TYPES_BY_CATEGORY, PROPERTY_CATEGORIES, getPropertyTypesByCate
 import { NATIONALITIES } from "@/lib/nationalities";
 import { PAYMENT_TYPES } from "@/lib/payment-types";
 import { ComboboxField } from "@/components/form/ComboboxField";
+import { MultiComboboxField } from "@/components/form/MultiComboboxField";
 import { CITIES, getDistricts } from "@/lib/locations";
 
 export const Route = createFileRoute("/property-request")({
@@ -100,7 +101,7 @@ function PropertyRequestPage() {
           paymentType: formData.get("paymentType") || undefined,
           preferredLocation: formData.get("location") || undefined,
           city: formData.get("city") || undefined,
-          district: formData.get("district") || undefined,
+          district: (() => { const v = formData.get("district"); if (!v) return undefined; try { return JSON.parse(String(v)); } catch { return undefined; } })(),
           notes: formData.get("notes") || undefined,
         },
         anonymous: true,
@@ -227,7 +228,7 @@ function PropertyRequestPage() {
                   />
                 </div>
                 <div>
-                  <ComboboxField
+                  <MultiComboboxField
                     key={city}
                     id="district"
                     label="الحي"

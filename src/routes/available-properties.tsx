@@ -341,10 +341,25 @@ function ListingCard({ listing }: { listing: PublicListing }) {
         </div>
 
         <div className="mt-3 space-y-2 text-sm text-muted-foreground">
-          {listing.location && (
+          {listing.city && (
+            <div className="flex items-start gap-2">
+              <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-gold" />
+              <span>{[listing.city, ...(Array.isArray(listing.district) ? listing.district : [])].filter(Boolean).join(" - ")}</span>
+            </div>
+          )}
+          {!listing.city && listing.location && (
             <div className="flex items-start gap-2">
               <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-gold" />
               <span>{listing.location}</span>
+            </div>
+          )}
+          {listing.district && Array.isArray(listing.district) && listing.district.length > 0 && (
+            <div className="flex flex-wrap gap-1.5">
+              {listing.district.map((d) => (
+                <Badge key={d} variant="secondary" className="text-xs">
+                  {d}
+                </Badge>
+              ))}
             </div>
           )}
           {listing.propertyType && (
@@ -757,6 +772,22 @@ function ListingDetailsDialog({
                           : "—"}
                       </span>
                     </div>
+                    <div className="flex items-center justify-between border-b border-border pb-2 text-sm">
+                      <span className="text-muted-foreground">{t("common.city")}</span>
+                      <span className="font-medium">{listing.city || "—"}</span>
+                    </div>
+                    {listing.district && Array.isArray(listing.district) && listing.district.length > 0 && (
+                      <div className="flex items-center justify-between border-b border-border pb-2 text-sm">
+                        <span className="text-muted-foreground">{t("common.district")}</span>
+                        <span className="font-medium flex flex-wrap gap-1">
+                          {listing.district.map((d) => (
+                            <Badge key={d} variant="secondary" className="text-xs">
+                              {d}
+                            </Badge>
+                          ))}
+                        </span>
+                      </div>
+                    )}
                     <div className="flex items-center justify-between border-b border-border pb-2 text-sm">
                       <span className="text-muted-foreground">{t("commercialListings.offerCode")}</span>
                       <span className="font-medium">{listing.offerCode || "—"}</span>

@@ -20,6 +20,7 @@ import { Plus, X, LayoutGrid, List, FileImage } from "lucide-react";
 import { toast } from "sonner";
 import { PhoneField } from "@/components/form/PhoneField";
 import { ComboboxField } from "@/components/form/ComboboxField";
+import { MultiComboboxField } from "@/components/form/MultiComboboxField";
 import { CITIES, getDistricts } from "@/lib/locations";
 import { PAYMENT_TYPES } from "@/lib/payment-types";
 import { PROPERTY_TYPES_BY_CATEGORY, getPropertyTypesByCategory } from "@/lib/property-types";
@@ -283,6 +284,13 @@ function buildCommercialPayload(
     payload.parentId = parseInt(parentIdStr as string, 10);
   }
 
+  payload.city = readFieldValue(fd, "city");
+  const districtRaw = fd.get("district");
+  if (districtRaw) {
+    try { payload.district = JSON.parse(String(districtRaw)); }
+    catch { payload.district = [String(districtRaw)]; }
+  }
+
   payload.brokerageContracts = normalizeBrokerageContracts(contracts);
 
   const amenityIdsStr = fd.get("amenityIds");
@@ -519,7 +527,7 @@ function CommercialListingsPage() {
     { key: "rentAmount", header: t("commercialListings.rentAmount"), cell: (r) => r.rentAmount || t("common.notProvided"), sortable: true },
     { key: "paymentType", header: t("commercialListings.paymentType"), cell: (r) => r.paymentType || t("common.notProvided"), sortable: true },
     { key: "city", header: t("common.city"), cell: (r) => r.city || t("common.notProvided"), sortable: true },
-    { key: "district", header: t("common.district"), cell: (r) => r.district || t("common.notProvided"), sortable: true },
+    { key: "district", header: t("common.district"), cell: (r) => Array.isArray(r.district) ? r.district.join(" - ") : (r.district || t("common.notProvided")), sortable: true },
     { key: "location", header: t("commercialListings.location"), cell: (r) => r.location || t("common.notProvided"), sortable: true },
     { key: "amenities", header: t("nav.amenities", { defaultValue: "Amenities" }), cell: (r) => r.amenities && r.amenities.length > 0 ? (
       <div className="flex flex-wrap gap-1">
@@ -545,7 +553,7 @@ function CommercialListingsPage() {
     return items.filter((record) => {
       const qMatch =
         !lower ||
-        [record.ownerName, record.deedNumber, record.city, record.district, record.location, record.propertyType, record.propertyStatus, record.offerCode]
+        [record.ownerName, record.deedNumber, record.city, Array.isArray(record.district) ? record.district.join(" ") : record.district, record.location, record.propertyType, record.propertyStatus, record.offerCode]
           .some((v) => (v ?? "").toLowerCase().includes(lower));
 
       const deedMatch = !deedLower || (record.deedNumber ?? "").toLowerCase().includes(deedLower);
@@ -796,7 +804,7 @@ function CommercialListingsPage() {
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">{t("common.district")}</span>
-                    <span className="truncate max-w-[120px]">{r.district || t("common.notProvided")}</span>
+                    <span className="truncate max-w-[120px]">{Array.isArray(r.district) ? r.district.join(" - ") : (r.district || t("common.notProvided"))}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">{t("commercialListings.location")}</span>
@@ -1291,11 +1299,11 @@ function CommercialListingDialog({
             />
           </div>
           <div className="space-y-2">
-            <ComboboxField
+            <MultiComboboxField
               key={selectedCity}
               id="district"
               label={t("common.district")}
-              defaultValue={listing?.district ?? ""}
+              defaultValue={listing?.district ?? null}
               readOnly={readOnly}
               disabled={!selectedCity}
               options={

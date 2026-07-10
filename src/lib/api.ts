@@ -216,7 +216,7 @@ export interface PropertyDto {
   type: string;
   region?: string | null;
   city?: string | null;
-  district?: string | null;
+  district?: string[] | null;
   listingType: "Rental" | "Sale";
   salePrice?: number | null;
   rentPrice?: number | null;
@@ -459,7 +459,7 @@ export interface CommercialListing {
   rentAmount?: string | null;
   paymentType?: string | null;
   city?: string | null;
-  district?: string | null;
+  district?: string[] | null;
   location?: string | null;
   coordinates?: string | null;
   hasKey?: boolean | null;
@@ -520,6 +520,8 @@ export interface PublicListing {
   adText2?: string | null;
   rentAmount?: string | null;
   paymentType?: string | null;
+  city?: string | null;
+  district?: string[] | null;
   location?: string | null;
   coordinates?: string | null;
   roomsCount?: string | null;
@@ -562,7 +564,7 @@ export interface ResidentialSeeker {
   paymentType?: string | null;
   preferredLocation?: string | null;
   city?: string | null;
-  district?: string | null;
+  district?: string[] | null;
   notes?: string | null;
   requestCategory?: string | null;
   createdAt: string;

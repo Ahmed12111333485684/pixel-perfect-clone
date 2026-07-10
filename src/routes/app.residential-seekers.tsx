@@ -23,6 +23,7 @@ import { Building2, MapPin, Plus, Sparkles, X, LayoutGrid, List } from "lucide-r
 import { RiyalIcon } from "@/components/icons/RiyalIcon";
 import { toast } from "sonner";
 import { ComboboxField } from "@/components/form/ComboboxField";
+import { MultiComboboxField } from "@/components/form/MultiComboboxField";
 import { PhoneField } from "@/components/form/PhoneField";
 import { CITIES, getDistricts } from "@/lib/locations";
 
@@ -78,7 +79,7 @@ function readFieldValue(fd: FormData, key: string) {
 }
 
 function buildResidentialPayload(fd: FormData, original?: ResidentialSeeker | null) {
-  const payload: Record<string, string> = {};
+  const payload: Record<string, unknown> = {};
 
   RESIDENTIAL_FIELDS.forEach((key) => {
     const value = readFieldValue(fd, key);
@@ -86,6 +87,12 @@ function buildResidentialPayload(fd: FormData, original?: ResidentialSeeker | nu
       payload[key] = value;
     }
   });
+
+  const districtRaw = fd.get("district");
+  if (districtRaw) {
+    try { payload.district = JSON.parse(String(districtRaw)); }
+    catch { payload.district = [String(districtRaw)]; }
+  }
 
   return payload;
 }
@@ -340,7 +347,7 @@ function ResidentialSeekersPage() {
     {
       key: "district",
       header: "الحي",
-      cell: (r) => r.district || t("common.notProvided"),
+      cell: (r) => Array.isArray(r.district) ? r.district.join(" - ") : (r.district || t("common.notProvided")),
     },
     {
       key: "employee",
@@ -530,7 +537,7 @@ function ResidentialSeekersPage() {
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">الحي</span>
-                    <span>{r.district || t("common.notProvided")}</span>
+                    <span>{Array.isArray(r.district) ? r.district.join(" - ") : (r.district || t("common.notProvided"))}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">{t("residentialSeekers.maxBudget")}</span>
@@ -873,11 +880,11 @@ function ResidentialSeekerDialog({
             options={CITIES.map((c) => ({ value: c, label: c }))}
             onValueChange={setSelectedCity}
           />
-          <ComboboxField
+          <MultiComboboxField
             key={selectedCity}
             id="district"
             label="الحي"
-            defaultValue={seeker?.district ?? ""}
+            defaultValue={seeker?.district ?? []}
             readOnly={readOnly}
             disabled={!selectedCity}
             options={

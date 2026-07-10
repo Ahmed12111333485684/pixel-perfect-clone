@@ -21,6 +21,7 @@ import { CheckCircle2, ImagePlus, Loader2, X } from "lucide-react";
 import { toast } from "sonner";
 import { PROPERTY_TYPES, localizePropertyType } from "@/lib/property-types";
 import { ComboboxField } from "@/components/form/ComboboxField";
+import { MultiComboboxField } from "@/components/form/MultiComboboxField";
 import { CITIES, getDistricts } from "@/lib/locations";
 
 export const Route = createFileRoute("/list-property")({
@@ -80,7 +81,11 @@ function LeadIntakePage() {
     fd.set("propertyType", type);
     // Prepend city/district to property address
     const rawAddress = fd.get("propertyAddress") || "";
-    const locationParts = [city, district].filter(Boolean);
+    const districtVal = fd.get("district");
+    const districtArr: string[] = districtVal
+      ? (() => { try { return JSON.parse(String(districtVal)); } catch { return []; } })()
+      : [];
+    const locationParts = [city, ...districtArr].filter(Boolean);
     const fullAddress = locationParts.length > 0
       ? `${locationParts.join(" - ")}${rawAddress ? " - " : ""}${rawAddress}`
       : rawAddress;
@@ -209,7 +214,7 @@ function LeadIntakePage() {
                 options={CITIES.map((c) => ({ value: c, label: c }))}
                 onValueChange={setCity}
               />
-              <ComboboxField
+              <MultiComboboxField
                 key={city}
                 id="district"
                 label={t("common.district")}
