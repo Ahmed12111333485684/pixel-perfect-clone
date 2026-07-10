@@ -236,7 +236,7 @@ const en = {
   landing: {
     heroTitle: "A Vision for Real Estate Management and Marketing",
     heroSubtitle:
-      "Noor Consultancy, we do more than just manage real estate; we create sustainable value. By combining smart solutions with deep-rooted expertise, we guide owners and partners toward exceptional deals that begin with the initial offer and culminate in success.",
+  "Noor Consultancy\nWe do more than just manage real estate; we create sustainable value.\nBy combining smart solutions with deep-rooted expertise, we guide owners and partners toward exceptional deals that begin with the initial offer and culminate in success.",
     listProperty: "List your property",
     findProperty: "Request your property",
     backofficeSignIn: "Staff login",
@@ -795,7 +795,7 @@ const ar = {
   },
   landing: {
     heroTitle: "رؤية حديثة في ادارة و تسويق العقارات",
-    heroSubtitle: "نور الاستشارة, لا نكتفي بإدارة العقارات; بل نصنع لها قيمة مستدامة. ندمج الحلول الذكية بالخبرة العريقة لنقود المُلاّك والشركاء نحو صفقات استثنائية تبدأ من العرض و تتوج بالنجاح.",
+    heroSubtitle: "نور الاستشارة\n لا نكتفي بإدارة العقارات; بل نصنع لها قيمة مستدامة.\n ندمج الحلول الذكية بالخبرة العريقة لنقود المُلاّك والشركاء نحو صفقات استثنائية تبدأ من العرض و تتوج بالنجاح.",
     listProperty: "اعرض عقارك", findProperty: "اطلب عقارك", backofficeSignIn: "دخول الموظفين",
     feature1Title: "عقارات تناسب احتياجاتك",
     feature1Body: "ساعدك في العثور على العقار المناسب بناءً على ميزانيتك، موقعك المفضل، وأسلوب حياتك، لتصل إلى الخيار الأنسب بسهولة وثقة.",

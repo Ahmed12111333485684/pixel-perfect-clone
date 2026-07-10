@@ -82,7 +82,7 @@ function Landing() {
     <div className="min-h-screen bg-background">
       <header className="absolute inset-x-0 top-0 z-22">
         <div className="relative h-[6.5rem] w-full">
-            <div className="absolute right-2 top-5 inline-flex items-center justify-center motion-safe:animate-rise-in sm:-right-6" style={{ animationDelay: "80ms" }}>
+            <div className="absolute right-4 top-5 inline-flex items-center justify-center motion-safe:animate-rise-in" style={{ animationDelay: "80ms" }}>
             <div
               aria-hidden
               className="absolute inset-x-[-32px] inset-y-[-24px] -z-10 rounded-full bg-white/30 blur-[48px] motion-safe:animate-pulse"
@@ -136,13 +136,16 @@ function Landing() {
           </span>
           <h1
             className="max-w-3xl text-balance font-display text-5xl font-bold leading-tight tracking-tight drop-shadow-[0_10px_26px_rgba(0,0,0,0.55)] md:text-7xl animate-fade-in"
-            style={{ animationDelay: "0.2s" }}
+            style={{ animationDelay: "0.2s",
+             }}
           >
             {t("landing.heroTitle")}
           </h1>
           <p
-            className="max-w-2xl text-balance text-lg text-white/90 drop-shadow-[0_6px_18px_rgba(0,0,0,0.45)] md:text-xl animate-fade-in"
-            style={{ animationDelay: "0.35s" }}
+            className="whitespace-pre-line max-w-2xl text-balance text-lg text-white/90 drop-shadow-[0_6px_18px_rgba(0,0,0,0.45)] md:text-xl animate-fade-in"
+            style={{ animationDelay: "0.35s",
+                     wordSpacing: "4px"
+             }}
           >
             {t("landing.heroSubtitle")}
           </p>
@@ -153,7 +156,7 @@ function Landing() {
                 size="lg"
                 className="bg-gold-gradient text-gold-foreground shadow-gold transition-all hover:opacity-95 hover:-translate-y-0.5 hover:scale-105"
               >
-                <Link to="/list-property">{t("landing.listProperty")}</Link>
+                <Link to="/available-properties">{t("publicProperties.browse")}</Link>
               </Button>
             </div>
             <div className="motion-safe:animate-rise-in" style={{ animationDelay: "0.62s" }}>
@@ -163,7 +166,9 @@ function Landing() {
                 variant="outline"
                 className="border-white/40 bg-white/15 text-white shadow-lg shadow-black/10 backdrop-blur transition-all hover:bg-white/25 hover:text-white hover:-translate-y-0.5 hover:scale-105"
               >
-                <Link to="/available-properties">{t("publicProperties.browse")}</Link>
+                <Link to="/property-request">
+                  {t("landing.findProperty") || "Find Your Property"}
+                </Link>
               </Button>
             </div>
             <div className="motion-safe:animate-rise-in" style={{ animationDelay: "0.74s" }}>
@@ -173,9 +178,7 @@ function Landing() {
                 variant="outline"
                 className="border-white/40 bg-white/15 text-white shadow-lg shadow-black/10 backdrop-blur transition-all hover:bg-white/25 hover:text-white hover:-translate-y-0.5 hover:scale-105"
               >
-                <Link to="/property-request">
-                  {t("landing.findProperty") || "Find Your Property"}
-                </Link>
+                <Link to="/list-property">{t("landing.listProperty")}</Link>
               </Button>
             </div>
             <div className="motion-safe:animate-rise-in" style={{ animationDelay: "0.86s" }}>

@@ -755,7 +755,13 @@ function ResidentialSeekerDialog({
             readOnly={readOnly || usersLoading}
             options={users.map(u => ({ value: u.username, label: u.username }))}
           />
-          <TextField id="receiver" label={t("residentialSeekers.receiver")} defaultValue={seeker?.receiver} readOnly={readOnly} />
+          <SelectField
+            id="receiver"
+            label={t("residentialSeekers.receiver")}
+            defaultValue={seeker?.receiver ?? ""}
+            readOnly={readOnly || usersLoading}
+            options={users.map(u => ({ value: u.username, label: u.username }))}
+          />
           {readOnly ? (
             <TextField id="sourceChannel" label={t("residentialSeekers.sourceChannel")} defaultValue={seeker?.sourceChannel} readOnly={readOnly} />
           ) : (
