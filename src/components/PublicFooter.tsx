@@ -19,8 +19,8 @@ function SocialLink({ href, title, color, children }: { href: string; title: str
 
 export function PublicFooter() {
   const { t } = useTranslation();
-  const email = "hh0hashim@gmail.com";
-  const phone = "+966 0597948787";
+  const email = "light0consultation@gmail.com";
+  const phone = "+966 597948787";
   const addressLine1 = t("footer.addressLine1");
   const addressLine2 = t("footer.addressLine2")
 
