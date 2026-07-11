@@ -364,6 +364,9 @@ export interface Lead {
   commissionAmount?: number | null;
   commissionStatus?: string | null;
   commissionNotes?: string | null;
+  city?: string | null;
+  district?: string | null;
+  commercialListingId?: number | null;
   images?: LeadImage[];
   createdAt: string;
 }

@@ -9,7 +9,7 @@ import {
   type Lead,
   type LeadIntent,
   type LeadStatus,
-  type PropertyDto,
+  type CommercialListing,
 } from "@/lib/api";
 import {
   PageHeader,
@@ -238,10 +238,10 @@ function LeadsPage() {
 
   const approve = useMutation({
     mutationFn: (id: number) =>
-      api<{ propertyId: number }>(`/api/leads/${id}/approve`, { method: "POST" }),
+      api<{ listingId: number }>(`/api/leads/${id}/approve`, { method: "POST" }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["leads"] });
-      qc.invalidateQueries({ queryKey: ["properties"] });
+      qc.invalidateQueries({ queryKey: ["listings"] });
       toast.success(t("common.leadApproved"));
       setApproving(null);
       setSelected(null);
@@ -249,10 +249,10 @@ function LeadsPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
-  const selectedProperty = useQuery({
-    queryKey: ["lead-property", selected?.propertyId],
-    queryFn: () => api<PropertyDto>(`/api/properties/${selected?.propertyId}`),
-    enabled: !!selected?.propertyId,
+  const selectedListing = useQuery({
+    queryKey: ["lead-listing", selected?.commercialListingId],
+    queryFn: () => api<CommercialListing>(`/api/commercial-listings/${selected?.commercialListingId}`),
+    enabled: !!selected?.commercialListingId,
   });
 
   const filteredLeads = useMemo(() => {
@@ -271,6 +271,9 @@ function LeadsPage() {
         lead.ownerNationalId,
         lead.partnerName,
         lead.propertyId == null ? "" : String(lead.propertyId),
+        lead.commercialListingId == null ? "" : String(lead.commercialListingId),
+        lead.city,
+        lead.district,
       ].some((value) => !!value && value.toLowerCase().includes(lowerSearch))
       // .some((value) => value.toLowerCase().includes(lowerSearch));
 
@@ -376,10 +379,10 @@ function LeadsPage() {
                         Partner: {l.partnerName ?? "—"}
                       </div>
                     )}
-                    {l.propertyId && (
+                    {l.commercialListingId && (
                       <div className="mt-2 inline-flex items-center gap-1 rounded-full border border-border bg-muted/60 px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
                         <Home className="h-3 w-3" />
-                        {t("common.propertyId")}: #{l.propertyId}
+                        {t("common.listingId")}: #{l.commercialListingId}
                       </div>
                     )}
                   </button>
@@ -470,16 +473,32 @@ function LeadsPage() {
                       : t("common.notProvided")}
                   </div>
                 </div>
-                {selected.propertyId && (
+                {selected.city && (
                   <div>
                     <span className="text-xs font-medium text-muted-foreground">
-                      {t("common.propertyId")}:
+                      {t("common.city")}:
+                    </span>
+                    <div>{selected.city}</div>
+                  </div>
+                )}
+                {selected.district && (
+                  <div>
+                    <span className="text-xs font-medium text-muted-foreground">
+                      {t("common.district")}:
+                    </span>
+                    <div>{selected.district}</div>
+                  </div>
+                )}
+                {selected.commercialListingId && (
+                  <div>
+                    <span className="text-xs font-medium text-muted-foreground">
+                      {t("common.listingId")}:
                     </span>
                     <div className="flex items-center justify-between">
-                      <span className="font-mono text-xs">#{selected.propertyId}</span>
+                      <span className="font-mono text-xs">#{selected.commercialListingId}</span>
                       <Link
-                        to="/app/properties/$id"
-                        params={{ id: String(selected.propertyId) }}
+                        to="/app/listings/$id"
+                        params={{ id: String(selected.commercialListingId) }}
                         className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
                       >
                         <ExternalLink className="h-3.5 w-3.5" />
@@ -489,15 +508,15 @@ function LeadsPage() {
                   </div>
                 )}
               </div>
-              {selected.propertyId && selectedProperty.data && (
+              {selected.commercialListingId && selectedListing.data && (
                 <div className="mt-3 border-t border-border pt-3">
                   <div className="text-xs font-medium text-muted-foreground mb-2">
-                    {t("common.linkedProperty")}
+                    {t("common.linkedListing")}
                   </div>
                   <div className="space-y-1 text-xs bg-background rounded p-2">
-                    <div className="font-medium">{selectedProperty.data.name}</div>
-                    <div>{selectedProperty.data.address}</div>
-                    <div className="text-muted-foreground">{selectedProperty.data.type}</div>
+                    <div className="font-medium">{selectedListing.data.ownerName}</div>
+                    <div>{selectedListing.data.location}</div>
+                    <div className="text-muted-foreground">{selectedListing.data.propertyType}</div>
                   </div>
                 </div>
               )}
