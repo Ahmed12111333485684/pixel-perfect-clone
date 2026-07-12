@@ -100,7 +100,7 @@ export function PublicFooter() {
             <li>
               <a href="https://whatsapp.com/channel/0029VbAhwvQG3R3dfqS7eG3V" target="_blank" rel="noreferrer" className="flex items-center gap-2 group hover:text-foreground transition">
                 <span className="text-base">☀️</span>
-                <span>عروض الفرص الاستثمارية</span>
+                <span>عروض الفرص الاستثمارية والايجارات التجارية</span>
               </a>
             </li>
           </ul>
@@ -132,7 +132,7 @@ export function PublicFooter() {
               <li>
                 <a href="https://t.me/+uaBQAtZjdHI0ZDY0" target="_blank" rel="noreferrer" className="flex items-center gap-2 group hover:text-foreground transition">
                   <span className="text-base">🔹</span>
-                  <span>عروض الفرص الاستثمارية</span>
+                  <span>عروض الفرص الاستثمارية و الايجارات التجارية</span>
                 </a>
               </li>
             </ul>

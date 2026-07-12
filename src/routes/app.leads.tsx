@@ -269,6 +269,7 @@ function LeadsPage() {
         lead.phone,
         lead.email,
         lead.ownerNationalId,
+        lead.deedNumber,
         lead.partnerName,
         lead.propertyId == null ? "" : String(lead.propertyId),
         lead.commercialListingId == null ? "" : String(lead.commercialListingId),
@@ -473,6 +474,14 @@ function LeadsPage() {
                       : t("common.notProvided")}
                   </div>
                 </div>
+                {selected.deedNumber && (
+                  <div>
+                    <span className="text-xs font-medium text-muted-foreground">
+                      {t("common.deedNumber")}:
+                    </span>
+                    <div className="font-mono text-xs">{selected.deedNumber}</div>
+                  </div>
+                )}
                 {selected.city && (
                   <div>
                     <span className="text-xs font-medium text-muted-foreground">

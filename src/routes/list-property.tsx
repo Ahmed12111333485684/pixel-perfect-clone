@@ -242,14 +242,15 @@ function LeadIntakePage() {
                 required
               />
             </div>
-            <Field id="ownerNationalId" label={t("lead.ownerNationalId")} required />
+            <Field id="ownerNationalId" label={t("lead.ownerNationalId")} />
+            <Field id="deedNumber" label={t("lead.deedNumber")} />
           </Section>
 
           <Section title={t("lead.contactName")}>
             <Field id="fullName" label={t("lead.contactName")} required />
             <div className="grid gap-4 sm:grid-cols-2">
               <Field id="phone" label={t("lead.contactPhone")} required type="tel" />
-              <Field id="email" label={t("lead.contactEmail")} required type="email" />
+              <Field id="email" label={t("lead.contactEmail")} type="email" />
             </div>
             <div className="space-y-2">
               <Label htmlFor="preferredContactAt">

@@ -899,7 +899,7 @@ function CommercialListingsPage() {
         amenities={amenities.data ?? []}
         readOnly={!canManage}
         submitting={submitting}
-        title={`${t("common.add")} ${t("nav.commercialListings")}`}
+        title={t("commercialListings.add")}
         submitLabel={t("common.create")}
         onSubmit={handleCreate}
         onImagesChange={() => qc.invalidateQueries({ queryKey: ["commercial-listings"] })}

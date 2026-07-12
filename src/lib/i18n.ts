@@ -291,6 +291,7 @@ const en = {
     contactName: "Your full name",
     contactPhone: "Phone",
     contactEmail: "Email",
+    deedNumber: "Deed #",
     intent: "I want to",
     notes: "Anything else?",
     images: "Photos (optional)",
@@ -338,6 +339,7 @@ const en = {
   commercialListings: {
     pageTitle: "Commercial & Investment Listings",
     pageSubtitle: "Manage commercial and investment rental property offers",
+    add: "Add property listing",
     listingCategory: "Category",
     listingType: "Listing Type",
     serialNumber: "Serial #",
@@ -401,8 +403,8 @@ const en = {
     },
   },
   residentialSeekers: {
-    pageTitle: "Residential Rental Seekers",
-    pageSubtitle: "Clients looking for a residential unit to rent",
+    pageTitle: "Property Requests",
+    pageSubtitle: "Clients looking for properties",
     listingType: "Requested listing type",
     propertyType: "Requested property type",
     serialNumber: "Serial #",
@@ -847,6 +849,7 @@ const ar = {
     contactName: "اسمك الكامل",
     contactPhone: "الهاتف",
     contactEmail: "البريد الإلكتروني",
+    deedNumber: "رقم الصك",
     intent: "أرغب في",
     notes: "ملاحظات إضافية",
     images: "صور (اختياري)",
@@ -896,6 +899,7 @@ const ar = {
   commercialListings: {
     pageTitle: "العروض",
     pageSubtitle: "إدارة عروض تأجير و بيع العقارات",
+    add: "إضافة العروض العقارية",
     listingCategory: "تصنيف العرض",
     listingType: "نوع العرض",
     serialNumber: "الرقم التسلسلي",
@@ -960,7 +964,7 @@ const ar = {
   },
   residentialSeekers: {
     pageTitle: "الطلبات",
-    pageSubtitle: "بيانات الطلبات السكنية",
+    pageSubtitle: "بيانات الطلبات العقارية",
     listingType: "نوع الطلب",
     propertyType: "نوع العقار المطلوب",
     serialNumber: "الرقم التسلسلي",

@@ -348,6 +348,7 @@ export interface Lead {
   propertyAddress: string;
   propertyType: string;
   ownerNationalId: string;
+  deedNumber?: string | null;
   fullName: string;
   phone: string;
   email: string;
