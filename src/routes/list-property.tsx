@@ -173,8 +173,8 @@ function LeadIntakePage() {
           className="space-y-6 rounded-2xl border border-border bg-card p-8 shadow-card"
         >
           <Section title={t("common.details")}>
-            <Field id="propertyName" label={t("lead.propertyName")} required />
-            <Field id="propertyAddress" label={t("lead.propertyAddress")} required />
+            {/* <Field id="propertyName" label={t("lead.propertyName")} /> */}
+            <Field id="propertyAddress" label={t("lead.propertyAddress")} />
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label>{t("lead.propertyType")}</Label>
