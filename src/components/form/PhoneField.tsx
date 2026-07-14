@@ -50,7 +50,7 @@ export function PhoneField({ id, label, defaultValue, readOnly }: PhoneFieldProp
             <input
                 type="hidden"
                 name={id}
-                value={`${countryCode} ${initial.number}`}
+                value={initial.number ? `${countryCode} ${initial.number}` : ""}
             />
 
             <div className="flex mt-1 rounded-md shadow-sm border border-border bg-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
@@ -84,10 +84,10 @@ export function PhoneField({ id, label, defaultValue, readOnly }: PhoneFieldProp
                     placeholder="500000000"
                     className="border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 rounded-s-none flex-1"
                     onChange={(e) => {
-                        // Dynamically update the hidden field's value whenever the user types
                         const hiddenInput = e.target.form?.elements.namedItem(id) as HTMLInputElement;
                         if (hiddenInput) {
-                            hiddenInput.value = `${countryCode} ${e.target.value.trim()}`;
+                            const typed = e.target.value.trim();
+                            hiddenInput.value = typed ? `${countryCode} ${typed}` : "";
                         }
                     }}
                 />
