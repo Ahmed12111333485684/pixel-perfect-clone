@@ -336,7 +336,7 @@ function ListingCard({ listing }: { listing: PublicListing }) {
               <Tag className="h-3.5 w-3.5" />
               {listing.offerCode || `#${listing.id}`}
             </div>
-            <h2 className="mt-1 text-xl font-semibold">{listing.adText1 || listing.offerCode || `#${listing.id}`}</h2>
+            <h2 className="mt-1 text-xl font-semibold">{listing.offerCode || `#${listing.id}`}</h2>
           </div>
         </div>
 
