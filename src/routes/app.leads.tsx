@@ -506,8 +506,8 @@ function LeadsPage() {
                     <div className="flex items-center justify-between">
                       <span className="font-mono text-xs">#{selected.commercialListingId}</span>
                       <Link
-                        to="/app/listings/$id"
-                        params={{ id: String(selected.commercialListingId) }}
+                        to="/app/listings"
+                        search={{ selected: selected.commercialListingId }}
                         className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
                       >
                         <ExternalLink className="h-3.5 w-3.5" />

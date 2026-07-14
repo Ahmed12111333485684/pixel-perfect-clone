@@ -999,8 +999,8 @@ function ResidentialSeekerDialog({
                       <div className="flex flex-wrap items-center gap-2">
                         <Button asChild size="sm" variant="outline">
                           <Link
-                            to="/app/listings/$id"
-                            params={{ id: String(property.id) }}
+                            to="/app/listings"
+                            search={{ selected: property.id }}
                             onClick={(e) => e.stopPropagation()}
                           >
                             {t("common.open")}

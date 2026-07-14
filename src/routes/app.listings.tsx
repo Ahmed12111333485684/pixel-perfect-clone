@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { memo, useCallback, useEffect, useMemo, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { api, fetchPartners, createPartner, type CommercialListing, type Partner, type CommercialListingImage, type UserDto, type Amenity, ApiError } from "@/lib/api";
 import { PartnerDialog } from "@/components/partners/PartnerDialog";
@@ -28,6 +28,9 @@ import { CommercialListingImageManager } from "@/components/CommercialListingIma
 import { resolveApiAssetUrl } from "@/lib/api";
 import { MediaLightbox } from "@/components/MediaLightbox";
 export const Route = createFileRoute("/app/listings")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    selected: search.selected ? Number(search.selected) : undefined,
+  }),
   component: CommercialListingsPage,
 });
 
@@ -417,6 +420,18 @@ function CommercialListingsPage() {
   const partners = useQuery({ queryKey: ["partners", "lookup"], queryFn: fetchPartners, enabled: hasAccess });
   const users = useQuery({ queryKey: ["users", "lookup"], queryFn: () => api<UserDto[]>("/users"), enabled: hasAccess });
   const amenities = useQuery({ queryKey: ["amenities"], queryFn: () => api<Amenity[]>("/amenities"), enabled: hasAccess });
+
+  const { selected: selectedId } = Route.useSearch();
+  const autoOpenedRef = useRef(false);
+  useEffect(() => {
+    if (!selectedId || autoOpenedRef.current || !listings.data) return;
+    const match = listings.data.find((l) => l.id === selectedId);
+    if (match) {
+      autoOpenedRef.current = true;
+      setSelected(match);
+      window.history.replaceState({}, "", "/app/listings");
+    }
+  }, [selectedId, listings.data]);
 
   const handleReset = () => {
     setQ("");
