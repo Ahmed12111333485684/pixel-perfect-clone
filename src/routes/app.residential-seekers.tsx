@@ -999,7 +999,7 @@ function ResidentialSeekerDialog({
                       <div className="flex flex-wrap items-center gap-2">
                         <Button asChild size="sm" variant="outline">
                           <Link
-                            to="/app/properties/$id"
+                            to="/app/listings/$id"
                             params={{ id: String(property.id) }}
                             onClick={(e) => e.stopPropagation()}
                           >
