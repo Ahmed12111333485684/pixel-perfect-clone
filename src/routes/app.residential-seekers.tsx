@@ -906,7 +906,7 @@ function ResidentialSeekerDialog({
             <div>
               <p className="text-sm font-semibold">{t("common.suggestions", { defaultValue: "Suggested properties" })}</p>
               <p className="text-xs text-muted-foreground">
-                {t("common.autoMatched", { defaultValue: "Top matches for this request" })}
+                {t("common.autoMatched")}
               </p>
             </div>
             <Badge variant="outline" className="gap-1">
@@ -952,7 +952,7 @@ function ResidentialSeekerDialog({
                           <div className="flex items-center gap-2 text-xs text-muted-foreground">
                             <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5">
                               <Sparkles className="h-3 w-3" />
-                              {t("common.match", { defaultValue: "Match" })} {property.score}
+                              {t("common.match")} {property.score}
                             </span>
                           </div>
                           <div className="mt-1 truncate font-medium">{property.name}</div>

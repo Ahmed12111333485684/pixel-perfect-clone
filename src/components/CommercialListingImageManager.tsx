@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { CommercialListingImage, uploadCommercialListingImage, deleteCommercialListingImage, setPrimaryCommercialListingImage } from "@/lib/api";
 import { resolveApiAssetUrl } from "@/lib/api";
 import { Button } from "@/components/ui/button";
@@ -18,6 +19,7 @@ export function CommercialListingImageManager({
   readOnly?: boolean;
   onImageZoom?: (index: number) => void;
 }) {
+  const { t } = useTranslation();
   const [uploading, setUploading] = useState(false);
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -30,7 +32,7 @@ export function CommercialListingImageManager({
       onChange();
     } catch (err) {
       console.error("Upload failed", err);
-      alert("Failed to upload image");
+      alert(t("common.failedUploadImage"));
     } finally {
       setUploading(false);
       e.target.value = "";
@@ -38,13 +40,13 @@ export function CommercialListingImageManager({
   };
 
   const handleDelete = async (imageId: number) => {
-    if (!confirm("Are you sure you want to delete this image?")) return;
+    if (!confirm(t("common.confirmDeleteImage"))) return;
     try {
       await deleteCommercialListingImage(listingId, imageId);
       onChange();
     } catch (err) {
       console.error("Delete failed", err);
-      alert("Failed to delete image");
+      alert(t("common.failedDeleteImage"));
     }
   };
 
@@ -54,19 +56,19 @@ export function CommercialListingImageManager({
       onChange();
     } catch (err) {
       console.error("Set primary failed", err);
-      alert("Failed to set primary image");
+      alert(t("common.failedSetPrimaryImage"));
     }
   };
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-medium">Images</h3>
+        <h3 className="text-sm font-medium">{t("common.images")}</h3>
         {!readOnly && (
           <div>
             <label className={`flex cursor-pointer items-center gap-2 rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition ${uploading ? "opacity-50 pointer-events-none" : ""}`}>
               <Upload className="h-4 w-4" />
-              {uploading ? "Uploading..." : "Upload Image"}
+              {uploading ? t("common.uploading") : t("common.uploadImage")}
               <input type="file" accept="image/*,video/*" className="hidden" onChange={handleUpload} disabled={uploading} />
             </label>
           </div>
@@ -76,7 +78,7 @@ export function CommercialListingImageManager({
       {images.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-lg border border-dashed py-8 text-muted-foreground">
           <FileImage className="mb-2 h-8 w-8 opacity-20" />
-          <p className="text-sm">No images attached</p>
+          <p className="text-sm">{t("common.noImagesAttached")}</p>
         </div>
       ) : (
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
