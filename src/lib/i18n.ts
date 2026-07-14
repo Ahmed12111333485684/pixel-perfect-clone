@@ -329,6 +329,7 @@ const en = {
     reasons: {
       match_listing_type: "Matches {{listingType}} request",
       location_overlap: "Location overlap",
+      district_overlap: "District match",
       within_budget: "Within budget",
       near_budget: "Near budget",
       bedroom_aligns: "Room count aligns",
@@ -887,6 +888,7 @@ const ar = {
     reasons: {
       match_listing_type: "مطابق لطلب {{listingType}}",
       location_overlap: "تطابق الموقع",
+      district_overlap: "تطابق الحي",
       within_budget: "ضمن الميزانية",
       near_budget: "قريب من الميزانية",
       bedroom_aligns: "عدد الغرف متطابق",

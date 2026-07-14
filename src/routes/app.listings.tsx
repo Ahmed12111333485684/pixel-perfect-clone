@@ -553,7 +553,7 @@ function CommercialListingsPage() {
     return items.filter((record) => {
       const qMatch =
         !lower ||
-        [record.ownerName, record.deedNumber, record.city, Array.isArray(record.district) ? record.district.join(" ") : record.district, record.location, record.propertyType, record.propertyStatus, record.offerCode]
+        [record.ownerName, record.deedNumber, record.city, Array.isArray(record.district) ? record.district.join(" ") : record.district, record.location, record.propertyType, record.propertyStatus, record.offerCode, record.mobile1, record.mobile2]
           .some((v) => (v ?? "").toLowerCase().includes(lower));
 
       const deedMatch = !deedLower || (record.deedNumber ?? "").toLowerCase().includes(deedLower);
