@@ -62,6 +62,7 @@ const COMMERCIAL_FIELDS = [
   "availableUnits",
   "deedNumber",
   "propertyType",
+  "offerCode",
   "roomsCount",
   "buildingAge",
   "hasElevator",
@@ -130,6 +131,12 @@ type CommercialListingStatusKey = "Available" | "Occupied" | "Unavailable";
 const LISTING_CATEGORY_OPTIONS = [
   { value: LISTING_CATEGORY_COMMERCIAL },
   { value: LISTING_CATEGORY_RESIDENTIAL },
+] as const;
+
+const DEAL_TYPE_FILTER_OPTIONS = [
+  { value: "sale", label: "بيع" },
+  { value: "rental", label: "ايجار" },
+  { value: "investment", label: "استثماري" },
 ] as const;
 
 function normalizeListingCategory(value: string | null | undefined): ListingCategoryValue {
@@ -314,6 +321,7 @@ function CommercialListingsPage() {
   const [q, setQ] = useState("");
   const [deedQ, setDeedQ] = useState("");
   const [status, setStatus] = useState<string>("all");
+  const [dealTypeFilter, setDealTypeFilter] = useState<string>("all");
   const [page, setPage] = useState(1);
   const [pageSize] = useState(20);
   const [sortBy, setSortBy] = useState<string>("createdAt");
@@ -437,6 +445,7 @@ function CommercialListingsPage() {
     setQ("");
     setDeedQ("");
     setStatus("all");
+    setDealTypeFilter("all");
     setPage(1);
   };
 
@@ -574,9 +583,19 @@ function CommercialListingsPage() {
       const deedMatch = !deedLower || (record.deedNumber ?? "").toLowerCase().includes(deedLower);
 
       const statusMatch = status === "all" || record.propertyStatus === status;
-      return qMatch && deedMatch && statusMatch;
+
+      const dealTypeMatch = dealTypeFilter === "all" || (() => {
+        const cat = normalizeListingCategory(record.listingCategory);
+        const type = normalizeListingType(record.listingType);
+        if (dealTypeFilter === "sale") return type === "Sale";
+        if (dealTypeFilter === "rental") return cat === "Residential" && type === "Rental";
+        if (dealTypeFilter === "investment") return cat === "Commercial" && type === "Rental";
+        return true;
+      })();
+
+      return qMatch && deedMatch && statusMatch && dealTypeMatch;
     });
-  }, [listings.data, q, deedQ, status]);
+  }, [listings.data, q, deedQ, status, dealTypeFilter]);
 
   const totalPages = Math.max(1, Math.ceil(filteredListings.length / pageSize));
 
@@ -627,7 +646,7 @@ function CommercialListingsPage() {
       />
 
       <div className="mb-6 space-y-4 rounded-xl border border-border bg-card p-4">
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
           <div>
             <Label htmlFor="q" className="text-xs font-medium">
               {t("common.search")}
@@ -683,6 +702,31 @@ function CommercialListingsPage() {
               </SelectContent>
             </Select>
           </div>
+
+          <div>
+            <Label htmlFor="dealTypeFilter" className="text-xs font-medium">
+              فلترة
+            </Label>
+            <Select
+              value={dealTypeFilter}
+              onValueChange={(value) => {
+                setDealTypeFilter(value);
+                setPage(1);
+              }}
+            >
+              <SelectTrigger id="dealTypeFilter" className="mt-1">
+                <SelectValue placeholder={t("common.all")} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{t("common.all")}</SelectItem>
+                {DEAL_TYPE_FILTER_OPTIONS.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
           <div className="w-full">
             <Label className="text-xs font-medium">ترتيب حسب</Label>
             <Select
@@ -713,7 +757,7 @@ function CommercialListingsPage() {
           <div className="flex gap-2">
             <Button size="sm" variant="outline" onClick={handleReset} className="w-fit">
               {t("common.filter")}
-              {(q || status !== "all") && <X className="ms-1 h-3 w-3" />}
+              {(q || status !== "all" || dealTypeFilter !== "all") && <X className="ms-1 h-3 w-3" />}
             </Button>
           </div>
           <div className="flex items-center rounded-md border border-border p-1 bg-muted/50">
@@ -1045,6 +1089,8 @@ function CommercialListingDialog({
   onAddPartner?: () => void;
 }) {
   const { t } = useTranslation();
+  const dialogAuth = useAuth();
+  const isAdmin = dialogAuth.hasRole("Admin");
   const [publishing, setPublishing] = useState<PublishingState>(() => buildPublishingState(listing));
   const [broker, setBroker] = useState<string>(listing?.broker ?? "");
   const [listingCategory, setListingCategory] = useState<ListingCategoryValue>(normalizeListingCategory(listing?.listingCategory));
@@ -1134,9 +1180,13 @@ function CommercialListingDialog({
           <DateField id="contactDate" label={t("commercialListings.contactDate")} defaultValue={listing?.contactDate || todayLocal()} readOnly={readOnly} />
           <div className="space-y-2">
             <Label htmlFor="offerCode" className="text-xs font-medium">{t("commercialListings.offerCode")}</Label>
-            <div className="mt-1 rounded-md border-2 border-gold/30 bg-gold/5 px-3 py-2 text-sm font-bold tracking-wide text-foreground">
-              {listing?.offerCode || "—"}
-            </div>
+            {isAdmin ? (
+              <Input id="offerCode" name="offerCode" defaultValue={listing?.offerCode ?? ""} readOnly={readOnly} className="mt-1" />
+            ) : (
+              <div className="mt-1 rounded-md border-2 border-gold/30 bg-gold/5 px-3 py-2 text-sm font-bold tracking-wide text-foreground">
+                {listing?.offerCode || "—"}
+              </div>
+            )}
           </div>
           <div className="space-y-2">
             <Label htmlFor="listingCategory" className="text-xs font-medium">تصنيف العقار</Label>
@@ -1279,7 +1329,7 @@ function CommercialListingDialog({
             </Select>
             <input type="hidden" name="propertyType" value={propertyType} />
           </div>
-          <TextField id="roomsCount" label={t("commercialListings.roomsCount")} defaultValue={listing?.roomsCount} readOnly={readOnly} type="number" min={1} />
+          <TextField id="roomsCount" label={t("commercialListings.roomsCount")} defaultValue={listing?.roomsCount} readOnly={readOnly} type="number" min={0} />
           <TextField id="buildingAge" label={t("commercialListings.buildingAge")} defaultValue={listing?.buildingAge} readOnly={readOnly} type="number" min={0} />
           <TextField id="hasElevator" label={t("commercialListings.hasElevator")} defaultValue={listing?.hasElevator} readOnly={readOnly} />
         </div>
