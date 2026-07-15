@@ -19,7 +19,7 @@ import { LanguageToggle } from "@/components/LanguageToggle";
 import { PublicFooter } from "@/components/PublicFooter";
 import { CheckCircle2, ImagePlus, Loader2, X } from "lucide-react";
 import { toast } from "sonner";
-import { PROPERTY_TYPES, localizePropertyType } from "@/lib/property-types";
+import { PROPERTY_TYPES_BY_CATEGORY, PROPERTY_CATEGORIES, getPropertyTypesByCategory } from "@/lib/property-types";
 import { ComboboxField } from "@/components/form/ComboboxField";
 import { MultiComboboxField } from "@/components/form/MultiComboboxField";
 import { CITIES, getDistricts } from "@/lib/locations";
@@ -47,7 +47,8 @@ function LeadIntakePage() {
   const [loading, setLoading] = useState(false);
   const [files, setFiles] = useState<File[]>([]);
   const [intent, setIntent] = useState<LeadIntent>("Sell");
-  const [type, setType] = useState<string>("Apartment");
+  const [category, setCategory] = useState<string>("سكني");
+  const [type, setType] = useState<string>("");
   const [city, setCity] = useState("");
   const [district, setDistrict] = useState("");
   const formRef = useRef<HTMLFormElement>(null);
@@ -68,7 +69,8 @@ function LeadIntakePage() {
     setSubmitted(null);
     setFiles([]);
     setIntent("Sell");
-    setType("Apartment");
+    setCategory("سكني");
+    setType("");
     setCity("");
     setDistrict("");
     formRef.current?.reset();
@@ -174,19 +176,30 @@ function LeadIntakePage() {
         >
           <Section title={t("common.details")}>
             {/* <Field id="propertyName" label={t("lead.propertyName")} /> */}
-            <Field id="propertyAddress" label={t("lead.propertyAddress")} />
+            {/* <Field id="propertyAddress" label={t("lead.propertyAddress")} /> */}
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label>{t("lead.propertyType")}</Label>
-                <Select value={type} onValueChange={setType}>
+                <Label>تصنيف العقار</Label>
+                <Select value={category} onValueChange={(v) => { setCategory(v); setType(""); }}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {PROPERTY_TYPES.map((p) => (
-                      <SelectItem key={p} value={p}>
-                        {localizePropertyType(t, p)}
-                      </SelectItem>
+                    {PROPERTY_CATEGORIES.map((cat) => (
+                      <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>نوع العقار</Label>
+                <Select value={type} onValueChange={setType} disabled={!category}>
+                  <SelectTrigger>
+                    <SelectValue placeholder={category ? "اختر..." : "اختر تصنيف العقار أولاً"} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {getPropertyTypesByCategory(category).map((tp) => (
+                      <SelectItem key={tp} value={tp}>{tp}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>

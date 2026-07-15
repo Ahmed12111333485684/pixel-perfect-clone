@@ -241,6 +241,7 @@ function PropertyRequestPage() {
                   />
                 </div>
 
+                {requestCategory === "سكني" && requestType === "Purchase" && (
                 <div>
                   <Label htmlFor="familyCount" className="text-xs font-medium">
                     {t("residentialSeekers.familyCount")}
@@ -254,6 +255,7 @@ function PropertyRequestPage() {
                     className="mt-1"
                   />
                 </div>
+                )}
 
                 <div>
                   <Label htmlFor="maxBudget" className="text-xs font-medium">
