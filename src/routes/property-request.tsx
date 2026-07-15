@@ -241,7 +241,7 @@ function PropertyRequestPage() {
                   />
                 </div>
 
-                {requestCategory === "سكني" && requestType === "Purchase" && (
+                {requestCategory === "سكني" && requestType === "Rental" && (
                 <div>
                   <Label htmlFor="familyCount" className="text-xs font-medium">
                     {t("residentialSeekers.familyCount")}
