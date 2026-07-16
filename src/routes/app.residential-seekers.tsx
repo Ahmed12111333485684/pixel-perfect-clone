@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { api, resolveApiAssetUrl, createPartner, type ResidentialSeeker, type RequestPropertySuggestion, fetchPartners, type UserDto, type Partner, ApiError } from "@/lib/api";
 import { PartnerDialog } from "@/components/partners/PartnerDialog";
@@ -109,6 +109,7 @@ function ResidentialSeekersPage() {
 
   const [q, setQ] = useState("");
   const [status, setStatus] = useState<string>("all");
+  const [dealTypeFilter, setDealTypeFilter] = useState<string>("all");
   const [page, setPage] = useState(1);
   const [pageSize] = useState(20);
   const [sortBy, setSortBy] = useState<string>("createdAt");
@@ -198,6 +199,7 @@ function ResidentialSeekersPage() {
   const handleReset = () => {
     setQ("");
     setStatus("all");
+    setDealTypeFilter("all");
     setPage(1);
   };
 
@@ -365,7 +367,18 @@ function ResidentialSeekersPage() {
     );
   }
 
-  const totalPages = Math.ceil((seekers.data?.total ?? 0) / pageSize);
+  const filteredSeekers = useMemo(() => {
+    const items = seekers.data?.items ?? [];
+    if (dealTypeFilter === "all") return items;
+    return items.filter((r) => {
+      const lt = (r.listingType ?? "").toLowerCase();
+      if (dealTypeFilter === "sale") return lt === "sale" || lt === "بيع";
+      if (dealTypeFilter === "rental") return lt === "rental" || lt === "ايجار";
+      return true;
+    });
+  }, [seekers.data?.items, dealTypeFilter]);
+
+  const totalPages = Math.ceil((dealTypeFilter === "all" ? (seekers.data?.total ?? 0) : filteredSeekers.length) / pageSize);
 
   return (
     <div>
@@ -419,6 +432,28 @@ function ResidentialSeekersPage() {
               </SelectContent>
             </Select>
           </div>
+
+          <div>
+            <Label htmlFor="dealTypeFilter" className="text-xs font-medium">
+              فلترة
+            </Label>
+            <Select
+              value={dealTypeFilter}
+              onValueChange={(value) => {
+                setDealTypeFilter(value);
+                setPage(1);
+              }}
+            >
+              <SelectTrigger id="dealTypeFilter" className="mt-1">
+                <SelectValue placeholder={t("common.all")} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{t("common.all")}</SelectItem>
+                <SelectItem value="sale">بيع</SelectItem>
+                <SelectItem value="rental">ايجار</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
           
           <div className="w-full">
             <Label className="text-xs font-medium">ترتيب حسب</Label>
@@ -450,7 +485,7 @@ function ResidentialSeekersPage() {
           <div className="flex gap-2">
             <Button size="sm" variant="outline" onClick={handleReset} className="w-fit">
               {t("common.filter")}
-              {(q || status !== "all") && <X className="ms-1 h-3 w-3" />}
+              {(q || status !== "all" || dealTypeFilter !== "all") && <X className="ms-1 h-3 w-3" />}
             </Button>
           </div>
           <div className="flex items-center rounded-md border border-border p-1 bg-muted/50">
@@ -482,14 +517,14 @@ function ResidentialSeekersPage() {
         <div className="rounded-xl border border-dashed border-destructive/40 p-8 text-center text-destructive">
           {t("common.error", { defaultValue: "An error occurred." })}
         </div>
-      ) : (seekers.data?.items ?? []).length === 0 ? (
+      ) : filteredSeekers.length === 0 ? (
         <div className="rounded-xl border border-dashed border-border p-8 text-center text-muted-foreground">
           {t("common.noData", { defaultValue: "No data found." })}
         </div>
       ) : viewMode === "table" ? (
         <DataTable
           columns={columns}
-          rows={seekers.data?.items ?? []}
+          rows={filteredSeekers}
           loading={seekers.isLoading}
           error={seekers.error}
           rowKey={(r) => r.id}
@@ -502,7 +537,7 @@ function ResidentialSeekersPage() {
         />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {(seekers.data?.items ?? []).map((r) => (
+          {filteredSeekers.map((r) => (
             <div
               key={r.id}
               className="group cursor-pointer flex flex-col justify-between rounded-xl border border-border bg-card p-4 transition-all hover:border-primary/50 hover:shadow-md"
@@ -599,7 +634,7 @@ function ResidentialSeekersPage() {
           <div className="text-sm text-muted-foreground">
             {t("common.skip", { defaultValue: "Showing" })} {(page - 1) * pageSize + 1}
             {" - "}
-            {Math.min(page * pageSize, seekers.data?.total ?? 0)} {t("common.of", { defaultValue: "of" })} {seekers.data?.total}
+            {Math.min(page * pageSize, filteredSeekers.length)} {t("common.of", { defaultValue: "of" })} {filteredSeekers.length}
           </div>
           <div className="flex gap-2">
             <Button
