@@ -53,6 +53,7 @@ export const APP_NAV_ITEMS: AppNavItem[] = [
   // { to: "/app/contracts", label: "nav.contracts", icon: ScrollText },
   // { to: "/app/payments", label: "nav.payments", icon: CreditCard },
   { to: "/app/expenses", label: "nav.expenses", icon: Receipt },
+  { to: "/app/revenue", label: "nav.revenue", icon: RiyalIcon },
   // { to: "/app/buyers", label: "nav.buyers", icon: ShoppingBag, staffOnly: true },
   // { to: "/app/sales", label: "nav.sales", icon: RiyalIcon },
 

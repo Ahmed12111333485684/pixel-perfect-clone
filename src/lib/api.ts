@@ -623,6 +623,40 @@ export interface ExpenseCreate {
   notes?: string;
 }
 
+export interface RevenueEntry {
+  id: number;
+  date: string;
+  employeeId?: number;
+  employeeName?: string;
+  offerCode: string;
+  category: string;
+  owner: string;
+  tenantBuyer: string;
+  tenantPhone: string;
+  ownerBroker: string;
+  tenantBroker: string;
+  amount: number;
+  officeNet: number;
+  paymentMethod: string;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export interface RevenueEntryCreate {
+  date: string;
+  employeeId?: number;
+  offerCode: string;
+  category: string;
+  owner: string;
+  tenantBuyer: string;
+  tenantPhone: string;
+  ownerBroker: string;
+  tenantBroker: string;
+  amount: number;
+  officeNet: number;
+  paymentMethod: string;
+}
+
 // ============ Notification helpers ============
 export interface NotificationItem {
   id: number;

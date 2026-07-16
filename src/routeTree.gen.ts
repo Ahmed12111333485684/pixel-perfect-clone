@@ -21,6 +21,7 @@ import { Route as PartnerMyPropertiesRouteImport } from './routes/partner.my-pro
 import { Route as AppUsersRouteImport } from './routes/app.users'
 import { Route as AppTenantsRouteImport } from './routes/app.tenants'
 import { Route as AppSalesRouteImport } from './routes/app.sales'
+import { Route as AppRevenueRouteImport } from './routes/app.revenue'
 import { Route as AppResidentialSeekersRouteImport } from './routes/app.residential-seekers'
 import { Route as AppPropertiesRouteImport } from './routes/app.properties'
 import { Route as AppPaymentsRouteImport } from './routes/app.payments'
@@ -96,6 +97,11 @@ const AppTenantsRoute = AppTenantsRouteImport.update({
 const AppSalesRoute = AppSalesRouteImport.update({
   id: '/sales',
   path: '/sales',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppRevenueRoute = AppRevenueRouteImport.update({
+  id: '/revenue',
+  path: '/revenue',
   getParentRoute: () => AppRoute,
 } as any)
 const AppResidentialSeekersRoute = AppResidentialSeekersRouteImport.update({
@@ -200,6 +206,7 @@ export interface FileRoutesByFullPath {
   '/app/payments': typeof AppPaymentsRoute
   '/app/properties': typeof AppPropertiesRouteWithChildren
   '/app/residential-seekers': typeof AppResidentialSeekersRoute
+  '/app/revenue': typeof AppRevenueRoute
   '/app/sales': typeof AppSalesRoute
   '/app/tenants': typeof AppTenantsRoute
   '/app/users': typeof AppUsersRoute
@@ -229,6 +236,7 @@ export interface FileRoutesByTo {
   '/app/payments': typeof AppPaymentsRoute
   '/app/properties': typeof AppPropertiesRouteWithChildren
   '/app/residential-seekers': typeof AppResidentialSeekersRoute
+  '/app/revenue': typeof AppRevenueRoute
   '/app/sales': typeof AppSalesRoute
   '/app/tenants': typeof AppTenantsRoute
   '/app/users': typeof AppUsersRoute
@@ -260,6 +268,7 @@ export interface FileRoutesById {
   '/app/payments': typeof AppPaymentsRoute
   '/app/properties': typeof AppPropertiesRouteWithChildren
   '/app/residential-seekers': typeof AppResidentialSeekersRoute
+  '/app/revenue': typeof AppRevenueRoute
   '/app/sales': typeof AppSalesRoute
   '/app/tenants': typeof AppTenantsRoute
   '/app/users': typeof AppUsersRoute
@@ -292,6 +301,7 @@ export interface FileRouteTypes {
     | '/app/payments'
     | '/app/properties'
     | '/app/residential-seekers'
+    | '/app/revenue'
     | '/app/sales'
     | '/app/tenants'
     | '/app/users'
@@ -321,6 +331,7 @@ export interface FileRouteTypes {
     | '/app/payments'
     | '/app/properties'
     | '/app/residential-seekers'
+    | '/app/revenue'
     | '/app/sales'
     | '/app/tenants'
     | '/app/users'
@@ -351,6 +362,7 @@ export interface FileRouteTypes {
     | '/app/payments'
     | '/app/properties'
     | '/app/residential-seekers'
+    | '/app/revenue'
     | '/app/sales'
     | '/app/tenants'
     | '/app/users'
@@ -456,6 +468,13 @@ declare module '@tanstack/react-router' {
       path: '/sales'
       fullPath: '/app/sales'
       preLoaderRoute: typeof AppSalesRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/revenue': {
+      id: '/app/revenue'
+      path: '/revenue'
+      fullPath: '/app/revenue'
+      preLoaderRoute: typeof AppRevenueRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/residential-seekers': {
@@ -612,6 +631,7 @@ interface AppRouteChildren {
   AppPaymentsRoute: typeof AppPaymentsRoute
   AppPropertiesRoute: typeof AppPropertiesRouteWithChildren
   AppResidentialSeekersRoute: typeof AppResidentialSeekersRoute
+  AppRevenueRoute: typeof AppRevenueRoute
   AppSalesRoute: typeof AppSalesRoute
   AppTenantsRoute: typeof AppTenantsRoute
   AppUsersRoute: typeof AppUsersRoute
@@ -633,6 +653,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppPaymentsRoute: AppPaymentsRoute,
   AppPropertiesRoute: AppPropertiesRouteWithChildren,
   AppResidentialSeekersRoute: AppResidentialSeekersRoute,
+  AppRevenueRoute: AppRevenueRoute,
   AppSalesRoute: AppSalesRoute,
   AppTenantsRoute: AppTenantsRoute,
   AppUsersRoute: AppUsersRoute,

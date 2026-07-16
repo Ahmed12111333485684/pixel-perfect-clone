@@ -16,7 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ListingLocationMap } from "@/components/ListingLocationMap";
-import { Plus, X, LayoutGrid, List, FileImage } from "lucide-react";
+import { Plus, X, LayoutGrid, List, FileImage, MapPin } from "lucide-react";
 import { toast } from "sonner";
 import { PhoneField } from "@/components/form/PhoneField";
 import { ComboboxField } from "@/components/form/ComboboxField";
@@ -1393,6 +1393,22 @@ function CommercialListingDialog({
               onCoordinatesChange={readOnly ? undefined : setCoordinates}
               editable={!readOnly}
             />
+            {coordinates && (
+              <Button
+                asChild
+                variant="outline"
+                className="mt-4 w-full flex items-center justify-center gap-2"
+              >
+                <a
+                  href={coordinates.startsWith("http") ? coordinates : `https://www.google.com/maps/search/?api=1&query=${coordinates}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <MapPin className="h-4 w-4 text-gold" />
+                  فتح في خرائط جوجل
+                </a>
+              </Button>
+            )}
           </div>
           <div className="flex items-center gap-3 rounded-lg border border-border bg-background px-3 py-3">
             <Checkbox id="hasKey" checked={hasKey} onCheckedChange={(checked) => setHasKey(checked === true)} disabled={readOnly} />
