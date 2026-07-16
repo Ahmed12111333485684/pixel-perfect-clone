@@ -250,38 +250,21 @@ function buildCommercialPayload(
   fd: FormData,
   publishing: PublishingState,
   contracts: BrokerageContractFormValue[],
-  original?: CommercialListing | null,
+  _original?: CommercialListing | null,
 ) {
   const payload: Record<string, unknown> = {};
 
   COMMERCIAL_FIELDS.forEach((key) => {
-    const value = readFieldValue(fd, key);
-    if (!original || value !== normalizeValue(original[key as CommercialFieldKey] as string | null | undefined)) {
-      payload[key] = value;
-    }
+    payload[key] = readFieldValue(fd, key);
   });
 
   PUBLISHING_CHANNELS.forEach((channel) => {
-    const value = publishing[channel.key] ? PUBLISHED_VALUE : "";
-    if (!original || value !== normalizeValue(original?.[channel.key] as string | null | undefined)) {
-      payload[channel.key] = value;
-    }
+    payload[channel.key] = publishing[channel.key] ? PUBLISHED_VALUE : "";
   });
 
-  const isOfficeListing = readBooleanField(fd, "isOfficeListing");
-  if (!original || isOfficeListing !== Boolean(original.isOfficeListing)) {
-    payload.isOfficeListing = isOfficeListing;
-  }
-
-  const publicVisible = readBooleanField(fd, "publicVisible");
-  if (!original || publicVisible !== Boolean(original.publicVisible)) {
-    payload.publicVisible = publicVisible;
-  }
-
-  const hasKey = readBooleanField(fd, "hasKey");
-  if (!original || hasKey !== Boolean(original.hasKey)) {
-    payload.hasKey = hasKey;
-  }
+  payload.isOfficeListing = readBooleanField(fd, "isOfficeListing");
+  payload.publicVisible = readBooleanField(fd, "publicVisible");
+  payload.hasKey = readBooleanField(fd, "hasKey");
 
   const parentIdStr = fd.get("parentId");
   if (parentIdStr) {
