@@ -20,7 +20,6 @@ import { CheckCircle2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { PROPERTY_TYPES_BY_CATEGORY, PROPERTY_CATEGORIES, getPropertyTypesByCategory } from "@/lib/property-types";
 import { NATIONALITIES } from "@/lib/nationalities";
-import { PAYMENT_TYPES } from "@/lib/payment-types";
 import { ComboboxField } from "@/components/form/ComboboxField";
 import { MultiComboboxField } from "@/components/form/MultiComboboxField";
 import { CITIES, getDistricts } from "@/lib/locations";
@@ -57,6 +56,8 @@ function PropertyRequestPage() {
   const [requestCategory, setRequestCategory] = useState<string>("سكني");
   const [propertyType, setPropertyType] = useState<string>("");
   const [city, setCity] = useState<string>("");
+  const [paymentType, setPaymentType] = useState<string>("");
+  const [paymentTypeOther, setPaymentTypeOther] = useState<string>("");
   const formRef = useRef<HTMLFormElement>(null);
 
   const reset = () => {
@@ -276,16 +277,28 @@ function PropertyRequestPage() {
                   <Label htmlFor="paymentType" className="text-xs font-medium">
                     {t("common.paymentType")}
                   </Label>
-                  <Select name="paymentType" defaultValue="">
+                  <input type="hidden" name="paymentType" value={paymentType === "__other__" ? paymentTypeOther : paymentType} />
+                  <Select value={paymentType} onValueChange={setPaymentType}>
                     <SelectTrigger id="paymentType" className="mt-1">
                       <SelectValue placeholder={t("common.paymentType")} />
                     </SelectTrigger>
                     <SelectContent>
-                      {PAYMENT_TYPES.map((p) => (
-                        <SelectItem key={p} value={p}>{p}</SelectItem>
-                      ))}
+                      <SelectItem value="شهري">شهري</SelectItem>
+                      <SelectItem value="دفعتين">دفعتين</SelectItem>
+                      <SelectItem value="ثلاث دفعات">ثلاث دفعات</SelectItem>
+                      <SelectItem value="خمس دفعات">خمس دفعات</SelectItem>
+                      <SelectItem value="__other__">اخري</SelectItem>
                     </SelectContent>
                   </Select>
+                  {paymentType === "__other__" && (
+                    <Input
+                      name="paymentTypeOther"
+                      value={paymentTypeOther}
+                      onChange={(e) => setPaymentTypeOther(e.target.value)}
+                      placeholder="اكتب نوع الدفع"
+                      className="mt-2"
+                    />
+                  )}
                 </div>
               </div>
             </div>

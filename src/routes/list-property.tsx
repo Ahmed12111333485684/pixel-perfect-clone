@@ -18,6 +18,7 @@ import { BrandLogo } from "@/components/BrandLogo";
 import { LanguageToggle } from "@/components/LanguageToggle";
 import { PublicFooter } from "@/components/PublicFooter";
 import { CheckCircle2, ImagePlus, Loader2, X } from "lucide-react";
+import { PhoneField } from "@/components/form/PhoneField";
 import { toast } from "sonner";
 import { PROPERTY_TYPES_BY_CATEGORY, PROPERTY_CATEGORIES, getPropertyTypesByCategory } from "@/lib/property-types";
 import { ComboboxField } from "@/components/form/ComboboxField";
@@ -262,7 +263,7 @@ function LeadIntakePage() {
           <Section title={t("lead.contactName")}>
             <Field id="fullName" label={t("lead.contactName")} required />
             <div className="grid gap-4 sm:grid-cols-2">
-              <Field id="phone" label={t("lead.contactPhone")} required type="tel" />
+              <PhoneField id="phone" label={t("lead.contactPhone")} readOnly={false} />
               <Field id="email" label={t("lead.contactEmail")} type="email" />
             </div>
             <div className="space-y-2">

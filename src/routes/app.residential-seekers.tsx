@@ -374,6 +374,10 @@ function ResidentialSeekersPage() {
       const lt = (r.listingType ?? "").toLowerCase();
       if (dealTypeFilter === "sale") return lt === "sale" || lt === "بيع";
       if (dealTypeFilter === "rental") return lt === "rental" || lt === "ايجار";
+      if (dealTypeFilter === "rental_commercial") {
+        const rc = (r.requestCategory ?? "").toLowerCase();
+        return (lt === "rental" || lt === "ايجار") && (rc === "تجاري" || rc === "commercial");
+      }
       return true;
     });
   }, [seekers.data?.items, dealTypeFilter]);
@@ -451,6 +455,7 @@ function ResidentialSeekersPage() {
                 <SelectItem value="all">{t("common.all")}</SelectItem>
                 <SelectItem value="sale">بيع</SelectItem>
                 <SelectItem value="rental">ايجار</SelectItem>
+                <SelectItem value="rental_commercial">استثماري</SelectItem>
               </SelectContent>
             </Select>
           </div>
