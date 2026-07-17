@@ -274,6 +274,11 @@ function ResidentialSeekersPage() {
 
   const columns: Column<ResidentialSeeker>[] = [
     {
+      key: "serialNumber",
+      header: t("residentialSeekers.serialNumber"),
+      cell: (r) => <span className="font-mono font-medium">{r.serialNumber || t("common.notProvided")}</span>,
+    },
+    {
       key: "requestDate",
       header: t("residentialSeekers.requestDate"),
       cell: (r) => r.requestDate || t("common.notProvided"),
@@ -781,7 +786,7 @@ function ResidentialSeekerDialog({
     >
       <div className="space-y-4 rounded-lg border border-border bg-muted/30 p-4">
         <div className="grid gap-4 sm:grid-cols-2">
-          {/* <TextField id="serialNumber" label={t("residentialSeekers.serialNumber")} defaultValue={seeker?.serialNumber} readOnly={readOnly} /> */}
+          <TextField id="serialNumber" label={t("residentialSeekers.serialNumber")} defaultValue={seeker?.serialNumber} readOnly />
           <DateField id="requestDate" label={t("residentialSeekers.requestDate")} defaultValue={seeker?.requestDate || todayLocal()} readOnly={readOnly} className="mt-1 w-full [color-scheme:light] [&::-webkit-calendar-picker-indicator]:ml-auto" />
           <DateField id="reviewDate" label="تاريخ المراجعة" defaultValue={seeker?.reviewDate} readOnly={readOnly} className="mt-1 w-full [color-scheme:light] [&::-webkit-calendar-picker-indicator]:ml-auto" />
           <SelectField
@@ -886,8 +891,12 @@ function ResidentialSeekerDialog({
               label: n,
             }))}
           />
-          <TextField id="profession" label={t("residentialSeekers.profession")} defaultValue={seeker?.profession} readOnly={readOnly} />
-          <TextField id="familyCount" label={t("residentialSeekers.familyCount")} defaultValue={seeker?.familyCount} readOnly={readOnly} type="number" min={1} />
+          {listingType === "Rental" && requestCategory === "سكني" && (
+            <>
+              <TextField id="profession" label={t("residentialSeekers.profession")} defaultValue={seeker?.profession} readOnly={readOnly} />
+              <TextField id="familyCount" label={t("residentialSeekers.familyCount")} defaultValue={seeker?.familyCount} readOnly={readOnly} type="number" min={1} />
+            </>
+          )}
         </div>
       </div>
 
