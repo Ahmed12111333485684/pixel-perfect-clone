@@ -875,7 +875,7 @@ function ResidentialSeekerDialog({
             defaultValue={requestCategory}
             readOnly={readOnly}
             onValueChange={(v) => { setRequestCategory(v); setPropertyType(""); }}
-            options={PROPERTY_CATEGORIES.map((cat) => ({ value: cat, label: t(`listingCategory.${cat}`) }))}
+            options={PROPERTY_CATEGORIES.map((cat) => ({ value: cat, label: t(`listingCategory.${cat === "سكني" ? "Residential" : "Commercial"}`) }))}
           />
           <div key={requestCategory}>
             <SelectField
