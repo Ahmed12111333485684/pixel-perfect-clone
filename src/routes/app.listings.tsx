@@ -670,7 +670,7 @@ function CommercialListingsPage() {
           </div>
 
           <div className="w-full">
-            <Label className="text-xs font-medium">ترتيب حسب</Label>
+            <Label className="text-xs font-medium">{t("common.sortBy")}</Label>
             <Select
               value={`${sortBy}-${sortDir}`}
               onValueChange={(val) => {
@@ -681,15 +681,15 @@ function CommercialListingsPage() {
               }}
             >
               <SelectTrigger className="mt-1 w-full">
-                <SelectValue placeholder="ترتيب حسب" />
+                <SelectValue placeholder={t("common.sortBy")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="createdAt-desc">الأحدث</SelectItem>
-                <SelectItem value="createdAt-asc">الأقدم</SelectItem>
-                <SelectItem value="contactDate-desc">تاريخ التواصل (الأحدث)</SelectItem>
-                <SelectItem value="contactDate-asc">تاريخ التواصل (الأقدم)</SelectItem>
-                <SelectItem value="rentAmount-desc">السعر (الأعلى)</SelectItem>
-                <SelectItem value="rentAmount-asc">السعر (الأقل)</SelectItem>
+                <SelectItem value="createdAt-desc">{t("common.sortNewest")}</SelectItem>
+                <SelectItem value="createdAt-asc">{t("common.sortOldest")}</SelectItem>
+                <SelectItem value="contactDate-desc">{t("common.sortContactDateNewest")}</SelectItem>
+                <SelectItem value="contactDate-asc">{t("common.sortContactDateOldest")}</SelectItem>
+                <SelectItem value="rentAmount-desc">{t("common.sortPriceHighest")}</SelectItem>
+                <SelectItem value="rentAmount-asc">{t("common.sortPriceLowest")}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -772,13 +772,13 @@ function CommercialListingsPage() {
                       className="w-full h-full object-cover transition-transform duration-300 group-hover/img:scale-105"
                     />
                     <div className="absolute inset-x-0 bottom-0 flex items-center justify-center bg-black/60 p-1 opacity-0 transition-opacity group-hover/img:opacity-100">
-                      <span className="text-xs text-white">View {r.images.length} images</span>
+                      <span className="text-xs text-white">{t("common.viewImages", { count: r.images.length })}</span>
                     </div>
                   </div>
                 ) : (
                   <div className="w-full sm:w-1/3 aspect-video sm:aspect-square flex flex-col items-center justify-center rounded-lg border border-dashed bg-muted/50 text-muted-foreground flex-shrink-0">
                     <FileImage className="mb-1 h-6 w-6 opacity-20" />
-                    <span className="text-[10px] uppercase tracking-wider">No Image</span>
+                    <span className="text-[10px] uppercase tracking-wider">{t("common.noImage")}</span>
                   </div>
                 )}
                 
@@ -1131,7 +1131,7 @@ function CommercialListingDialog({
             )}
           </div>
           <div className="space-y-2">
-            <Label htmlFor="listingCategory" className="text-xs font-medium">تصنيف العقار</Label>
+            <Label htmlFor="listingCategory" className="text-xs font-medium">{t("commercialListings.listingCategory")}</Label>
             <Select value={listingCategory} onValueChange={(v) => { setListingCategory(v as ListingCategoryValue); setPropertyType(""); }} disabled={readOnly}>
               <SelectTrigger id="listingCategory" className="mt-1">
                 <SelectValue placeholder={t("commercialListings.listingCategory")} />
@@ -1197,7 +1197,7 @@ function CommercialListingDialog({
               <div className="flex-1">
                 <Select value={broker || "none"} onValueChange={(value) => setBroker(value === "none" ? "" : value)} disabled={readOnly}>
                   <SelectTrigger id="broker" className="mt-1">
-                    <SelectValue placeholder={partnersLoading ? "Loading partners..." : "Select partner"} />
+                    <SelectValue placeholder={partnersLoading ? t("common.loadingPartners") : t("common.selectPartner")} />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="none">{t("common.notProvided")}</SelectItem>
@@ -1258,10 +1258,10 @@ function CommercialListingDialog({
           <TextField id="availableUnits" label={t("commercialListings.availableUnits")} defaultValue={listing?.availableUnits} readOnly={readOnly} type="number" min={0} />
           <TextField id="deedNumber" label={t("commercialListings.deedNumber")} defaultValue={listing?.deedNumber} readOnly={readOnly} />
           <div className="space-y-2">
-            <Label htmlFor="propertyType" className="text-xs font-medium">نوع العقار</Label>
+            <Label htmlFor="propertyType" className="text-xs font-medium">{t("commercialListings.propertyType")}</Label>
             <Select value={propertyType} onValueChange={setPropertyType} disabled={readOnly}>
               <SelectTrigger id="propertyType" className="mt-1">
-                <SelectValue placeholder={listingCategory ? "اختر..." : "اختر تصنيف العقار أولاً"} />
+                <SelectValue placeholder={listingCategory ? t("common.choose") : t("commercialListings.chooseCategoryFirst")} />
               </SelectTrigger>
               <SelectContent>
                 {getPropertyTypesByCategory(listingCategoryToArabic(listingCategory)).map((type) => (
@@ -1290,7 +1290,7 @@ function CommercialListingDialog({
               </SelectTrigger>
               <SelectContent>
                 {PAYMENT_TYPES.map((p) => (
-                  <SelectItem key={p} value={p}>{p}</SelectItem>
+                  <SelectItem key={p} value={p}>{p === "كاش" ? t("common.cash") : p === "حوالة" ? t("common.transfer") : p === "سداد" ? t("common.repayment") : p === "مدى" ? t("common.mada") : p}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -1347,7 +1347,7 @@ function CommercialListingDialog({
                   rel="noopener noreferrer"
                 >
                   <MapPin className="h-4 w-4 text-gold" />
-                  فتح في خرائط جوجل
+                  {t("common.openInGoogleMaps")}
                 </a>
               </Button>
             )}

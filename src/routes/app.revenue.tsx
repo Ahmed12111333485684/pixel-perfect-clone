@@ -531,7 +531,7 @@ function RevenueDialog({
             <SelectContent>
               {CATEGORY_OPTIONS.map((opt) => (
                 <SelectItem key={opt.value} value={opt.value}>
-                  {opt.label}
+                  {opt.value === "ايجار" ? t("revenue.categoryRent") : opt.value === "بيع" ? t("revenue.categorySale") : opt.value === "عمولة" ? t("revenue.categoryCommission") : t("revenue.categoryOther")}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -629,7 +629,7 @@ function RevenueDialog({
             <SelectContent>
               {PAYMENT_METHODS.map((method) => (
                 <SelectItem key={method} value={method}>
-                  {method}
+                  {method === "كاش" ? t("common.cash") : method === "حوالة" ? t("common.transfer") : method === "سداد" ? t("common.repayment") : t("common.mada")}
                 </SelectItem>
               ))}
             </SelectContent>

@@ -44,6 +44,32 @@ const PROPERTY_TYPE_VALUES = ["ايجار", "بيع"] as const;
 const AD_TYPE_VALUES = ["لوحة", "استكر", "لوحة(بار)"] as const;
 const INSTALLATION_TYPE_VALUES = ["جداري", "ارضي", "تثبيت سور", "استكر"] as const;
 
+const STATUS_KEY_MAP: Record<string, string> = {
+  "تمت الازالة": "advertisements.statusRemoved",
+  "تم الطلب": "advertisements.statusOrdered",
+  "تم التركيب": "advertisements.statusInstalled",
+  "في انتظار التركيب": "advertisements.statusAwaitingInstallation",
+  "انتهي الاعلان": "advertisements.statusExpired",
+};
+
+const PROPERTY_TYPE_KEY_MAP: Record<string, string> = {
+  "ايجار": "advertisements.propertyTypeRent",
+  "بيع": "advertisements.propertyTypeSale",
+};
+
+const AD_TYPE_KEY_MAP: Record<string, string> = {
+  "لوحة": "advertisements.adTypeBoard",
+  "استكر": "advertisements.adTypeSticker",
+  "لوحة(بار)": "advertisements.adTypeBoardBar",
+};
+
+const INSTALLATION_TYPE_KEY_MAP: Record<string, string> = {
+  "جداري": "advertisements.installationTypeWall",
+  "ارضي": "advertisements.installationTypeGround",
+  "تثبيت سور": "advertisements.installationTypeFence",
+  "استكر": "advertisements.installationTypeSticker",
+};
+
 const ADVERTISEMENT_FIELDS = [
   "code",
   "status",
@@ -326,7 +352,7 @@ function AdvertisementsPage() {
     {
       key: "propertyCodeOrFallback",
       header: t("advertisements.propertyCodeOrFallback"),
-      cell: (row) => row.propertyCodeOrFallback || "لا يوجد",
+      cell: (row) => row.propertyCodeOrFallback || t("common.none"),
     },
     {
       key: "propertyType",
@@ -449,7 +475,7 @@ function AdvertisementsPage() {
                 <SelectItem value="all">{t("common.all")}</SelectItem>
                 {STATUS_VALUES.map((value) => (
                   <SelectItem key={value} value={value}>
-                    {value}
+                    {t(STATUS_KEY_MAP[value])}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -619,7 +645,7 @@ function AdvertisementDialog({
             <SelectContent>
               {STATUS_VALUES.map((value) => (
                 <SelectItem key={value} value={value}>
-                  {value}
+                  {t(STATUS_KEY_MAP[value])}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -675,7 +701,7 @@ function AdvertisementDialog({
             <SelectContent>
               {PROPERTY_TYPE_VALUES.map((value) => (
                 <SelectItem key={value} value={value}>
-                  {value}
+                  {t(PROPERTY_TYPE_KEY_MAP[value])}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -727,7 +753,7 @@ function AdvertisementDialog({
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="none">لا يوجد</SelectItem>
+              <SelectItem value="none">{t("common.none")}</SelectItem>
               {properties.map((property) => (
                 <SelectItem key={property.id} value={String(property.id)}>
                   {`#${property.id} - ${property.name}`}
@@ -750,7 +776,7 @@ function AdvertisementDialog({
             <SelectContent>
               {AD_TYPE_VALUES.map((value) => (
                 <SelectItem key={value} value={value}>
-                  {value}
+                  {t(AD_TYPE_KEY_MAP[value])}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -770,7 +796,7 @@ function AdvertisementDialog({
             <SelectContent>
               {INSTALLATION_TYPE_VALUES.map((value) => (
                 <SelectItem key={value} value={value}>
-                  {value}
+                  {t(INSTALLATION_TYPE_KEY_MAP[value])}
                 </SelectItem>
               ))}
             </SelectContent>

@@ -377,7 +377,7 @@ function LeadsPage() {
                     </div>
                     {l.partnerId && (
                       <div className="mt-1 truncate text-[11px] text-muted-foreground">
-                        Partner: {l.partnerName ?? "—"}
+                        {t("common.partner")}: {l.partnerName ?? "—"}
                       </div>
                     )}
                     {l.commercialListingId && (
@@ -569,7 +569,7 @@ function LeadsPage() {
                 </div>
                 {selected.partnerId && (
                   <div>
-                    <span className="text-xs font-medium text-muted-foreground">Partner:</span>
+                    <span className="text-xs font-medium text-muted-foreground">{t("common.partner")}:</span>
                     <div>{selected.partnerName ?? t("common.notProvided")}</div>
                   </div>
                 )}
@@ -737,7 +737,7 @@ function LeadsPage() {
             {editing.partnerId && (
               <>
                 <div className="space-y-2">
-                  <Label htmlFor="commissionAmount">Commission amount</Label>
+                  <Label htmlFor="commissionAmount">{t("common.commissionAmount")}</Label>
                   <Input
                     id="commissionAmount"
                     name="commissionAmount"
@@ -748,16 +748,16 @@ function LeadsPage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="commissionStatus">Commission status</Label>
+                  <Label htmlFor="commissionStatus">{t("common.commissionStatus")}</Label>
                   <Input
                     id="commissionStatus"
                     name="commissionStatus"
-                    placeholder="Pending or Paid"
+                    placeholder={t("common.pendingOrPaid")}
                     defaultValue={editing.commissionStatus ?? ""}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="commissionNotes">Commission notes</Label>
+                  <Label htmlFor="commissionNotes">{t("common.commissionNotes")}</Label>
                   <Textarea
                     id="commissionNotes"
                     name="commissionNotes"

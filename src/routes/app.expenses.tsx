@@ -459,7 +459,7 @@ function ExpenseDialog({
             <SelectContent>
               {PAYMENT_METHODS.map((method) => (
                 <SelectItem key={method} value={method}>
-                  {method}
+                  {method === "كاش" ? t("common.cash") : method === "حوالة" ? t("common.transfer") : method === "سداد" ? t("common.repayment") : t("common.mada")}
                 </SelectItem>
               ))}
             </SelectContent>

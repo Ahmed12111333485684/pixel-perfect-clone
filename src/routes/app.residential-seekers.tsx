@@ -172,6 +172,7 @@ function ResidentialSeekersPage() {
     || auth.isPartner
     || auth.user?.screenPermissions.includes("/app/residential-seekers");
   const canManage = auth.isStaff || auth.isPartner;
+  const isAdmin = auth.hasRole("Admin");
 
   const seekers = useQuery({
     queryKey: ["residential-seekers", { q, status, page, pageSize, sortBy, sortDir }],
@@ -267,8 +268,8 @@ function ResidentialSeekersPage() {
   const statusLabel = (value?: string | null) => {
     const normalized = normalizeValue(value);
     if (!normalized) return t("common.notProvided");
-    if (normalized === STATUS_DONE) return STATUS_DONE;
-    if (normalized === STATUS_NOT_DONE) return STATUS_NOT_DONE;
+    if (normalized === STATUS_DONE) return t("residentialSeekers.statusDone");
+    if (normalized === STATUS_NOT_DONE) return t("residentialSeekers.statusNotDone");
     return value ?? t("common.notProvided");
   };
 
@@ -286,7 +287,7 @@ function ResidentialSeekersPage() {
     },
     {
       key: "reviewDate",
-      header: "تاريخ المراجعة",
+      header: t("residentialSeekers.reviewDate"),
       cell: (r) => r.reviewDate || t("common.notProvided"),
       sortable: true,
     },
@@ -348,12 +349,12 @@ function ResidentialSeekersPage() {
     },
     {
       key: "city",
-      header: "المدينة",
+      header: t("common.city"),
       cell: (r) => r.city || t("common.notProvided"),
     },
     {
       key: "district",
-      header: "الحي",
+      header: t("common.district"),
       cell: (r) => Array.isArray(r.district) ? r.district.join(" - ") : (r.district || t("common.notProvided")),
     },
     {
@@ -436,15 +437,15 @@ function ResidentialSeekersPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">{t("common.all")}</SelectItem>
-                <SelectItem value={STATUS_NOT_DONE}>{STATUS_NOT_DONE}</SelectItem>
-                <SelectItem value={STATUS_DONE}>{STATUS_DONE}</SelectItem>
+                <SelectItem value={STATUS_NOT_DONE}>{t("residentialSeekers.statusNotDone")}</SelectItem>
+                <SelectItem value={STATUS_DONE}>{t("residentialSeekers.statusDone")}</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
           <div>
             <Label htmlFor="dealTypeFilter" className="text-xs font-medium">
-              فلترة
+              {t("common.filter")}
             </Label>
             <Select
               value={dealTypeFilter}
@@ -458,15 +459,15 @@ function ResidentialSeekersPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">{t("common.all")}</SelectItem>
-                <SelectItem value="sale">بيع</SelectItem>
-                <SelectItem value="rental">ايجار</SelectItem>
-                <SelectItem value="rental_commercial">استثماري</SelectItem>
+                <SelectItem value="sale">{t("listingType.Sale")}</SelectItem>
+                <SelectItem value="rental">{t("listingType.Rental")}</SelectItem>
+                <SelectItem value="rental_commercial">{t("residentialSeekers.investment")}</SelectItem>
               </SelectContent>
             </Select>
           </div>
           
           <div className="w-full">
-            <Label className="text-xs font-medium">ترتيب حسب</Label>
+            <Label className="text-xs font-medium">{t("residentialSeekers.sortBy")}</Label>
             <Select
               value={`${sortBy}-${sortDir}`}
               onValueChange={(val) => {
@@ -477,15 +478,15 @@ function ResidentialSeekersPage() {
               }}
             >
               <SelectTrigger className="mt-1 w-full">
-                <SelectValue placeholder="ترتيب حسب" />
+                <SelectValue placeholder={t("residentialSeekers.sortBy")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="createdAt-desc">الأحدث</SelectItem>
-                <SelectItem value="createdAt-asc">الأقدم</SelectItem>
-                <SelectItem value="requestDate-desc">تاريخ الطلب (الأحدث)</SelectItem>
-                <SelectItem value="requestDate-asc">تاريخ الطلب (الأقدم)</SelectItem>
-                <SelectItem value="fullName-asc">الاسم (أ-ي)</SelectItem>
-                <SelectItem value="fullName-desc">الاسم (ي-أ)</SelectItem>
+                <SelectItem value="createdAt-desc">{t("residentialSeekers.sortNewest")}</SelectItem>
+                <SelectItem value="createdAt-asc">{t("residentialSeekers.sortOldest")}</SelectItem>
+                <SelectItem value="requestDate-desc">{t("residentialSeekers.sortRequestDateNewest")}</SelectItem>
+                <SelectItem value="requestDate-asc">{t("residentialSeekers.sortRequestDateOldest")}</SelectItem>
+                <SelectItem value="fullName-asc">{t("residentialSeekers.sortNameAsc")}</SelectItem>
+                <SelectItem value="fullName-desc">{t("residentialSeekers.sortNameDesc")}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -577,11 +578,11 @@ function ResidentialSeekersPage() {
                     <span className="truncate max-w-[120px]" title={r.preferredLocation ?? undefined}>{r.preferredLocation || t("common.notProvided")}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">المدينة</span>
+                    <span className="text-muted-foreground">{t("common.city")}</span>
                     <span>{r.city || t("common.notProvided")}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">الحي</span>
+                    <span className="text-muted-foreground">{t("common.district")}</span>
                     <span>{Array.isArray(r.district) ? r.district.join(" - ") : (r.district || t("common.notProvided"))}</span>
                   </div>
                   <div className="flex justify-between">
@@ -631,7 +632,7 @@ function ResidentialSeekersPage() {
                   )}
                 </div>
                 <div>
-                  تاريخ المراجعة: {r.reviewDate || t("common.notProvided")}
+                  {t("residentialSeekers.reviewDate")}: {r.reviewDate || t("common.notProvided")}
                 </div>
               </div>
             </div>
@@ -642,7 +643,7 @@ function ResidentialSeekersPage() {
       {(seekers.data?.total ?? 0) > 0 && (
         <div className="mt-4 flex items-center justify-between">
           <div className="text-sm text-muted-foreground">
-            {t("common.skip", { defaultValue: "Showing" })} {(page - 1) * pageSize + 1}
+            {t("common.of", { defaultValue: "Showing" })} {(page - 1) * pageSize + 1}
             {" - "}
             {Math.min(page * pageSize, filteredSeekers.length)} {t("common.of", { defaultValue: "of" })} {filteredSeekers.length}
           </div>
@@ -685,6 +686,7 @@ function ResidentialSeekersPage() {
         submitLabel={t("common.create")}
         onSubmit={handleCreate}
         onAddPartner={() => setPartnerDialogOpen(true)}
+        isAdmin={isAdmin}
       />
 
       <ResidentialSeekerDialog
@@ -707,6 +709,7 @@ function ResidentialSeekersPage() {
           setSelected(null);
         }}
         onAddPartner={() => setPartnerDialogOpen(true)}
+        isAdmin={isAdmin}
       />
 
       <PartnerDialog
@@ -748,6 +751,7 @@ function ResidentialSeekerDialog({
   submitLabel,
   onSubmit,
   onAddPartner,
+  isAdmin,
 }: {
   open: boolean;
   onOpenChange: (value: boolean) => void;
@@ -763,6 +767,7 @@ function ResidentialSeekerDialog({
   submitLabel: string;
   onSubmit: (e: React.FormEvent<HTMLFormElement>) => void | Promise<void>;
   onAddPartner?: () => void;
+  isAdmin: boolean;
 }) {
   const { t } = useTranslation();
   const [listingType, setListingType] = useState(seeker?.listingType ?? "Rental");
@@ -786,9 +791,18 @@ function ResidentialSeekerDialog({
     >
       <div className="space-y-4 rounded-lg border border-border bg-muted/30 p-4">
         <div className="grid gap-4 sm:grid-cols-2">
-          <TextField id="serialNumber" label={t("residentialSeekers.serialNumber")} defaultValue={seeker?.serialNumber} readOnly />
+          {isAdmin ? (
+            <TextField id="serialNumber" label={t("residentialSeekers.serialNumber")} defaultValue={seeker?.serialNumber} readOnly={readOnly} />
+          ) : (
+            <div className="space-y-2">
+              <Label htmlFor="serialNumber" className="text-xs font-medium">{t("residentialSeekers.serialNumber")}</Label>
+              <div className="mt-1 rounded-md border-2 border-gold/30 bg-gold/5 px-3 py-2 text-sm font-bold tracking-wide text-foreground">
+                {seeker?.serialNumber || "—"}
+              </div>
+            </div>
+          )}
           <DateField id="requestDate" label={t("residentialSeekers.requestDate")} defaultValue={seeker?.requestDate || todayLocal()} readOnly={readOnly} className="mt-1 w-full [color-scheme:light] [&::-webkit-calendar-picker-indicator]:ml-auto" />
-          <DateField id="reviewDate" label="تاريخ المراجعة" defaultValue={seeker?.reviewDate} readOnly={readOnly} className="mt-1 w-full [color-scheme:light] [&::-webkit-calendar-picker-indicator]:ml-auto" />
+          <DateField id="reviewDate" label={t("residentialSeekers.reviewDate")} defaultValue={seeker?.reviewDate} readOnly={readOnly} className="mt-1 w-full [color-scheme:light] [&::-webkit-calendar-picker-indicator]:ml-auto" />
           <SelectField
             id="status"
             label={t("residentialSeekers.status")}
@@ -857,20 +871,20 @@ function ResidentialSeekerDialog({
           />
           <SelectField
             id="requestCategory"
-            label="تصنيف العقار"
+            label={t("residentialSeekers.requestCategory")}
             defaultValue={requestCategory}
             readOnly={readOnly}
             onValueChange={(v) => { setRequestCategory(v); setPropertyType(""); }}
-            options={PROPERTY_CATEGORIES.map((cat) => ({ value: cat, label: cat }))}
+            options={PROPERTY_CATEGORIES.map((cat) => ({ value: cat, label: t(`listingCategory.${cat}`) }))}
           />
           <div key={requestCategory}>
             <SelectField
               id="propertyType"
-              label="نوع العقار"
+              label={t("residentialSeekers.propertyType")}
               defaultValue={propertyType}
               readOnly={readOnly || !requestCategory}
               onValueChange={setPropertyType}
-              options={getPropertyTypesByCategory(requestCategory).map((type) => ({ value: type, label: type }))}
+              options={getPropertyTypesByCategory(requestCategory).map((type) => ({ value: type, label: localizePropertyType(t, type) }))}
             />
           </div>
         </div>
@@ -918,12 +932,12 @@ function ResidentialSeekerDialog({
             label={t("residentialSeekers.paymentType")}
             defaultValue={seeker?.paymentType ?? ""}
             readOnly={readOnly}
-            options={PAYMENT_TYPES.map((p) => ({ value: p, label: p }))}
+            options={PAYMENT_TYPES.map((p) => ({ value: p, label: p === "كاش" ? t("paymentTypes.cash") : t("paymentTypes.finance") }))}
           />
           <TextField id="preferredLocation" label={t("residentialSeekers.preferredLocation")} defaultValue={seeker?.preferredLocation} readOnly={readOnly} />
           <ComboboxField
             id="city"
-            label="المدينة"
+            label={t("common.city")}
             defaultValue={seeker?.city ?? ""}
             readOnly={readOnly}
             options={CITIES.map((c) => ({ value: c, label: c }))}
@@ -932,7 +946,7 @@ function ResidentialSeekerDialog({
           <MultiComboboxField
             key={selectedCity}
             id="district"
-            label="الحي"
+            label={t("common.district")}
             defaultValue={seeker?.district ?? []}
             readOnly={readOnly}
             disabled={!selectedCity}

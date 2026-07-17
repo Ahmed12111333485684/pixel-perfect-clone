@@ -30,18 +30,20 @@ export const Route = createFileRoute("/app/notifications")({
   component: NotificationsPage,
 });
 
-function timeAgo(dateStr: string): string {
+import type { TFunction } from "i18next";
+
+function timeAgo(dateStr: string, t: TFunction): string {
   const now = Date.now();
   const date = new Date(dateStr).getTime();
   const diffMs = now - date;
   const diffSec = Math.floor(diffMs / 1000);
-  if (diffSec < 60) return "now";
+  if (diffSec < 60) return t("notifications.timeAgoNow");
   const diffMin = Math.floor(diffSec / 60);
-  if (diffMin < 60) return `${diffMin}m ago`;
+  if (diffMin < 60) return t("notifications.timeAgoMinutes", { count: diffMin });
   const diffHr = Math.floor(diffMin / 60);
-  if (diffHr < 24) return `${diffHr}h ago`;
+  if (diffHr < 24) return t("notifications.timeAgoHours", { count: diffHr });
   const diffDay = Math.floor(diffHr / 24);
-  return `${diffDay}d ago`;
+  return t("notifications.timeAgoDays", { count: diffDay });
 }
 
 function NotificationsPage() {
@@ -135,7 +137,7 @@ function NotificationsPage() {
                       </div>
                     </td>
                     <td className="px-4 py-3 text-sm text-muted-foreground whitespace-nowrap">
-                      {timeAgo(item.createdAt)}
+                      {timeAgo(item.createdAt, t)}
                     </td>
                     <td className="px-4 py-3">
                       {item.read ? (
