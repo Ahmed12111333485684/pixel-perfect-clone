@@ -167,7 +167,7 @@ function normalizePropertyType(value: string | null | undefined): PropertyTypeKe
   if (v === "محل" || v === "shop") return "Shop";
   if (v === "مكتب" || v === "office") return "Office";
   if (v === "معرض" || v === "showroom" || v === "gallery") return "Showroom";
-  if (v === "عمارة" || v === "building") return "Building";
+  if (v === "عمارة" || v === "عمارة سكنية" || v === "عمارة تجارية" || v === "building") return "Building";
   if (v === "ارض" || v === "land") return "Land";
   if (v === "استراحة" || v === "resthouse" || v === "rest house") return "RestHouse";
   if (v === "فيلا" || v === "villa") return "Villa";

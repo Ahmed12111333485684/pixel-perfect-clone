@@ -130,6 +130,20 @@ export interface UserDto {
   ownerId?: number | null;
   ownerFullName?: string | null;
   createdAt: string;
+  employeeId?: string | null;
+  jobTitle?: string | null;
+  fullName?: string | null;
+  nationality?: string | null;
+  nationalId?: string | null;
+  dateOfBirth?: string | null;
+  personalMobile?: string | null;
+  workMobile?: string | null;
+  startDate?: string | null;
+  endDate?: string | null;
+  email?: string | null;
+  bank?: string | null;
+  iban?: string | null;
+  notes?: string | null;
 }
 
 export interface AuthResponse {

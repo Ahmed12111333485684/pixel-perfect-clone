@@ -102,10 +102,39 @@ function UsersPage() {
       role: Role;
       screenPermissions?: string[];
       canDelete?: boolean;
+      employeeId?: string;
+      jobTitle?: string;
+      fullName?: string;
+      nationality?: string;
+      nationalId?: string;
+      dateOfBirth?: string;
+      personalMobile?: string;
+      workMobile?: string;
+      startDate?: string;
+      endDate?: string;
+      email?: string;
+      bank?: string;
+      iban?: string;
+      notes?: string;
     }) => {
       if (vals.id) {
         const body: Record<string, unknown> = { username: vals.username, role: vals.role };
         if (vals.password) body.password = vals.password;
+        if (vals.employeeId !== undefined) body.employeeId = vals.employeeId;
+        if (vals.jobTitle !== undefined) body.jobTitle = vals.jobTitle;
+        if (vals.fullName !== undefined) body.fullName = vals.fullName;
+        if (vals.nationality !== undefined) body.nationality = vals.nationality;
+        if (vals.nationalId !== undefined) body.nationalId = vals.nationalId;
+        if (vals.dateOfBirth !== undefined) body.dateOfBirth = vals.dateOfBirth;
+        if (vals.personalMobile !== undefined) body.personalMobile = vals.personalMobile;
+        if (vals.workMobile !== undefined) body.workMobile = vals.workMobile;
+        if (vals.startDate !== undefined) body.startDate = vals.startDate;
+        if (vals.endDate !== undefined) body.endDate = vals.endDate;
+        if (vals.email !== undefined) body.email = vals.email;
+        if (vals.bank !== undefined) body.bank = vals.bank;
+        if (vals.iban !== undefined) body.iban = vals.iban;
+        if (vals.notes !== undefined) body.notes = vals.notes;
+
         if (vals.role === "Employee") {
           body.screenPermissions = vals.screenPermissions ?? [];
           body.canDelete = vals.canDelete ?? false;
@@ -127,6 +156,20 @@ function UsersPage() {
           ...(vals.role === "Employee"
             ? { screenPermissions: vals.screenPermissions ?? [], canDelete: vals.canDelete ?? false }
             : {}),
+          employeeId: vals.employeeId,
+          jobTitle: vals.jobTitle,
+          fullName: vals.fullName,
+          nationality: vals.nationality,
+          nationalId: vals.nationalId,
+          dateOfBirth: vals.dateOfBirth,
+          personalMobile: vals.personalMobile,
+          workMobile: vals.workMobile,
+          startDate: vals.startDate,
+          endDate: vals.endDate,
+          email: vals.email,
+          bank: vals.bank,
+          iban: vals.iban,
+          notes: vals.notes,
         },
       });
     },
@@ -296,6 +339,20 @@ function UserDialog({
     role: Role;
     screenPermissions?: string[];
     canDelete?: boolean;
+    employeeId?: string;
+    jobTitle?: string;
+    fullName?: string;
+    nationality?: string;
+    nationalId?: string;
+    dateOfBirth?: string;
+    personalMobile?: string;
+    workMobile?: string;
+    startDate?: string;
+    endDate?: string;
+    email?: string;
+    bank?: string;
+    iban?: string;
+    notes?: string;
   }) => void;
   submitting?: boolean;
 }) {
@@ -349,20 +406,130 @@ function UserDialog({
           role,
           ...(password ? { password } : {}),
           ...(employeeMode ? { screenPermissions, canDelete } : {}),
+          employeeId: String(fd.get("employeeId") ?? "").trim(),
+          jobTitle: String(fd.get("jobTitle") ?? "").trim(),
+          fullName: String(fd.get("fullName") ?? "").trim(),
+          nationality: String(fd.get("nationality") ?? "").trim(),
+          nationalId: String(fd.get("nationalId") ?? "").trim(),
+          dateOfBirth: String(fd.get("dateOfBirth") ?? "").trim(),
+          personalMobile: String(fd.get("personalMobile") ?? "").trim(),
+          workMobile: String(fd.get("workMobile") ?? "").trim(),
+          startDate: String(fd.get("startDate") ?? "").trim(),
+          endDate: String(fd.get("endDate") ?? "").trim(),
+          email: String(fd.get("email") ?? "").trim(),
+          bank: String(fd.get("bank") ?? "").trim(),
+          iban: String(fd.get("iban") ?? "").trim(),
+          notes: String(fd.get("notes") ?? "").trim(),
         });
       }}
     >
-      <div className="space-y-2">
-        <Label htmlFor="username">{t("common.username")}</Label>
-        <Input id="username" name="username" defaultValue={user?.username ?? ""} required />
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div className="space-y-2">
+          <Label htmlFor="username">{t("common.username")}</Label>
+          <Input id="username" name="username" defaultValue={user?.username ?? ""} required />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="password">
+            {t("common.password")}{" "}
+            {user && <span className="text-xs text-muted-foreground">({t("common.optional")})</span>}
+          </Label>
+          <Input id="password" name="password" type="password" required={!user} />
+        </div>
+        
+        <div className="space-y-2">
+          <Label>{t("common.role")}</Label>
+          <Select
+            value={role}
+            onValueChange={(v) => {
+              const nextRole = v as Role;
+              setRole(nextRole);
+              if (nextRole === "Employee" && screenPermissions.length === 0) {
+                setScreenPermissions(["/app", "/app/employee-productivity"]);
+              }
+            }}
+          >
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {ROLES.map((r) => (
+                <SelectItem key={r} value={r}>
+                  {t(`role.${r}`)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="employeeId">{t("common.employeeId")}</Label>
+          <Input id="employeeId" name="employeeId" defaultValue={user?.employeeId ?? ""} />
+        </div>
+        
+        <div className="space-y-2">
+          <Label htmlFor="fullName">{t("common.employeeName")}</Label>
+          <Input id="fullName" name="fullName" defaultValue={user?.fullName ?? ""} />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="jobTitle">{t("common.jobTitle")}</Label>
+          <Input id="jobTitle" name="jobTitle" defaultValue={user?.jobTitle ?? ""} />
+        </div>
+        
+        <div className="space-y-2">
+          <Label htmlFor="nationalId">{t("common.nationalId")}</Label>
+          <Input id="nationalId" name="nationalId" defaultValue={user?.nationalId ?? ""} />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="nationality">{t("common.nationality")}</Label>
+          <Input id="nationality" name="nationality" defaultValue={user?.nationality ?? ""} />
+        </div>
+        
+        <div className="space-y-2">
+          <Label htmlFor="dateOfBirth">{t("common.dateOfBirth")}</Label>
+          <Input id="dateOfBirth" name="dateOfBirth" type="date" defaultValue={user?.dateOfBirth ?? ""} />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="email">{t("common.email")}</Label>
+          <Input id="email" name="email" type="email" defaultValue={user?.email ?? ""} />
+        </div>
+        
+        <div className="space-y-2">
+          <Label htmlFor="personalMobile">{t("common.personalMobile")}</Label>
+          <Input id="personalMobile" name="personalMobile" defaultValue={user?.personalMobile ?? ""} />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="workMobile">{t("common.workMobile")}</Label>
+          <Input id="workMobile" name="workMobile" defaultValue={user?.workMobile ?? ""} />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="startDate">{t("common.startDate")}</Label>
+          <Input id="startDate" name="startDate" type="date" defaultValue={user?.startDate ?? ""} />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="endDate">{t("common.endDate")}</Label>
+          <Input id="endDate" name="endDate" type="date" defaultValue={user?.endDate ?? ""} />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="bank">{t("common.bank")}</Label>
+          <Input id="bank" name="bank" defaultValue={user?.bank ?? ""} />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="iban">{t("common.iban")}</Label>
+          <Input id="iban" name="iban" defaultValue={user?.iban ?? ""} />
+        </div>
+        
+        <div className="sm:col-span-2 space-y-2">
+          <Label htmlFor="notes">{t("common.notes")}</Label>
+          <textarea
+            id="notes"
+            name="notes"
+            defaultValue={user?.notes ?? ""}
+            className="flex min-h-[80px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+          />
+        </div>
       </div>
-      <div className="space-y-2">
-        <Label htmlFor="password">
-          {t("common.password")}{" "}
-          {user && <span className="text-xs text-muted-foreground">({t("common.optional")})</span>}
-        </Label>
-        <Input id="password" name="password" type="password" required={!user} />
-      </div>
+
       {employeeMode && (
         <div className="space-y-3 rounded-lg border border-border bg-muted/30 p-4">
           <div>
@@ -396,30 +563,6 @@ function UserDialog({
           </div>
         </div>
       )}
-      <div className="space-y-2">
-        <Label>{t("common.role")}</Label>
-        <Select
-          value={role}
-          onValueChange={(v) => {
-            const nextRole = v as Role;
-            setRole(nextRole);
-            if (nextRole === "Employee" && screenPermissions.length === 0) {
-              setScreenPermissions(["/app", "/app/employee-productivity"]);
-            }
-          }}
-        >
-          <SelectTrigger>
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {ROLES.map((r) => (
-              <SelectItem key={r} value={r}>
-                {t(`role.${r}`)}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
     </FormDialog>
   );
 }
