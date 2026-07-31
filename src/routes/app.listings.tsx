@@ -1035,6 +1035,7 @@ function CommercialListingDialog({
   const isAdmin = dialogAuth.hasRole("Admin");
   const [publishing, setPublishing] = useState<PublishingState>(() => buildPublishingState(listing));
   const [broker, setBroker] = useState<string>(listing?.broker ?? "");
+  const [employee, setEmployee] = useState<string>(listing?.employee ?? "");
   const [listingCategory, setListingCategory] = useState<ListingCategoryValue>(normalizeListingCategory(listing?.listingCategory));
   const [propertyStatus, setPropertyStatus] = useState<string>(listing?.propertyStatus ?? STATUS_AVAILABLE);
   const [listingType, setListingType] = useState<ListingTypeValue>(normalizeListingType(listing?.listingType));
@@ -1062,6 +1063,7 @@ function CommercialListingDialog({
     .sort((a, b) => a.fullName.localeCompare(b.fullName)), [partners]);
 
   const hasCurrentBrokerInPartners = broker ? partnerOptions.some((partner) => partner.fullName === broker) : true;
+  const hasCurrentEmployeeInUsers = employee ? users.some((user) => user.username === employee) : true;
 
   const updateContract = useCallback((id: string, field: keyof Omit<BrokerageContractFormValue, "id">, value: string) => {
     setContracts((current) => current.map((item) => (item.id === id ? { ...item, [field]: value } : item)));
@@ -1082,6 +1084,7 @@ function CommercialListingDialog({
     if (open) {
       setPublishing(buildPublishingState(listing));
       setBroker(listing?.broker ?? "");
+      setEmployee(listing?.employee ?? "");
       setListingCategory(normalizeListingCategory(listing?.listingCategory));
       setPropertyStatus(listing?.propertyStatus ?? STATUS_AVAILABLE);
       setListingType(normalizeListingType(listing?.listingType));
@@ -1175,21 +1178,24 @@ function CommercialListingDialog({
           <div className="space-y-2">
             <Label htmlFor="employee" className="text-xs font-medium">{t("common.employee")}</Label>
             <Select
-              name="employee"
-              defaultValue={listing?.employee ?? undefined}
+              value={employee || "none"}
+              onValueChange={(value) => setEmployee(value === "none" ? "" : value)}
               disabled={readOnly || usersLoading}
             >
               <SelectTrigger id="employee" className="mt-1">
                 <SelectValue placeholder={t("common.employee")} />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="none">{t("common.notProvided")}</SelectItem>
                 {users.map((user) => (
                   <SelectItem key={user.id} value={user.username}>
                     {user.username}
                   </SelectItem>
                 ))}
+                {employee && !hasCurrentEmployeeInUsers && <SelectItem value={employee}>{employee}</SelectItem>}
               </SelectContent>
             </Select>
+            <input type="hidden" name="employee" value={employee} />
           </div>
           <div className="space-y-2">
             <Label htmlFor="broker" className="text-xs font-medium">{t("commercialListings.broker")}</Label>
