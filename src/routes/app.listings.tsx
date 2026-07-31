@@ -1273,6 +1273,9 @@ function CommercialListingDialog({
                 {getPropertyTypesByCategory(listingCategoryToArabic(listingCategory)).map((type) => (
                   <SelectItem key={type} value={type}>{type}</SelectItem>
                 ))}
+                {propertyType && !getPropertyTypesByCategory(listingCategoryToArabic(listingCategory)).includes(propertyType) && (
+                  <SelectItem value={propertyType}>{propertyType}</SelectItem>
+                )}
               </SelectContent>
             </Select>
             <input type="hidden" name="propertyType" value={propertyType} />
