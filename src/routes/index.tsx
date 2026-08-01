@@ -18,6 +18,7 @@ export const Route = createFileRoute("/")({
           "مكتب نور الاستشارة: متميزون في طرح العروض العقارية ونتجاوب مع عروضكم وطلباتكم العقارية",
       },
       { property: "og:title", content: "نور الاستشارة" },
+      { property: "og:site_name", content: "نور الاستشارة" },
       {
         property: "og:description",
         content: "مكتب نور الاستشارة: متميزون في طرح العروض العقارية ونتجاوب مع عروضكم وطلباتكم العقارية",
