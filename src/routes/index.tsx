@@ -11,7 +11,7 @@ import heroImg from "@/assets/hero-property.png";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "نور الاستشارة — متميزون في طرح العروض العقارية" },
+      { title: "نور الاستشارة" },
       {
         name: "description",
         content:

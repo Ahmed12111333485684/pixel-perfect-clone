@@ -9,6 +9,25 @@ import {
 import { Button } from "@/components/ui/button";
 import { useTranslation } from "react-i18next";
 import { Loader2 } from "lucide-react";
+import { toast } from "sonner";
+
+function getMissingRequiredLabels(form: HTMLFormElement, fallback: string): string[] {
+  const missing: string[] = [];
+  const elements = Array.from(form.elements) as Array<
+    HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+  >;
+  for (const el of elements) {
+    if (el.disabled || !el.required || !el.validity.valueMissing) continue;
+    let label = "";
+    if (el.id) {
+      label =
+        form.querySelector<HTMLLabelElement>(`label[for="${el.id}"]`)?.textContent?.trim() ?? "";
+    }
+    if (!label) label = el.name || el.id || fallback;
+    if (!missing.includes(label)) missing.push(label);
+  }
+  return missing;
+}
 
 interface FormDialogProps {
   open: boolean;
@@ -50,7 +69,26 @@ export function FormDialog({
         className={`max-h-[90vh] overflow-y-auto rounded-xl ${size === "lg" ? "sm:max-w-2xl" : "sm:max-w-md"
           }`}
       >
-        <form onSubmit={onSubmit} className="space-y-4">
+        <form
+          noValidate
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (!readOnly) {
+              const form = e.currentTarget;
+              const missing = getMissingRequiredLabels(form, t("common.requiredField"));
+              if (missing.length > 0) {
+                toast.error(`${t("common.requiredFieldsMissing")}: ${missing.join("، ")}`);
+                return;
+              }
+              if (!form.checkValidity()) {
+                toast.error(t("common.invalidFields"));
+                return;
+              }
+            }
+            onSubmit(e);
+          }}
+          className="space-y-4"
+        >
           <DialogHeader>
             <DialogTitle className="font-display">{title}</DialogTitle>
             {description && <DialogDescription>{description}</DialogDescription>}
