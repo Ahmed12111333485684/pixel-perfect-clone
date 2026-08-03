@@ -109,7 +109,6 @@ function ResidentialSeekersPage() {
 
   const [q, setQ] = useState("");
   const [status, setStatus] = useState<string>("all");
-  const [dealTypeFilter, setDealTypeFilter] = useState<string>("all");
   const [page, setPage] = useState(1);
   const [pageSize] = useState(20);
   const [sortBy, setSortBy] = useState<string>("createdAt");
@@ -200,7 +199,6 @@ function ResidentialSeekersPage() {
   const handleReset = () => {
     setQ("");
     setStatus("all");
-    setDealTypeFilter("all");
     setPage(1);
   };
 
@@ -374,21 +372,10 @@ function ResidentialSeekersPage() {
   }
 
   const filteredSeekers = useMemo(() => {
-    const items = seekers.data?.items ?? [];
-    if (dealTypeFilter === "all") return items;
-    return items.filter((r) => {
-      const lt = (r.listingType ?? "").toLowerCase();
-      if (dealTypeFilter === "sale") return lt === "sale" || lt === "بيع";
-      if (dealTypeFilter === "rental") return lt === "rental" || lt === "ايجار";
-      if (dealTypeFilter === "rental_commercial") {
-        const rc = (r.requestCategory ?? "").toLowerCase();
-        return (lt === "rental" || lt === "ايجار") && (rc === "تجاري" || rc === "commercial");
-      }
-      return true;
-    });
-  }, [seekers.data?.items, dealTypeFilter]);
+    return seekers.data?.items ?? [];
+  }, [seekers.data?.items]);
 
-  const totalPages = Math.ceil((dealTypeFilter === "all" ? (seekers.data?.total ?? 0) : filteredSeekers.length) / pageSize);
+  const totalPages = Math.ceil((seekers.data?.total ?? 0) / pageSize);
 
   return (
     <div>
@@ -443,29 +430,6 @@ function ResidentialSeekersPage() {
             </Select>
           </div>
 
-          <div>
-            <Label htmlFor="dealTypeFilter" className="text-xs font-medium">
-              {t("common.filter")}
-            </Label>
-            <Select
-              value={dealTypeFilter}
-              onValueChange={(value) => {
-                setDealTypeFilter(value);
-                setPage(1);
-              }}
-            >
-              <SelectTrigger id="dealTypeFilter" className="mt-1">
-                <SelectValue placeholder={t("common.all")} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">{t("common.all")}</SelectItem>
-                <SelectItem value="sale">{t("listingType.Sale")}</SelectItem>
-                <SelectItem value="rental">{t("listingType.Rental")}</SelectItem>
-                <SelectItem value="rental_commercial">{t("residentialSeekers.investment")}</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          
           <div className="w-full">
             <Label className="text-xs font-medium">{t("residentialSeekers.sortBy")}</Label>
             <Select
@@ -496,7 +460,7 @@ function ResidentialSeekersPage() {
           <div className="flex gap-2">
             <Button size="sm" variant="outline" onClick={handleReset} className="w-fit">
               {t("common.filter")}
-              {(q || status !== "all" || dealTypeFilter !== "all") && <X className="ms-1 h-3 w-3" />}
+              {(q || status !== "all") && <X className="ms-1 h-3 w-3" />}
             </Button>
           </div>
           <div className="flex items-center rounded-md border border-border p-1 bg-muted/50">

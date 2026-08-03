@@ -144,6 +144,7 @@ export interface UserDto {
   bank?: string | null;
   iban?: string | null;
   notes?: string | null;
+  photoUrls?: string[] | null;
 }
 
 export interface AuthResponse {
@@ -173,7 +174,7 @@ export interface Partner {
   falLicenseNumber?: string | null;
   commercialRegistrationNumber?: string | null;
   location?: string | null;
-  photoUrl?: string | null;
+  photoUrls?: string[] | null;
   notes?: string | null;
   partnerType?: string | null;
   companyName?: string | null;
@@ -654,6 +655,7 @@ export interface RevenueEntry {
   paymentMethod: string;
   createdAt: string;
   updatedAt?: string;
+  photoUrls?: string[] | null;
 }
 
 export interface RevenueEntryCreate {
@@ -770,4 +772,36 @@ export function deleteCommercialListingImage(listingId: number, imageId: number)
 
 export function setPrimaryCommercialListingImage(listingId: number, imageId: number) {
   return api(`/api/commercial-listings/${listingId}/images/${imageId}/primary`, { method: "PUT" });
+}
+
+// ============ Photo helpers (partners / users / revenue) ============
+
+export function uploadPartnerPhoto(partnerId: string, file: File) {
+  const formData = new FormData();
+  formData.append("file", file);
+  return api<{ url: string }>(`/api/partners/${partnerId}/photos`, { method: "POST", formData });
+}
+
+export function deletePartnerPhoto(partnerId: string, url: string) {
+  return api(`/api/partners/${partnerId}/photos`, { method: "DELETE", query: { url } });
+}
+
+export function uploadUserPhoto(userId: number, file: File) {
+  const formData = new FormData();
+  formData.append("file", file);
+  return api<{ url: string }>(`/api/users/${userId}/photos`, { method: "POST", formData });
+}
+
+export function deleteUserPhoto(userId: number, url: string) {
+  return api(`/api/users/${userId}/photos`, { method: "DELETE", query: { url } });
+}
+
+export function uploadRevenuePhoto(entryId: number, file: File) {
+  const formData = new FormData();
+  formData.append("file", file);
+  return api<{ url: string }>(`/api/RevenueEntries/${entryId}/photos`, { method: "POST", formData });
+}
+
+export function deleteRevenuePhoto(entryId: number, url: string) {
+  return api(`/api/RevenueEntries/${entryId}/photos`, { method: "DELETE", query: { url } });
 }

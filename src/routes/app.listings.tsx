@@ -298,6 +298,7 @@ function CommercialListingsPage() {
   const [q, setQ] = useState("");
   const [deedQ, setDeedQ] = useState("");
   const [status, setStatus] = useState<string>("all");
+  const [dealTypeFilter, setDealTypeFilter] = useState<string>("all");
   const [page, setPage] = useState(1);
   const [pageSize] = useState(20);
   const [sortBy, setSortBy] = useState<string>("createdAt");
@@ -421,6 +422,7 @@ function CommercialListingsPage() {
     setQ("");
     setDeedQ("");
     setStatus("all");
+    setDealTypeFilter("all");
     setPage(1);
   };
 
@@ -559,9 +561,22 @@ function CommercialListingsPage() {
 
       const statusMatch = status === "all" || record.propertyStatus === status;
 
-      return qMatch && deedMatch && statusMatch;
+      let dealTypeMatch = true;
+      if (dealTypeFilter !== "all") {
+        const lt = (record.listingType ?? "").toLowerCase();
+        if (dealTypeFilter === "sale") {
+          dealTypeMatch = lt === "sale" || lt === "بيع";
+        } else if (dealTypeFilter === "rental") {
+          dealTypeMatch = lt === "rental" || lt === "ايجار" || lt === "إيجار";
+        } else if (dealTypeFilter === "rental_commercial") {
+          const rc = (record.listingCategory ?? "").toLowerCase();
+          dealTypeMatch = (lt === "rental" || lt === "ايجار" || lt === "إيجار") && (rc === "تجاري" || rc === "commercial");
+        }
+      }
+
+      return qMatch && deedMatch && statusMatch && dealTypeMatch;
     });
-  }, [listings.data, q, deedQ, status]);
+  }, [listings.data, q, deedQ, status, dealTypeFilter]);
 
   const totalPages = Math.max(1, Math.ceil(filteredListings.length / pageSize));
 
@@ -669,6 +684,29 @@ function CommercialListingsPage() {
             </Select>
           </div>
 
+          <div>
+            <Label htmlFor="dealTypeFilter" className="text-xs font-medium">
+              {t("common.filter")}
+            </Label>
+            <Select
+              value={dealTypeFilter}
+              onValueChange={(value) => {
+                setDealTypeFilter(value);
+                setPage(1);
+              }}
+            >
+              <SelectTrigger id="dealTypeFilter" className="mt-1">
+                <SelectValue placeholder={t("common.all")} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{t("common.all")}</SelectItem>
+                <SelectItem value="sale">{t("listingType.Sale")}</SelectItem>
+                <SelectItem value="rental">{t("listingType.Rental")}</SelectItem>
+                <SelectItem value="rental_commercial">{t("residentialSeekers.investment")}</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
           <div className="w-full">
             <Label className="text-xs font-medium">{t("common.sortBy")}</Label>
             <Select
@@ -699,7 +737,7 @@ function CommercialListingsPage() {
           <div className="flex gap-2">
             <Button size="sm" variant="outline" onClick={handleReset} className="w-fit">
               {t("common.filter")}
-              {(q || status !== "all") && <X className="ms-1 h-3 w-3" />}
+              {(q || status !== "all" || dealTypeFilter !== "all") && <X className="ms-1 h-3 w-3" />}
             </Button>
           </div>
           <div className="flex items-center rounded-md border border-border p-1 bg-muted/50">

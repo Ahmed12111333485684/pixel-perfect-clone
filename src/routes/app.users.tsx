@@ -2,7 +2,7 @@ import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { api, getStoredToken, type UserDto, type Role } from "@/lib/api";
+import { api, getStoredToken, resolveApiAssetUrl, type UserDto, type Role } from "@/lib/api";
 import type { AppNavItem } from "@/lib/navigation";
 import { useAuth } from "@/lib/auth";
 import { PageHeader, StatusBadge } from "@/components/PageHeader";
@@ -11,6 +11,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
+import { MediaPreview } from "@/components/MediaPreview";
+import { MediaLightbox } from "@/components/MediaLightbox";
+import { PhotoManager } from "@/components/PhotoManager";
+import { deleteUserPhoto, uploadUserPhoto } from "@/lib/api";
 import {
   Select,
   SelectContent,
@@ -19,7 +23,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { FormDialog, ConfirmDialog } from "@/components/FormDialog";
-import { Plus, KeyRound } from "lucide-react";
+import { ImagePlus, Plus, KeyRound } from "lucide-react";
 import { toast } from "sonner";
 import { formatDate } from "@/lib/format";
 import { APP_NAV_ITEMS } from "@/lib/navigation";
@@ -67,6 +71,13 @@ function UsersPage() {
 
   const [sortBy, setSortBy] = useState<string>("created");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
+  const [lightboxImages, setLightboxImages] = useState<{ src: string; alt: string }[]>([]);
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+
+  const openLightbox = (user: UserDto, startIndex: number) => {
+    setLightboxImages((user.photoUrls ?? []).map((url) => ({ src: resolveApiAssetUrl(url), alt: user.fullName ?? user.username })));
+    setLightboxIndex(startIndex);
+  };
 
   const handleSort = (key: string) => {
     if (sortBy === key) {
@@ -117,67 +128,67 @@ function UsersPage() {
       iban?: string;
       notes?: string;
     }) => {
-      if (vals.id) {
-        const body: Record<string, unknown> = { username: vals.username, role: vals.role };
-        if (vals.password) body.password = vals.password;
-        if (vals.employeeId !== undefined) body.employeeId = vals.employeeId;
-        if (vals.jobTitle !== undefined) body.jobTitle = vals.jobTitle;
-        if (vals.fullName !== undefined) body.fullName = vals.fullName;
-        if (vals.nationality !== undefined) body.nationality = vals.nationality;
-        if (vals.nationalId !== undefined) body.nationalId = vals.nationalId;
-        if (vals.dateOfBirth !== undefined) body.dateOfBirth = vals.dateOfBirth;
-        if (vals.personalMobile !== undefined) body.personalMobile = vals.personalMobile;
-        if (vals.workMobile !== undefined) body.workMobile = vals.workMobile;
-        if (vals.startDate !== undefined) body.startDate = vals.startDate;
-        if (vals.endDate !== undefined) body.endDate = vals.endDate;
-        if (vals.email !== undefined) body.email = vals.email;
-        if (vals.bank !== undefined) body.bank = vals.bank;
-        if (vals.iban !== undefined) body.iban = vals.iban;
-        if (vals.notes !== undefined) body.notes = vals.notes;
-
-        if (vals.role === "Employee") {
-          body.screenPermissions = vals.screenPermissions ?? [];
-          body.canDelete = vals.canDelete ?? false;
-        }
-        await api(`/api/users/${vals.id}`, { method: "PUT", body });
-        return;
-      }
-
-      if (vals.role === "Partner") {
+      if (vals.role === "Partner" && !vals.id) {
         throw new Error(t("common.usePartnersPageForPartnerAccounts"));
       }
 
-      await api("/users", {
-        method: "POST",
-        body: {
-          username: vals.username,
-          password: vals.password,
-          role: vals.role,
-          ...(vals.role === "Employee"
-            ? { screenPermissions: vals.screenPermissions ?? [], canDelete: vals.canDelete ?? false }
-            : {}),
-          employeeId: vals.employeeId,
-          jobTitle: vals.jobTitle,
-          fullName: vals.fullName,
-          nationality: vals.nationality,
-          nationalId: vals.nationalId,
-          dateOfBirth: vals.dateOfBirth,
-          personalMobile: vals.personalMobile,
-          workMobile: vals.workMobile,
-          startDate: vals.startDate,
-          endDate: vals.endDate,
-          email: vals.email,
-          bank: vals.bank,
-          iban: vals.iban,
-          notes: vals.notes,
-        },
-      });
+      const fd = new FormData();
+      fd.append("username", vals.username);
+      if (vals.password) fd.append("password", vals.password);
+      fd.append("role", vals.role);
+      if (vals.role === "Employee") {
+        for (const perm of vals.screenPermissions ?? []) fd.append("screenPermissions", perm);
+        fd.append("canDelete", vals.canDelete ? "true" : "false");
+      }
+      const optionalFields: { key: string; value?: string }[] = [
+        { key: "employeeId", value: vals.employeeId },
+        { key: "jobTitle", value: vals.jobTitle },
+        { key: "fullName", value: vals.fullName },
+        { key: "nationality", value: vals.nationality },
+        { key: "nationalId", value: vals.nationalId },
+        { key: "dateOfBirth", value: vals.dateOfBirth },
+        { key: "personalMobile", value: vals.personalMobile },
+        { key: "workMobile", value: vals.workMobile },
+        { key: "startDate", value: vals.startDate },
+        { key: "endDate", value: vals.endDate },
+        { key: "email", value: vals.email },
+        { key: "bank", value: vals.bank },
+        { key: "iban", value: vals.iban },
+        { key: "notes", value: vals.notes },
+      ];
+      for (const field of optionalFields) {
+        if (field.value !== undefined && field.value !== "") fd.append(field.key, field.value);
+      }
+
+      if (vals.id) {
+        await api(`/api/users/${vals.id}`, { method: "PUT", formData: fd });
+        return;
+      }
+      await api("/users", { method: "POST", formData: fd });
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["users"] });
       toast.success(t("common.success"));
       setCreating(false);
       setEditing(null);
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const uploadPhoto = useMutation({
+    mutationFn: ({ id, file }: { id: number; file: File }) => uploadUserPhoto(id, file),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["users"] });
+      toast.success(t("common.success"));
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const deletePhoto = useMutation({
+    mutationFn: ({ id, url }: { id: number; url: string }) => deleteUserPhoto(id, url),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["users"] });
+      toast.success(t("common.deleted"));
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -214,6 +225,32 @@ function UsersPage() {
   }
 
   const cols: Column<UserDto>[] = [
+    {
+      key: "photo",
+      header: t("common.photo"),
+      className: "w-20",
+      cell: (r) =>
+        r.photoUrls?.length ? (
+          <div
+            className="h-12 w-12 overflow-hidden rounded-lg border border-border bg-muted"
+            style={{ cursor: "zoom-in" }}
+            onClick={(e) => {
+              e.stopPropagation();
+              openLightbox(r, 0);
+            }}
+          >
+            <MediaPreview
+              src={resolveApiAssetUrl(r.photoUrls[0])}
+              alt={r.fullName ?? r.username}
+              className="h-full w-full object-cover"
+            />
+          </div>
+        ) : (
+          <div className="flex h-12 w-12 items-center justify-center rounded-lg border border-dashed border-border text-muted-foreground">
+            <ImagePlus className="h-4 w-4" />
+          </div>
+        ),
+    },
     {
       key: "username",
       header: t("common.username"),
@@ -302,7 +339,20 @@ function UsersPage() {
         user={editing}
         submitting={upsert.isPending}
         onSubmit={(vals) => upsert.mutate({ ...vals, id: editing?.id })}
+        onUploadPhoto={(file) => editing && uploadPhoto.mutate({ id: editing.id, file })}
+        onDeletePhoto={(url) => editing && deletePhoto.mutate({ id: editing.id, url })}
+        onImageZoom={(index) => editing && openLightbox(editing, index)}
       />
+
+      {/* Lightbox */}
+      {lightboxIndex !== null && lightboxImages.length > 0 && (
+        <MediaLightbox
+          images={lightboxImages}
+          index={lightboxIndex}
+          onClose={() => setLightboxIndex(null)}
+          onChange={setLightboxIndex}
+        />
+      )}
 
       <ConfirmDialog
         open={!!deleting}
@@ -329,6 +379,9 @@ function UserDialog({
   user,
   onSubmit,
   submitting,
+  onUploadPhoto,
+  onDeletePhoto,
+  onImageZoom,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
@@ -355,6 +408,9 @@ function UserDialog({
     notes?: string;
   }) => void;
   submitting?: boolean;
+  onUploadPhoto?: (file: File) => void;
+  onDeletePhoto?: (url: string) => void;
+  onImageZoom?: (index: number) => void;
 }) {
   const { t } = useTranslation();
   const [role, setRole] = useState<Role>(user?.role ?? "Admin");
@@ -519,6 +575,18 @@ function UserDialog({
           <Input id="iban" name="iban" defaultValue={user?.iban ?? ""} />
         </div>
         
+        {user?.id && (
+          <div className="sm:col-span-2 rounded-lg border border-border bg-muted/30 p-4">
+            <PhotoManager
+              urls={user.photoUrls ?? []}
+              alt={user.fullName ?? user.username}
+              onUpload={onUploadPhoto ?? (() => {})}
+              onDelete={onDeletePhoto ?? (() => {})}
+              onZoom={onImageZoom}
+            />
+          </div>
+        )}
+
         <div className="sm:col-span-2 space-y-2">
           <Label htmlFor="notes">{t("common.notes")}</Label>
           <textarea

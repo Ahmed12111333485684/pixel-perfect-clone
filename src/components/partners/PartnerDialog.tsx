@@ -3,8 +3,8 @@ import { useTranslation } from "react-i18next";
 import { FormDialog } from "@/components/FormDialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { MediaPreview } from "@/components/MediaPreview";
-import { resolveApiAssetUrl, type Partner } from "@/lib/api";
+import { PhotoManager } from "@/components/PhotoManager";
+import { type Partner } from "@/lib/api";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 export function FormField({
@@ -34,6 +34,9 @@ export function PartnerDialog({
   partner,
   onSubmit,
   submitting,
+  onUploadPhoto,
+  onDeletePhoto,
+  onImageZoom,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
@@ -49,9 +52,11 @@ export function PartnerDialog({
     notes?: string;
     partnerType?: string;
     companyName?: string;
-    photo?: File | null;
   }) => void;
   submitting?: boolean;
+  onUploadPhoto?: (file: File) => void;
+  onDeletePhoto?: (url: string) => void;
+  onImageZoom?: (index: number) => void;
 }) {
   const { t } = useTranslation();
   const [partnerType, setPartnerType] = useState<string>(partner?.partnerType ?? "فرد");
@@ -68,7 +73,6 @@ export function PartnerDialog({
       onSubmit={(e) => {
         e.preventDefault();
         const fd = new FormData(e.currentTarget);
-        const photoInput = e.currentTarget.elements.namedItem("photo") as HTMLInputElement | null;
         onSubmit({
           fullName: String(fd.get("fullName") ?? ""),
           phone: String(fd.get("phone") ?? "") || undefined,
@@ -81,7 +85,6 @@ export function PartnerDialog({
           notes: String(fd.get("notes") ?? "") || undefined,
           partnerType: String(fd.get("partnerType") ?? "") || undefined,
           companyName: String(fd.get("companyName") ?? "") || undefined,
-          photo: photoInput?.files?.[0] ?? null,
         });
       }}
     >
@@ -122,22 +125,17 @@ export function PartnerDialog({
       <FormField id="falLicenseNumber" label={t("common.falLicenseNumber")} defaultValue={partner?.falLicenseNumber ?? ""} />
       <FormField id="commercialRegistrationNumber" label={t("common.commercialRegistrationNumber")} defaultValue={partner?.commercialRegistrationNumber ?? ""} />
       <FormField id="location" label={t("common.partnerLocation")} defaultValue={partner?.location ?? ""} />
-      <div className="space-y-2">
-        <Label htmlFor="photo">{t("common.photo")}</Label>
-        <Input id="photo" name="photo" type="file" accept="image/*" />
-        {partner?.photoUrl && (
-          <div className="flex items-center gap-3 rounded-lg border border-border bg-muted/40 p-3">
-            <div className="h-16 w-16 overflow-hidden rounded-md border border-border bg-background">
-              <MediaPreview
-                src={resolveApiAssetUrl(partner.photoUrl)}
-                alt={partner.fullName}
-                className="h-full w-full object-cover"
-              />
-            </div>
-            <div className="text-sm text-muted-foreground">{t("common.photo")}</div>
-          </div>
-        )}
-      </div>
+      {partner?.id && (
+        <div className="rounded-lg border border-border bg-muted/30 p-4">
+          <PhotoManager
+            urls={partner.photoUrls ?? []}
+            alt={partner.fullName}
+            onUpload={onUploadPhoto ?? (() => {})}
+            onDelete={onDeletePhoto ?? (() => {})}
+            onZoom={onImageZoom}
+          />
+        </div>
+      )}
       <FormField id="notes" label={t("common.notes")} defaultValue={partner?.notes ?? ""} />
     </FormDialog>
   );

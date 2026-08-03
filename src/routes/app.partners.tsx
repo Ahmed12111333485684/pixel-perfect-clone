@@ -7,9 +7,11 @@ import {
   createPartner,
   createPartnerAccount,
   deletePartner,
+  deletePartnerPhoto,
   fetchPartners,
   type Partner,
   updatePartner,
+  uploadPartnerPhoto,
 } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { PageHeader } from "@/components/PageHeader";
@@ -18,6 +20,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { FormDialog, ConfirmDialog } from "@/components/FormDialog";
 import { MediaPreview } from "@/components/MediaPreview";
+import { MediaLightbox } from "@/components/MediaLightbox";
+import { PhotoManager } from "@/components/PhotoManager";
 import { PartnerDialog, FormField } from "@/components/partners/PartnerDialog";
 import { ImagePlus, KeyRound, Plus } from "lucide-react";
 import { toast } from "sonner";
@@ -45,6 +49,13 @@ function PartnersPage() {
   const [search, setSearch] = useState("");
   const [sortBy, setSortBy] = useState<string>("created");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
+  const [lightboxImages, setLightboxImages] = useState<{ src: string; alt: string }[]>([]);
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+
+  const openLightbox = (partner: Partner, startIndex: number) => {
+    setLightboxImages((partner.photoUrls ?? []).map((url) => ({ src: resolveApiAssetUrl(url), alt: partner.fullName })));
+    setLightboxIndex(startIndex);
+  };
 
   const handleSort = (key: string) => {
     if (sortBy === key) {
@@ -68,7 +79,6 @@ function PartnersPage() {
       notes?: string;
       partnerType?: string;
       companyName?: string;
-      photo?: File | null;
     }) => {
       const formData = new FormData();
       formData.append("fullName", vals.fullName);
@@ -82,7 +92,6 @@ function PartnersPage() {
       if (vals.notes) formData.append("notes", vals.notes);
       if (vals.partnerType) formData.append("partnerType", vals.partnerType);
       if (vals.companyName) formData.append("companyName", vals.companyName);
-      if (vals.photo) formData.append("photo", vals.photo);
       if (vals.id) {
         await updatePartner(vals.id, formData);
       } else {
@@ -94,6 +103,24 @@ function PartnersPage() {
       toast.success(t("common.success"));
       setEditing(null);
       setCreating(false);
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const uploadPhoto = useMutation({
+    mutationFn: ({ id, file }: { id: string; file: File }) => uploadPartnerPhoto(id, file),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["partners"] });
+      toast.success(t("common.success"));
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const deletePhoto = useMutation({
+    mutationFn: ({ id, url }: { id: string; url: string }) => deletePartnerPhoto(id, url),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["partners"] });
+      toast.success(t("common.deleted"));
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -128,13 +155,19 @@ function PartnersPage() {
       header: t("common.photo"),
       className: "w-20",
       cell: (r) =>
-        r.photoUrl ? (
-          <div className="h-12 w-12 overflow-hidden rounded-lg border border-border bg-muted">
+        r.photoUrls?.length ? (
+          <div
+            className="h-12 w-12 overflow-hidden rounded-lg border border-border bg-muted"
+            style={{ cursor: "zoom-in" }}
+            onClick={(e) => {
+              e.stopPropagation();
+              openLightbox(r, 0);
+            }}
+          >
             <MediaPreview
-              src={resolveApiAssetUrl(r.photoUrl)}
+              src={resolveApiAssetUrl(r.photoUrls[0])}
               alt={r.fullName}
               className="h-full w-full object-cover"
-              zoomable
             />
           </div>
         ) : (
@@ -286,7 +319,20 @@ function PartnersPage() {
         partner={editing}
         submitting={upsert.isPending}
         onSubmit={(vals) => upsert.mutate({ ...vals, id: editing?.id })}
+        onUploadPhoto={(file) => editing && uploadPhoto.mutate({ id: editing.id, file })}
+        onDeletePhoto={(url) => editing && deletePhoto.mutate({ id: editing.id, url })}
+        onImageZoom={(index) => editing && openLightbox(editing, index)}
       />
+
+      {/* Lightbox */}
+      {lightboxIndex !== null && lightboxImages.length > 0 && (
+        <MediaLightbox
+          images={lightboxImages}
+          index={lightboxIndex}
+          onClose={() => setLightboxIndex(null)}
+          onChange={setLightboxIndex}
+        />
+      )}
 
       <ConfirmDialog
         open={!!deleting}

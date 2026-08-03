@@ -1,12 +1,15 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   api,
+  deleteRevenuePhoto,
+  resolveApiAssetUrl,
   type RevenueEntry,
   type UserDto,
   type CommercialListing,
+  uploadRevenuePhoto,
 } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { PageHeader } from "@/components/PageHeader";
@@ -15,6 +18,9 @@ import { FormDialog, ConfirmDialog } from "@/components/FormDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { MediaPreview } from "@/components/MediaPreview";
+import { MediaLightbox } from "@/components/MediaLightbox";
+import { PhotoManager } from "@/components/PhotoManager";
 import {
   Select,
   SelectContent,
@@ -24,7 +30,7 @@ import {
 } from "@/components/ui/select";
 import { PhoneField } from "@/components/form/PhoneField";
 import { ComboboxField } from "@/components/form/ComboboxField";
-import { Plus } from "lucide-react";
+import { ImagePlus, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { formatDate } from "@/lib/format";
 
@@ -40,25 +46,8 @@ const CATEGORY_OPTIONS = [
   { value: "اخرى", label: "اخرى" },
 ];
 
-function readFieldValue(fd: FormData, key: string) {
-  return String(fd.get(key) ?? "").trim();
-}
-
-function buildPayload(fd: FormData) {
-  return {
-    date: readFieldValue(fd, "date"),
-    employeeId: Number(readFieldValue(fd, "employeeId")) || undefined,
-    offerCode: readFieldValue(fd, "offerCode"),
-    category: readFieldValue(fd, "category"),
-    owner: readFieldValue(fd, "owner"),
-    tenantBuyer: readFieldValue(fd, "tenantBuyer"),
-    tenantPhone: readFieldValue(fd, "tenantPhone"),
-    ownerBroker: readFieldValue(fd, "ownerBroker"),
-    tenantBroker: readFieldValue(fd, "tenantBroker"),
-    amount: Number(readFieldValue(fd, "amount")) || 0,
-    officeNet: Number(readFieldValue(fd, "officeNet")) || 0,
-    paymentMethod: readFieldValue(fd, "paymentMethod"),
-  };
+function buildFormData(form: HTMLFormElement) {
+  return new FormData(form);
 }
 
 function RevenuePage() {
@@ -78,6 +67,31 @@ function RevenuePage() {
 
   const [sortKey, setSortKey] = useState<string>("date");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
+  const [lightboxImages, setLightboxImages] = useState<{ src: string; alt: string }[]>([]);
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+
+  const openLightbox = (entry: RevenueEntry, startIndex: number) => {
+    setLightboxImages((entry.photoUrls ?? []).map((url) => ({ src: resolveApiAssetUrl(url), alt: entry.offerCode })));
+    setLightboxIndex(startIndex);
+  };
+
+  const uploadPhoto = useMutation({
+    mutationFn: ({ id, file }: { id: number; file: File }) => uploadRevenuePhoto(id, file),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["revenue"] });
+      toast.success(t("common.success"));
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const deletePhoto = useMutation({
+    mutationFn: ({ id, url }: { id: number; url: string }) => deleteRevenuePhoto(id, url),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["revenue"] });
+      toast.success(t("common.deleted"));
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
 
   const handleSort = (key: string) => {
     if (sortKey === key) {
@@ -127,11 +141,10 @@ function RevenuePage() {
     e.preventDefault();
     setSubmitting(true);
     try {
-      const fd = new FormData(e.currentTarget);
-      const payload = buildPayload(fd);
+      const fd = buildFormData(e.currentTarget);
       await api<RevenueEntry>("/api/RevenueEntries", {
         method: "POST",
-        body: payload,
+        formData: fd,
       });
       toast.success(t("common.created"));
       setCreating(false);
@@ -148,11 +161,10 @@ function RevenuePage() {
     if (!selected) return;
     setSubmitting(true);
     try {
-      const fd = new FormData(e.currentTarget);
-      const payload = buildPayload(fd);
+      const fd = buildFormData(e.currentTarget);
       await api<RevenueEntry>(`/api/RevenueEntries/${selected.id}`, {
         method: "PUT",
-        body: payload,
+        formData: fd,
       });
       toast.success(t("common.updated"));
       setSelected(null);
@@ -180,6 +192,32 @@ function RevenuePage() {
   };
 
   const columns: Column<RevenueEntry>[] = [
+    {
+      key: "photo",
+      header: t("common.photo"),
+      className: "w-20",
+      cell: (row) =>
+        row.photoUrls?.length ? (
+          <div
+            className="h-12 w-12 overflow-hidden rounded-lg border border-border bg-muted"
+            style={{ cursor: "zoom-in" }}
+            onClick={(e) => {
+              e.stopPropagation();
+              openLightbox(row, 0);
+            }}
+          >
+            <MediaPreview
+              src={resolveApiAssetUrl(row.photoUrls[0])}
+              alt={row.offerCode}
+              className="h-full w-full object-cover"
+            />
+          </div>
+        ) : (
+          <div className="flex h-12 w-12 items-center justify-center rounded-lg border border-dashed border-border text-muted-foreground">
+            <ImagePlus className="h-4 w-4" />
+          </div>
+        ),
+    },
     {
       key: "date",
       header: t("revenue.date"),
@@ -416,7 +454,20 @@ function RevenuePage() {
                 setSelected(null);
               }
         }
+        onUploadPhoto={(file) => selected && uploadPhoto.mutate({ id: selected.id, file })}
+        onDeletePhoto={(url) => selected && deletePhoto.mutate({ id: selected.id, url })}
+        onImageZoom={(index) => selected && openLightbox(selected, index)}
       />
+
+      {/* Lightbox */}
+      {lightboxIndex !== null && lightboxImages.length > 0 && (
+        <MediaLightbox
+          images={lightboxImages}
+          index={lightboxIndex}
+          onClose={() => setLightboxIndex(null)}
+          onChange={setLightboxIndex}
+        />
+      )}
 
       <ConfirmDialog
         open={!!deleting}
@@ -445,6 +496,9 @@ function RevenueDialog({
   title,
   submitLabel,
   onSubmit,
+  onUploadPhoto,
+  onDeletePhoto,
+  onImageZoom,
 }: {
   open: boolean;
   onOpenChange: (value: boolean) => void;
@@ -456,6 +510,9 @@ function RevenueDialog({
   title: string;
   submitLabel: string;
   onSubmit: (event: React.FormEvent<HTMLFormElement>) => void;
+  onUploadPhoto?: (file: File) => void;
+  onDeletePhoto?: (url: string) => void;
+  onImageZoom?: (index: number) => void;
 }) {
   const { t } = useTranslation();
 
@@ -635,6 +692,19 @@ function RevenueDialog({
             </SelectContent>
           </Select>
         </div>
+
+        {entry?.id && (
+          <div className="sm:col-span-2 rounded-lg border border-border bg-muted/30 p-4">
+            <PhotoManager
+              urls={entry.photoUrls ?? []}
+              alt={entry.offerCode}
+              onUpload={onUploadPhoto ?? (() => {})}
+              onDelete={onDeletePhoto ?? (() => {})}
+              onZoom={onImageZoom}
+              readOnly={readOnly}
+            />
+          </div>
+        )}
       </div>
     </FormDialog>
   );
