@@ -110,7 +110,7 @@ function ResidentialSeekersPage() {
   const [q, setQ] = useState("");
   const [status, setStatus] = useState<string>("all");
   const [page, setPage] = useState(1);
-  const [pageSize] = useState(20);
+  const [pageSize] = useState(100);
   const [sortBy, setSortBy] = useState<string>("createdAt");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
 

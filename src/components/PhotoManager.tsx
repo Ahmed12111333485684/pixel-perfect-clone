@@ -1,55 +1,87 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { resolveApiAssetUrl } from "@/lib/api";
 import { Button } from "@/components/ui/button";
-import { Trash2, Upload, FileImage, Loader2 } from "lucide-react";
+import { Trash2, Upload, FileImage } from "lucide-react";
 import { MediaPreview } from "@/components/MediaPreview";
+import { MediaLightbox } from "@/components/MediaLightbox";
+
+export type PhotoDraft = {
+  files: File[];
+  removedUrls: string[];
+};
+
+type StagedFile = {
+  id: number;
+  file: File;
+  url: string;
+};
 
 export function PhotoManager({
   urls,
   alt,
-  onUpload,
-  onDelete,
-  onZoom,
+  onDraftChange,
   readOnly = false,
 }: {
   urls: string[];
   alt: string;
-  onUpload: (file: File) => Promise<void> | void;
-  onDelete: (url: string) => Promise<void> | void;
-  onZoom?: (index: number) => void;
+  onDraftChange: (draft: PhotoDraft) => void;
   readOnly?: boolean;
 }) {
   const { t } = useTranslation();
   const inputRef = useRef<HTMLInputElement>(null);
-  const [uploading, setUploading] = useState(false);
-  const [deleting, setDeleting] = useState<string | null>(null);
+  const [staged, setStaged] = useState<StagedFile[]>([]);
+  const [removedUrls, setRemovedUrls] = useState<string[]>([]);
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+  const nextIdRef = useRef(1);
+  const stagedRef = useRef<StagedFile[]>([]);
+  stagedRef.current = staged;
 
-  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  useEffect(() => {
+    return () => {
+      stagedRef.current.forEach((s) => URL.revokeObjectURL(s.url));
+    };
+  }, []);
+
+  const keptUrls = urls.filter((url) => !removedUrls.includes(url));
+  const items = [
+    ...keptUrls.map((url) => ({ key: url, src: resolveApiAssetUrl(url), isFile: false })),
+    ...staged.map((s) => ({ key: `f-${s.id}`, src: s.url, isFile: true })),
+  ];
+
+  const emitDraft = () => {
+    onDraftChange({
+      files: staged.map((s) => s.file),
+      removedUrls,
+    });
+  };
+
+  const handleUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file) return;
-    setUploading(true);
-    try {
-      await onUpload(file);
-    } catch {
-      // caller reports errors
-    } finally {
-      setUploading(false);
-      if (inputRef.current) inputRef.current.value = "";
+    if (file) {
+      setStaged((current) => [...current, { id: nextIdRef.current++, file, url: URL.createObjectURL(file) }]);
+    }
+    if (inputRef.current) inputRef.current.value = "";
+  };
+
+  const removeItem = (index: number) => {
+    const item = items[index];
+    if (item.isFile) {
+      setStaged((current) => {
+        const entry = current.find((s) => `f-${s.id}` === item.key);
+        if (entry) URL.revokeObjectURL(entry.url);
+        return current.filter((s) => `f-${s.id}` !== item.key);
+      });
+    } else {
+      const url = urls.find((u) => resolveApiAssetUrl(u) === item.src);
+      if (url) setRemovedUrls((current) => (current.includes(url) ? current : [...current, url]));
     }
   };
 
-  const handleDelete = async (url: string) => {
-    if (!confirm(t("common.confirmDeleteImage"))) return;
-    setDeleting(url);
-    try {
-      await onDelete(url);
-    } catch {
-      // caller reports errors
-    } finally {
-      setDeleting(null);
-    }
-  };
+  useEffect(() => {
+    emitDraft();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [staged, removedUrls]);
 
   return (
     <div className="space-y-4">
@@ -57,49 +89,34 @@ export function PhotoManager({
         <h3 className="text-sm font-medium">{t("common.images")}</h3>
         {!readOnly && (
           <div>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              disabled={uploading}
-              onClick={() => inputRef.current?.click()}
-            >
-              {uploading ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Upload className="h-4 w-4" />
-              )}
-              <span className="ms-1">
-                {uploading ? t("common.uploading") : t("common.uploadImage")}
-              </span>
+            <Button type="button" variant="outline" size="sm" onClick={() => inputRef.current?.click()}>
+              <Upload className="h-4 w-4" />
+              <span className="ms-1">{t("common.uploadImage")}</span>
             </Button>
-            <input
-              ref={inputRef}
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={handleUpload}
-            />
+            <input ref={inputRef} type="file" accept="image/*" className="hidden" onChange={handleUpload} />
           </div>
         )}
       </div>
 
-      {urls.length === 0 ? (
+      {items.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-lg border border-dashed py-8 text-muted-foreground">
           <FileImage className="mb-2 h-8 w-8 opacity-20" />
           <p className="text-sm">{t("common.noImagesAttached")}</p>
         </div>
       ) : (
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-          {urls.map((url, index) => (
+          {items.map((item, index) => (
             <div
-              key={url}
+              key={item.key}
               className="group relative aspect-square overflow-hidden rounded-md border bg-muted"
-              style={onZoom ? { cursor: "zoom-in" } : undefined}
-              onClick={onZoom ? (e) => { e.stopPropagation(); onZoom(index); } : undefined}
+              style={{ cursor: "zoom-in" }}
+              onClick={(e) => {
+                e.stopPropagation();
+                setLightboxIndex(index);
+              }}
             >
               <MediaPreview
-                src={resolveApiAssetUrl(url)}
+                src={item.src}
                 alt={alt}
                 className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
               />
@@ -107,22 +124,30 @@ export function PhotoManager({
                 <div className="absolute inset-x-0 bottom-0 flex items-center justify-end bg-black/60 p-2 opacity-0 transition-opacity group-hover:opacity-100">
                   <button
                     type="button"
-                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleDelete(url); }}
-                    disabled={deleting === url}
-                    className="rounded-full p-1.5 text-white/70 transition-colors hover:text-red-400 disabled:opacity-50"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      removeItem(index);
+                    }}
+                    className="rounded-full p-1.5 text-white/70 transition-colors hover:text-red-400"
                     title={t("common.delete")}
                   >
-                    {deleting === url ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <Trash2 className="h-4 w-4" />
-                    )}
+                    <Trash2 className="h-4 w-4" />
                   </button>
                 </div>
               )}
             </div>
           ))}
         </div>
+      )}
+
+      {lightboxIndex !== null && items[lightboxIndex] && (
+        <MediaLightbox
+          images={items.map((item) => ({ src: item.src, alt }))}
+          index={lightboxIndex}
+          onClose={() => setLightboxIndex(null)}
+          onChange={setLightboxIndex}
+        />
       )}
     </div>
   );

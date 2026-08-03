@@ -11,7 +11,6 @@ import {
   fetchPartners,
   type Partner,
   updatePartner,
-  uploadPartnerPhoto,
 } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { PageHeader } from "@/components/PageHeader";
@@ -79,6 +78,8 @@ function PartnersPage() {
       notes?: string;
       partnerType?: string;
       companyName?: string;
+      photos?: File[] | null;
+      removePhotoUrls?: string[] | null;
     }) => {
       const formData = new FormData();
       formData.append("fullName", vals.fullName);
@@ -92,8 +93,13 @@ function PartnersPage() {
       if (vals.notes) formData.append("notes", vals.notes);
       if (vals.partnerType) formData.append("partnerType", vals.partnerType);
       if (vals.companyName) formData.append("companyName", vals.companyName);
+      for (const photo of vals.photos ?? []) formData.append("photos", photo);
+
       if (vals.id) {
         await updatePartner(vals.id, formData);
+        for (const url of vals.removePhotoUrls ?? []) {
+          await deletePartnerPhoto(vals.id, url);
+        }
       } else {
         await createPartner(formData);
       }
@@ -103,24 +109,6 @@ function PartnersPage() {
       toast.success(t("common.success"));
       setEditing(null);
       setCreating(false);
-    },
-    onError: (e: Error) => toast.error(e.message),
-  });
-
-  const uploadPhoto = useMutation({
-    mutationFn: ({ id, file }: { id: string; file: File }) => uploadPartnerPhoto(id, file),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["partners"] });
-      toast.success(t("common.success"));
-    },
-    onError: (e: Error) => toast.error(e.message),
-  });
-
-  const deletePhoto = useMutation({
-    mutationFn: ({ id, url }: { id: string; url: string }) => deletePartnerPhoto(id, url),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["partners"] });
-      toast.success(t("common.deleted"));
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -319,9 +307,6 @@ function PartnersPage() {
         partner={editing}
         submitting={upsert.isPending}
         onSubmit={(vals) => upsert.mutate({ ...vals, id: editing?.id })}
-        onUploadPhoto={(file) => editing && uploadPhoto.mutate({ id: editing.id, file })}
-        onDeletePhoto={(url) => editing && deletePhoto.mutate({ id: editing.id, url })}
-        onImageZoom={(index) => editing && openLightbox(editing, index)}
       />
 
       {/* Lightbox */}

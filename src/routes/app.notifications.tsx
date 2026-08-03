@@ -52,7 +52,7 @@ function NotificationsPage() {
   const isAr = i18n.language === "ar";
   const [page, setPage] = useState(1);
   const [readFilter, setReadFilter] = useState<string>("all");
-  const pageSize = 20;
+  const pageSize = 100;
 
   const readParam = readFilter === "all" ? undefined : readFilter === "read";
 

@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { FormDialog } from "@/components/FormDialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { PhotoManager } from "@/components/PhotoManager";
+import { PhotoManager, type PhotoDraft } from "@/components/PhotoManager";
 import { type Partner } from "@/lib/api";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
@@ -34,9 +34,6 @@ export function PartnerDialog({
   partner,
   onSubmit,
   submitting,
-  onUploadPhoto,
-  onDeletePhoto,
-  onImageZoom,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
@@ -52,14 +49,14 @@ export function PartnerDialog({
     notes?: string;
     partnerType?: string;
     companyName?: string;
+    photos?: File[] | null;
+    removePhotoUrls?: string[] | null;
   }) => void;
   submitting?: boolean;
-  onUploadPhoto?: (file: File) => void;
-  onDeletePhoto?: (url: string) => void;
-  onImageZoom?: (index: number) => void;
 }) {
   const { t } = useTranslation();
   const [partnerType, setPartnerType] = useState<string>(partner?.partnerType ?? "فرد");
+  const [photoDraft, setPhotoDraft] = useState<PhotoDraft>({ files: [], removedUrls: [] });
 
   const key = `${partner?.id ?? "new"}-${open}`;
   return (
@@ -85,6 +82,8 @@ export function PartnerDialog({
           notes: String(fd.get("notes") ?? "") || undefined,
           partnerType: String(fd.get("partnerType") ?? "") || undefined,
           companyName: String(fd.get("companyName") ?? "") || undefined,
+          photos: photoDraft.files.length > 0 ? photoDraft.files : null,
+          removePhotoUrls: photoDraft.removedUrls.length > 0 ? photoDraft.removedUrls : null,
         });
       }}
     >
@@ -130,9 +129,7 @@ export function PartnerDialog({
           <PhotoManager
             urls={partner.photoUrls ?? []}
             alt={partner.fullName}
-            onUpload={onUploadPhoto ?? (() => {})}
-            onDelete={onDeletePhoto ?? (() => {})}
-            onZoom={onImageZoom}
+            onDraftChange={setPhotoDraft}
           />
         </div>
       )}

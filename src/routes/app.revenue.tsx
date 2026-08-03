@@ -9,7 +9,6 @@ import {
   type RevenueEntry,
   type UserDto,
   type CommercialListing,
-  uploadRevenuePhoto,
 } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { PageHeader } from "@/components/PageHeader";
@@ -20,7 +19,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { MediaPreview } from "@/components/MediaPreview";
 import { MediaLightbox } from "@/components/MediaLightbox";
-import { PhotoManager } from "@/components/PhotoManager";
+import { PhotoManager, type PhotoDraft } from "@/components/PhotoManager";
 import {
   Select,
   SelectContent,
@@ -46,10 +45,6 @@ const CATEGORY_OPTIONS = [
   { value: "اخرى", label: "اخرى" },
 ];
 
-function buildFormData(form: HTMLFormElement) {
-  return new FormData(form);
-}
-
 function RevenuePage() {
   const { t } = useTranslation();
   const auth = useAuth();
@@ -74,24 +69,6 @@ function RevenuePage() {
     setLightboxImages((entry.photoUrls ?? []).map((url) => ({ src: resolveApiAssetUrl(url), alt: entry.offerCode })));
     setLightboxIndex(startIndex);
   };
-
-  const uploadPhoto = useMutation({
-    mutationFn: ({ id, file }: { id: number; file: File }) => uploadRevenuePhoto(id, file),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["revenue"] });
-      toast.success(t("common.success"));
-    },
-    onError: (e: Error) => toast.error(e.message),
-  });
-
-  const deletePhoto = useMutation({
-    mutationFn: ({ id, url }: { id: number; url: string }) => deleteRevenuePhoto(id, url),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["revenue"] });
-      toast.success(t("common.deleted"));
-    },
-    onError: (e: Error) => toast.error(e.message),
-  });
 
   const handleSort = (key: string) => {
     if (sortKey === key) {
@@ -137,11 +114,9 @@ function RevenuePage() {
     return unique.map((c) => ({ value: c, label: c }));
   }, [listings.data?.items]);
 
-  const handleCreate = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+  const handleCreate = async (fd: FormData) => {
     setSubmitting(true);
     try {
-      const fd = buildFormData(e.currentTarget);
       await api<RevenueEntry>("/api/RevenueEntries", {
         method: "POST",
         formData: fd,
@@ -156,16 +131,17 @@ function RevenuePage() {
     }
   };
 
-  const handleUpdate = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+  const handleUpdate = async (fd: FormData, removedUrls: string[]) => {
     if (!selected) return;
     setSubmitting(true);
     try {
-      const fd = buildFormData(e.currentTarget);
       await api<RevenueEntry>(`/api/RevenueEntries/${selected.id}`, {
         method: "PUT",
         formData: fd,
       });
+      for (const url of removedUrls) {
+        await deleteRevenuePhoto(selected.id, url);
+      }
       toast.success(t("common.updated"));
       setSelected(null);
       qc.invalidateQueries({ queryKey: ["revenue"] });
@@ -449,14 +425,10 @@ function RevenuePage() {
         onSubmit={
           canManage
             ? handleUpdate
-            : (e) => {
-                e.preventDefault();
+            : () => {
                 setSelected(null);
               }
         }
-        onUploadPhoto={(file) => selected && uploadPhoto.mutate({ id: selected.id, file })}
-        onDeletePhoto={(url) => selected && deletePhoto.mutate({ id: selected.id, url })}
-        onImageZoom={(index) => selected && openLightbox(selected, index)}
       />
 
       {/* Lightbox */}
@@ -496,9 +468,6 @@ function RevenueDialog({
   title,
   submitLabel,
   onSubmit,
-  onUploadPhoto,
-  onDeletePhoto,
-  onImageZoom,
 }: {
   open: boolean;
   onOpenChange: (value: boolean) => void;
@@ -509,22 +478,27 @@ function RevenueDialog({
   submitting: boolean;
   title: string;
   submitLabel: string;
-  onSubmit: (event: React.FormEvent<HTMLFormElement>) => void;
-  onUploadPhoto?: (file: File) => void;
-  onDeletePhoto?: (url: string) => void;
-  onImageZoom?: (index: number) => void;
+  onSubmit: (fd: FormData, removedUrls: string[]) => void;
 }) {
   const { t } = useTranslation();
+  const [photoDraft, setPhotoDraft] = useState<PhotoDraft>({ files: [], removedUrls: [] });
+  const key = `${entry?.id ?? "new"}-${open}`;
 
   return (
     <FormDialog
+      key={key}
       open={open}
       onOpenChange={onOpenChange}
       title={title}
       submitLabel={submitLabel}
       submitting={submitting}
       size="lg"
-      onSubmit={onSubmit}
+      onSubmit={(e) => {
+        e.preventDefault();
+        const fd = new FormData(e.currentTarget);
+        for (const photo of photoDraft.files) fd.append("photos", photo);
+        onSubmit(fd, photoDraft.removedUrls);
+      }}
     >
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2">
@@ -698,9 +672,7 @@ function RevenueDialog({
             <PhotoManager
               urls={entry.photoUrls ?? []}
               alt={entry.offerCode}
-              onUpload={onUploadPhoto ?? (() => {})}
-              onDelete={onDeletePhoto ?? (() => {})}
-              onZoom={onImageZoom}
+              onDraftChange={setPhotoDraft}
               readOnly={readOnly}
             />
           </div>

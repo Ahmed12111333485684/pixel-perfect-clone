@@ -13,8 +13,8 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { MediaPreview } from "@/components/MediaPreview";
 import { MediaLightbox } from "@/components/MediaLightbox";
-import { PhotoManager } from "@/components/PhotoManager";
-import { deleteUserPhoto, uploadUserPhoto } from "@/lib/api";
+import { PhotoManager, type PhotoDraft } from "@/components/PhotoManager";
+import { deleteUserPhoto } from "@/lib/api";
 import {
   Select,
   SelectContent,
@@ -127,6 +127,8 @@ function UsersPage() {
       bank?: string;
       iban?: string;
       notes?: string;
+      photos?: File[] | null;
+      removePhotoUrls?: string[] | null;
     }) => {
       if (vals.role === "Partner" && !vals.id) {
         throw new Error(t("common.usePartnersPageForPartnerAccounts"));
@@ -159,9 +161,13 @@ function UsersPage() {
       for (const field of optionalFields) {
         if (field.value !== undefined && field.value !== "") fd.append(field.key, field.value);
       }
+      for (const photo of vals.photos ?? []) fd.append("photos", photo);
 
       if (vals.id) {
         await api(`/api/users/${vals.id}`, { method: "PUT", formData: fd });
+        for (const url of vals.removePhotoUrls ?? []) {
+          await deleteUserPhoto(vals.id, url);
+        }
         return;
       }
       await api("/users", { method: "POST", formData: fd });
@@ -171,24 +177,6 @@ function UsersPage() {
       toast.success(t("common.success"));
       setCreating(false);
       setEditing(null);
-    },
-    onError: (e: Error) => toast.error(e.message),
-  });
-
-  const uploadPhoto = useMutation({
-    mutationFn: ({ id, file }: { id: number; file: File }) => uploadUserPhoto(id, file),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["users"] });
-      toast.success(t("common.success"));
-    },
-    onError: (e: Error) => toast.error(e.message),
-  });
-
-  const deletePhoto = useMutation({
-    mutationFn: ({ id, url }: { id: number; url: string }) => deleteUserPhoto(id, url),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["users"] });
-      toast.success(t("common.deleted"));
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -339,9 +327,6 @@ function UsersPage() {
         user={editing}
         submitting={upsert.isPending}
         onSubmit={(vals) => upsert.mutate({ ...vals, id: editing?.id })}
-        onUploadPhoto={(file) => editing && uploadPhoto.mutate({ id: editing.id, file })}
-        onDeletePhoto={(url) => editing && deletePhoto.mutate({ id: editing.id, url })}
-        onImageZoom={(index) => editing && openLightbox(editing, index)}
       />
 
       {/* Lightbox */}
@@ -379,9 +364,6 @@ function UserDialog({
   user,
   onSubmit,
   submitting,
-  onUploadPhoto,
-  onDeletePhoto,
-  onImageZoom,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
@@ -406,11 +388,10 @@ function UserDialog({
     bank?: string;
     iban?: string;
     notes?: string;
+    photos?: File[] | null;
+    removePhotoUrls?: string[] | null;
   }) => void;
   submitting?: boolean;
-  onUploadPhoto?: (file: File) => void;
-  onDeletePhoto?: (url: string) => void;
-  onImageZoom?: (index: number) => void;
 }) {
   const { t } = useTranslation();
   const [role, setRole] = useState<Role>(user?.role ?? "Admin");
@@ -418,6 +399,7 @@ function UserDialog({
     user?.screenPermissions ?? [],
   );
   const [canDelete, setCanDelete] = useState(user?.canDelete ?? false);
+  const [photoDraft, setPhotoDraft] = useState<PhotoDraft>({ files: [], removedUrls: [] });
   const key = `${user?.id ?? "new"}-${open}`;
 
   useEffect(() => {
@@ -476,6 +458,8 @@ function UserDialog({
           bank: String(fd.get("bank") ?? "").trim(),
           iban: String(fd.get("iban") ?? "").trim(),
           notes: String(fd.get("notes") ?? "").trim(),
+          photos: photoDraft.files,
+          removePhotoUrls: photoDraft.removedUrls,
         });
       }}
     >
@@ -580,9 +564,7 @@ function UserDialog({
             <PhotoManager
               urls={user.photoUrls ?? []}
               alt={user.fullName ?? user.username}
-              onUpload={onUploadPhoto ?? (() => {})}
-              onDelete={onDeletePhoto ?? (() => {})}
-              onZoom={onImageZoom}
+              onDraftChange={setPhotoDraft}
             />
           </div>
         )}
