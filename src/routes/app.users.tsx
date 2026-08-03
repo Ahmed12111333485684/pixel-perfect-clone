@@ -542,11 +542,11 @@ function UserDialog({
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="startDate">{t("common.startDate")}</Label>
+          <Label htmlFor="startDate">{t("common.employmentStartDate")}</Label>
           <Input id="startDate" name="startDate" type="date" defaultValue={user?.startDate ?? ""} />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="endDate">{t("common.endDate")}</Label>
+          <Label htmlFor="endDate">{t("common.employmentEndDate")}</Label>
           <Input id="endDate" name="endDate" type="date" defaultValue={user?.endDate ?? ""} />
         </div>
 
@@ -559,15 +559,13 @@ function UserDialog({
           <Input id="iban" name="iban" defaultValue={user?.iban ?? ""} />
         </div>
         
-        {user?.id && (
-          <div className="sm:col-span-2 rounded-lg border border-border bg-muted/30 p-4">
-            <PhotoManager
-              urls={user.photoUrls ?? []}
-              alt={user.fullName ?? user.username}
-              onDraftChange={setPhotoDraft}
-            />
-          </div>
-        )}
+        <div className="sm:col-span-2 rounded-lg border border-border bg-muted/30 p-4">
+          <PhotoManager
+            urls={user?.photoUrls ?? []}
+            alt={user?.fullName ?? user?.username ?? ""}
+            onDraftChange={setPhotoDraft}
+          />
+        </div>
 
         <div className="sm:col-span-2 space-y-2">
           <Label htmlFor="notes">{t("common.notes")}</Label>

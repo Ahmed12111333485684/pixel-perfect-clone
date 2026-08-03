@@ -667,16 +667,14 @@ function RevenueDialog({
           </Select>
         </div>
 
-        {entry?.id && (
-          <div className="sm:col-span-2 rounded-lg border border-border bg-muted/30 p-4">
-            <PhotoManager
-              urls={entry.photoUrls ?? []}
-              alt={entry.offerCode}
-              onDraftChange={setPhotoDraft}
-              readOnly={readOnly}
-            />
-          </div>
-        )}
+        <div className="sm:col-span-2 rounded-lg border border-border bg-muted/30 p-4">
+          <PhotoManager
+            urls={entry?.photoUrls ?? []}
+            alt={entry?.offerCode ?? ""}
+            onDraftChange={setPhotoDraft}
+            readOnly={readOnly}
+          />
+        </div>
       </div>
     </FormDialog>
   );

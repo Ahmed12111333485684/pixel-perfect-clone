@@ -28,6 +28,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { FormDialog, ConfirmDialog } from "@/components/FormDialog";
+
+function toDistrict(d: string | string[] | null | undefined): string {
+  return Array.isArray(d) ? d.join(", ") : (d ?? "");
+}
 import { Plus } from "lucide-react";
 import { toast } from "sonner";
 import { propertyStatusTone, formatDate } from "@/lib/format";
@@ -397,7 +401,7 @@ function PropertyDialog({
   const [status, setStatus] = useState<PropertyStatus>(property?.status ?? "Pending");
   const [region, setRegion] = useState<string>(property?.region ?? "");
   const [city, setCity] = useState<string>(property?.city ?? "");
-  const [district, setDistrict] = useState<string>(property?.district ?? "");
+  const [district, setDistrict] = useState<string>(toDistrict(property?.district));
   const [listingType, setListingType] = useState<"Rental" | "Sale">(
     property?.listingType ?? "Rental",
   );
@@ -416,7 +420,7 @@ function PropertyDialog({
     setStatus(property?.status ?? "Pending");
     setRegion(property?.region ?? "");
     setCity(property?.city ?? "");
-    setDistrict(property?.district ?? "");
+    setDistrict(toDistrict(property?.district));
     setListingType(property?.listingType ?? "Rental");
     setDeedNumber(property?.deedNumber ?? "");
     setDetails(property?.details ?? {});
