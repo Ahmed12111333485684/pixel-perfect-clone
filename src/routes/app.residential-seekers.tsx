@@ -70,7 +70,8 @@ const RESIDENTIAL_FIELDS = [
 
 type ResidentialFieldKey = (typeof RESIDENTIAL_FIELDS)[number];
 
-function normalizeValue(value: string | null | undefined) {
+function normalizeValue(value: string | string[] | null | undefined) {
+  if (Array.isArray(value)) return JSON.stringify(value);
   return (value ?? "").trim();
 }
 
@@ -83,7 +84,7 @@ function buildResidentialPayload(fd: FormData, original?: ResidentialSeeker | nu
 
   RESIDENTIAL_FIELDS.forEach((key) => {
     const value = readFieldValue(fd, key);
-    if (!original || value !== normalizeValue(original[key as ResidentialFieldKey] as string | null | undefined)) {
+    if (!original || value !== normalizeValue(original[key as ResidentialFieldKey])) {
       payload[key] = value;
     }
   });
@@ -213,7 +214,7 @@ function ResidentialSeekersPage() {
       setCreating(false);
       qc.invalidateQueries({ queryKey: ["residential-seekers"] });
     } catch (error) {
-      toast.error(t("common.error"));
+      toast.error(error instanceof ApiError && error.detail ? error.detail : (error instanceof Error ? error.message : t("common.error")));
     } finally {
       setSubmitting(false);
     }
@@ -235,7 +236,7 @@ function ResidentialSeekersPage() {
       setSelected(null);
       qc.invalidateQueries({ queryKey: ["residential-seekers"] });
     } catch (error) {
-      toast.error(t("common.error"));
+      toast.error(error instanceof ApiError && error.detail ? error.detail : (error instanceof Error ? error.message : t("common.error")));
     } finally {
       setSubmitting(false);
     }
