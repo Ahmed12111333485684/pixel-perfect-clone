@@ -399,7 +399,7 @@ function ResidentialSeekersPage() {
             </Label>
             <Input
               id="q"
-              placeholder={t("residentialSeekers.fullName")}
+              placeholder={t("residentialSeekers.searchPlaceholder")}
               value={q}
               onChange={(e) => {
                 setQ(e.target.value);
