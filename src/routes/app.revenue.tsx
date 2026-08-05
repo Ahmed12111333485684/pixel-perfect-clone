@@ -19,7 +19,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { MediaPreview } from "@/components/MediaPreview";
 import { MediaLightbox } from "@/components/MediaLightbox";
-import { PhotoManager, type PhotoDraft } from "@/components/PhotoManager";
+import { FileManager, type PhotoDraft } from "@/components/FileManager";
 import {
   Select,
   SelectContent,
@@ -668,7 +668,7 @@ function RevenueDialog({
         </div>
 
         <div className="sm:col-span-2 rounded-lg border border-border bg-muted/30 p-4">
-          <PhotoManager
+          <FileManager
             urls={entry?.photoUrls ?? []}
             alt={entry?.offerCode ?? ""}
             onDraftChange={setPhotoDraft}

@@ -3,8 +3,10 @@ import { useTranslation } from "react-i18next";
 import { CommercialListingImage, uploadCommercialListingImage, deleteCommercialListingImage, setPrimaryCommercialListingImage } from "@/lib/api";
 import { resolveApiAssetUrl } from "@/lib/api";
 import { Button } from "@/components/ui/button";
-import { Star, Trash2, Upload, FileImage } from "lucide-react";
+import { Star, Trash2, FileImage } from "lucide-react";
 import { MediaPreview } from "@/components/MediaPreview";
+import { FileManager, type MediaDraft } from "@/components/FileManager";
+import { toast } from "sonner";
 
 export function CommercialListingImageManager({
   listingId,
@@ -20,22 +22,26 @@ export function CommercialListingImageManager({
   onImageZoom?: (index: number) => void;
 }) {
   const { t } = useTranslation();
-  const [uploading, setUploading] = useState(false);
+  const [stagedDraft, setStagedDraft] = useState<MediaDraft>({ files: [], removedUrls: [] });
+  const [saveKey, setSaveKey] = useState(0);
+  const [saving, setSaving] = useState(false);
 
-  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!e.target.files || e.target.files.length === 0) return;
-    const file = e.target.files[0];
-    
-    setUploading(true);
+  const handleSave = async () => {
+    if (stagedDraft.files.length === 0) return;
+    setSaving(true);
     try {
-      await uploadCommercialListingImage(listingId, file, images.length === 0);
+      for (const file of stagedDraft.files) {
+        await uploadCommercialListingImage(listingId, file, images.length === 0);
+      }
       onChange();
+      setStagedDraft({ files: [], removedUrls: [] });
+      setSaveKey((k) => k + 1);
+      toast.success(t("common.success"));
     } catch (err) {
       console.error("Upload failed", err);
-      alert(t("common.failedUploadImage"));
+      toast.error(t("common.failedUploadImage"));
     } finally {
-      setUploading(false);
-      e.target.value = "";
+      setSaving(false);
     }
   };
 
@@ -46,7 +52,7 @@ export function CommercialListingImageManager({
       onChange();
     } catch (err) {
       console.error("Delete failed", err);
-      alert(t("common.failedDeleteImage"));
+      toast.error(t("common.failedDeleteImage"));
     }
   };
 
@@ -56,23 +62,30 @@ export function CommercialListingImageManager({
       onChange();
     } catch (err) {
       console.error("Set primary failed", err);
-      alert(t("common.failedSetPrimaryImage"));
+      toast.error(t("common.failedSetPrimaryImage"));
     }
   };
 
   return (
     <div className="space-y-4">
+      <FileManager
+        key={saveKey}
+        urls={[]}
+        alt=""
+        onDraftChange={setStagedDraft}
+        readOnly={readOnly}
+        hideTitle
+      />
+      {!readOnly && stagedDraft.files.length > 0 && (
+        <div>
+          <Button type="button" onClick={handleSave} disabled={saving}>
+            {saving ? t("common.saving") : t("common.saveChanges")}
+          </Button>
+        </div>
+      )}
+
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-medium">{t("common.images")}</h3>
-        {!readOnly && (
-          <div>
-            <label className={`flex cursor-pointer items-center gap-2 rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition ${uploading ? "opacity-50 pointer-events-none" : ""}`}>
-              <Upload className="h-4 w-4" />
-              {uploading ? t("common.uploading") : t("common.uploadImage")}
-              <input type="file" accept="image/*,video/*" className="hidden" onChange={handleUpload} disabled={uploading} />
-            </label>
-          </div>
-        )}
       </div>
 
       {images.length === 0 ? (

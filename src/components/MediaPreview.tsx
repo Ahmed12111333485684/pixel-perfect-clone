@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
-import { isVideoAsset } from "@/lib/media";
-import { X } from "lucide-react";
+import { mediaKind } from "@/lib/media";
+import { cn } from "@/lib/utils";
+import { FileText, ExternalLink, X } from "lucide-react";
 
 type MediaPreviewProps = {
   src: string;
@@ -40,9 +41,29 @@ export function MediaPreview({
     }
   }, [zoomed]);
 
-  const isVideo = isVideoAsset({ fileName, mimeType, url: src });
+  const kind = mediaKind({ fileName, mimeType, url: src });
+  const isVideo = kind === "video";
+  const isDocument = kind === "document";
 
-  const content = isVideo ? (
+  const content = isDocument ? (
+    <a
+      href={src}
+      target="_blank"
+      rel="noreferrer"
+      onClick={(e) => e.stopPropagation()}
+      className={cn(
+        "flex h-full w-full flex-col items-center justify-center gap-2 bg-muted/40 p-3 text-center",
+        className,
+      )}
+      title={fileName ?? alt}
+    >
+      <FileText className="h-8 w-8 shrink-0 text-muted-foreground" />
+      <span className="line-clamp-2 max-w-full break-all text-xs text-muted-foreground">
+        {fileName ?? alt}
+      </span>
+      <ExternalLink className="h-3.5 w-3.5 shrink-0 text-muted-foreground/70" />
+    </a>
+  ) : isVideo ? (
     <video
       src={src}
       title={alt}

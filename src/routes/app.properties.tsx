@@ -20,6 +20,7 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import PropertyDetailsForm from "@/components/PropertyDetailsForm";
 import { MediaPreview } from "@/components/MediaPreview";
+import { FileManager, type PhotoDraft } from "@/components/FileManager";
 import {
   Select,
   SelectContent,
@@ -410,7 +411,7 @@ function PropertyDialog({
   const [picked, setPicked] = useState<Set<number>>(
     new Set(property?.amenities?.map((a) => a.id) ?? []),
   );
-  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [photoDraft, setPhotoDraft] = useState<PhotoDraft>({ files: [], removedUrls: [] });
 
   useEffect(() => {
     if (!open) return;
@@ -425,7 +426,7 @@ function PropertyDialog({
     setDeedNumber(property?.deedNumber ?? "");
     setDetails(property?.details ?? {});
     setPicked(new Set(property?.amenities?.map((amenity) => amenity.id) ?? []));
-    setSelectedFiles([]);
+    setPhotoDraft({ files: [], removedUrls: [] });
   }, [
     open,
     property?.id,
@@ -441,18 +442,12 @@ function PropertyDialog({
     defaultOwnerId,
   ]);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      setSelectedFiles(Array.from(e.target.files));
-    }
-  };
-
   return (
     <FormDialog
       open={open}
       onOpenChange={(v) => {
         onOpenChange(v);
-        if (!v) setSelectedFiles([]);
+        if (!v) setPhotoDraft({ files: [], removedUrls: [] });
       }}
       title={property ? t("common.edit") : t("common.add")}
       submitting={submitting}
@@ -476,7 +471,7 @@ function PropertyDialog({
           details,
           amenityIds: Array.from(picked),
           status: auth.isStaff ? status : undefined,
-          files: selectedFiles.length > 0 ? selectedFiles : undefined,
+          files: photoDraft.files.length > 0 ? photoDraft.files : undefined,
         });
       }}
     >
@@ -640,20 +635,7 @@ function PropertyDialog({
         </div>
       </div>
       <div className="space-y-2">
-        <Label htmlFor="images">{t("common.images")}</Label>
-        <Input
-          id="images"
-          name="images"
-          type="file"
-          multiple
-          accept="image/*,video/*"
-          onChange={handleFileChange}
-        />
-        {selectedFiles.length > 0 && (
-          <div className="mt-2 text-sm text-muted-foreground">
-            {selectedFiles.length} {t("common.selected")}
-          </div>
-        )}
+        <FileManager urls={[]} alt="" onDraftChange={setPhotoDraft} />
       </div>
       <div className="space-y-2">
         <div className="flex items-center justify-between">

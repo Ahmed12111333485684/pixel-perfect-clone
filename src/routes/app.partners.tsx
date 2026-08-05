@@ -20,7 +20,6 @@ import { Input } from "@/components/ui/input";
 import { FormDialog, ConfirmDialog } from "@/components/FormDialog";
 import { MediaPreview } from "@/components/MediaPreview";
 import { MediaLightbox } from "@/components/MediaLightbox";
-import { PhotoManager } from "@/components/PhotoManager";
 import { PartnerDialog, FormField } from "@/components/partners/PartnerDialog";
 import { ImagePlus, KeyRound, Plus } from "lucide-react";
 import { toast } from "sonner";

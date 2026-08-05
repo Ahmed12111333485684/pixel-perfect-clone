@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   api,
@@ -20,11 +20,11 @@ import {
 } from "@/components/PageHeader";
 import { Button } from "@/components/ui/button";
 import { MediaPreview } from "@/components/MediaPreview";
+import { FileManager, type PhotoDraft } from "@/components/FileManager";
 import {
   ArrowLeft,
   Star,
   Trash2,
-  Upload,
   ImagePlus,
   X,
   ChevronLeft,
@@ -142,6 +142,8 @@ function PropertyDetail() {
       qc.setQueryData<PropertyImage[]>(["property-images", propId], freshImages);
       qc.invalidateQueries({ queryKey: ["property-images", propId] });
       qc.invalidateQueries({ queryKey: ["property-images-preview", propId] });
+      setMediaDraft({ files: [], removedUrls: [] });
+      setUploadKey((k) => k + 1);
       toast.success(t("common.success"));
     },
     onError: (e: Error) => toast.error(e.message),
@@ -186,9 +188,10 @@ function PropertyDetail() {
     onError: (e: Error) => toast.error(e.message),
   });
 
-  const inputRef = useRef<HTMLInputElement>(null);
   const [dragId, setDragId] = useState<number | null>(null);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+  const [mediaDraft, setMediaDraft] = useState<PhotoDraft>({ files: [], removedUrls: [] });
+  const [uploadKey, setUploadKey] = useState(0);
 
   const sorted = (images.data ?? []).slice().sort((a, b) => a.sortOrder - b.sortOrder);
   const primary = sorted.find((i) => i.isPrimary) ?? sorted[0];
@@ -459,33 +462,27 @@ function PropertyDetail() {
           title={t("common.gallery")}
           icon={<ImageIcon className="h-4 w-4" />}
           action={
-            <>
-              <input
-                ref={inputRef}
-                type="file"
-                accept="image/*,video/*"
-                multiple
-                hidden
-                onChange={(e) => {
-                  const files = Array.from(e.target.files ?? []);
-                  if (files.length) upload.mutate(files);
-                  if (inputRef.current) inputRef.current.value = "";
-                }}
-              />
+            mediaDraft.files.length > 0 ? (
               <Button
                 size="sm"
-                onClick={() => inputRef.current?.click()}
+                onClick={() => upload.mutate(mediaDraft.files)}
                 disabled={upload.isPending}
               >
-                <Upload className="me-1 h-4 w-4" />
-                {upload.isPending ? t("common.submitting") : t("common.upload")}
+                {upload.isPending ? t("common.saving") : t("common.saveChanges")}
               </Button>
-            </>
+            ) : undefined
           }
           subtitle={
             sorted.length > 0 ? t("common.photoCount", { count: sorted.length }) : undefined
           }
         >
+          <FileManager
+            key={uploadKey}
+            urls={[]}
+            alt=""
+            onDraftChange={setMediaDraft}
+            hideTitle
+          />
           {images.isLoading ? (
             <LoadingBlock />
           ) : sorted.length === 0 ? (

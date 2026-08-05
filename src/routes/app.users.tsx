@@ -13,7 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { MediaPreview } from "@/components/MediaPreview";
 import { MediaLightbox } from "@/components/MediaLightbox";
-import { PhotoManager, type PhotoDraft } from "@/components/PhotoManager";
+import { FileManager, type PhotoDraft } from "@/components/FileManager";
 import { deleteUserPhoto } from "@/lib/api";
 import {
   Select,
@@ -560,7 +560,7 @@ function UserDialog({
         </div>
         
         <div className="sm:col-span-2 rounded-lg border border-border bg-muted/30 p-4">
-          <PhotoManager
+          <FileManager
             urls={user?.photoUrls ?? []}
             alt={user?.fullName ?? user?.username ?? ""}
             onDraftChange={setPhotoDraft}

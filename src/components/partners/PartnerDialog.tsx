@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { FormDialog } from "@/components/FormDialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { PhotoManager, type PhotoDraft } from "@/components/PhotoManager";
+import { FileManager, type PhotoDraft } from "@/components/FileManager";
 import { type Partner } from "@/lib/api";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
@@ -126,7 +126,7 @@ export function PartnerDialog({
       <FormField id="location" label={t("common.partnerLocation")} defaultValue={partner?.location ?? ""} />
       {partner?.id && (
         <div className="rounded-lg border border-border bg-muted/30 p-4">
-          <PhotoManager
+          <FileManager
             urls={partner.photoUrls ?? []}
             alt={partner.fullName}
             onDraftChange={setPhotoDraft}

@@ -9,7 +9,7 @@ export function MediaLightbox({
   onClose,
   onChange,
 }: {
-  images: { src: string; alt: string; mimeType?: string }[];
+  images: { src: string; alt: string; mimeType?: string; fileName?: string }[];
   index: number;
   onClose: () => void;
   onChange: (i: number) => void;
@@ -87,6 +87,7 @@ export function MediaLightbox({
         <MediaPreview
           src={img.src}
           alt={img.alt}
+          fileName={img.fileName}
           mimeType={img.mimeType}
           className="max-h-[80vh] max-w-full rounded-lg object-contain shadow-2xl"
           controls
