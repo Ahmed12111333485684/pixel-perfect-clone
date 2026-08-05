@@ -66,6 +66,8 @@ function PropertyRequestPage() {
     setRequestCategory("سكني");
     setPropertyType("");
     setCity("");
+    setPaymentType("");
+    setPaymentTypeOther("");
     formRef.current?.reset();
   };
 
@@ -177,7 +179,7 @@ function PropertyRequestPage() {
                   <Label htmlFor="requestType" className="text-xs font-medium">
                     {t("common.requestType")} *
                   </Label>
-                  <Select value={requestType} onValueChange={setRequestType}>
+                  <Select value={requestType} onValueChange={(v) => { setRequestType(v); setPaymentType(""); setPaymentTypeOther(""); }}>
                     <SelectTrigger id="requestType" className="mt-1">
                       <SelectValue />
                     </SelectTrigger>
@@ -289,10 +291,12 @@ function PropertyRequestPage() {
                       <SelectValue placeholder={t("common.paymentType")} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="شهري">شهري</SelectItem>
-                      <SelectItem value="دفعتين">دفعتين</SelectItem>
-                      <SelectItem value="ثلاث دفعات">ثلاث دفعات</SelectItem>
-                      <SelectItem value="خمس دفعات">خمس دفعات</SelectItem>
+                      {(requestType === "Purchase"
+                        ? ["تمويل", "كاش"]
+                        : ["شهري", "دفعتين", "ثلاث دفعات", "خمس دفعات"]
+                      ).map((opt) => (
+                        <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                      ))}
                       <SelectItem value="__other__">اخري</SelectItem>
                     </SelectContent>
                   </Select>
