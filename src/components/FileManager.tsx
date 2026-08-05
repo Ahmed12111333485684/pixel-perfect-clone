@@ -21,6 +21,16 @@ type StagedFile = {
   url: string;
 };
 
+function deriveFileName(url: string): string {
+  const clean = url.split(/[?#]/)[0].split("/").pop();
+  if (!clean) return "";
+  try {
+    return decodeURIComponent(clean);
+  } catch {
+    return clean;
+  }
+}
+
 export const DEFAULT_MEDIA_ACCEPT = "image/*,video/*,.pdf,.docx";
 
 export function FileManager({
@@ -59,7 +69,7 @@ export function FileManager({
 
   const keptUrls = urls.filter((url) => !removedUrls.includes(url));
   const items = [
-    ...keptUrls.map((url) => ({ key: url, src: resolveApiAssetUrl(url), isFile: false, fileName: null as string | null })),
+    ...keptUrls.map((url) => ({ key: url, src: resolveApiAssetUrl(url), isFile: false, fileName: deriveFileName(url) })),
     ...staged.map((s) => ({ key: `f-${s.id}`, src: s.url, isFile: true, fileName: s.file.name })),
   ];
 
@@ -159,7 +169,7 @@ export function FileManager({
               <MediaPreview
                 src={item.src}
                 alt={alt}
-                fileName={item.fileName ?? alt}
+                fileName={item.fileName || alt}
                 className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
               />
               {!readOnly && (
@@ -188,7 +198,7 @@ export function FileManager({
           images={items.map((item) => ({
             src: item.src,
             alt,
-            fileName: item.fileName ?? alt,
+            fileName: item.fileName || alt,
           }))}
           index={lightboxIndex}
           onClose={() => setLightboxIndex(null)}

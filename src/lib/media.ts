@@ -7,19 +7,25 @@ export type MediaSource = {
   url?: string | null;
 };
 
+function extensionOf(value?: string | null): string {
+  return (value ?? "").toLowerCase().split(/[?#]/, 1)[0];
+}
+
+function endsWithAny(candidate: string, extensions: string[]): boolean {
+  return extensions.some((extension) => candidate.endsWith(extension));
+}
+
 export function isVideoAsset(source: MediaSource): boolean {
   if (source.mimeType?.toLowerCase().startsWith("video/")) return true;
-
-  const candidate = (source.fileName ?? source.url ?? "").toLowerCase().split(/[?#]/, 1)[0];
-  return VIDEO_EXTENSIONS.some((extension) => candidate.endsWith(extension));
+  if (endsWithAny(extensionOf(source.fileName), VIDEO_EXTENSIONS)) return true;
+  return endsWithAny(extensionOf(source.url), VIDEO_EXTENSIONS);
 }
 
 export function isDocumentAsset(source: MediaSource): boolean {
   const mime = source.mimeType?.toLowerCase() ?? "";
   if (mime === "application/pdf" || mime.includes("officedocument")) return true;
-
-  const candidate = (source.fileName ?? source.url ?? "").toLowerCase().split(/[?#]/, 1)[0];
-  return DOCUMENT_EXTENSIONS.some((extension) => candidate.endsWith(extension));
+  if (endsWithAny(extensionOf(source.fileName), DOCUMENT_EXTENSIONS)) return true;
+  return endsWithAny(extensionOf(source.url), DOCUMENT_EXTENSIONS);
 }
 
 export type MediaKind = "image" | "video" | "document";

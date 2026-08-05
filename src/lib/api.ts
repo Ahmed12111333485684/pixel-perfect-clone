@@ -221,6 +221,7 @@ export interface Amenity {
   id: number;
   name: string;
   description?: string;
+  photoUrls: string[];
   createdAt: string;
 }
 export interface PropertyDto {
@@ -804,4 +805,14 @@ export function uploadRevenuePhoto(entryId: number, file: File) {
 
 export function deleteRevenuePhoto(entryId: number, url: string) {
   return api(`/api/RevenueEntries/${entryId}/photos`, { method: "DELETE", query: { url } });
+}
+
+export function uploadAmenityPhoto(amenityId: number, file: File) {
+  const formData = new FormData();
+  formData.append("file", file);
+  return api<{ url: string }>(`/api/amenities/${amenityId}/photos`, { method: "POST", formData });
+}
+
+export function deleteAmenityPhoto(amenityId: number, url: string) {
+  return api(`/api/amenities/${amenityId}/photos`, { method: "DELETE", query: { url } });
 }
