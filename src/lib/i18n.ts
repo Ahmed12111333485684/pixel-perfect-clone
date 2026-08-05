@@ -376,6 +376,7 @@ const en = {
     preferredContactAt: "Preferred contact time",
     submitted: "Thanks! We received your submission.",
     submitAnother: "Submit another",
+    invalidPreferredContactAt: "Please enter a valid preferred contact date and time.",
   },
   propertyRequest: {
     title: "Looking for a property?",
@@ -1071,6 +1072,7 @@ const ar = {
     preferredContactAt: "وقت الاتصال المفضّل",
     submitted: "شكرًا لك! استلمنا طلبك.",
     submitAnother: "إرسال طلب آخر",
+    invalidPreferredContactAt: "يرجى إدخال تاريخ ووقت اتصال مفضّل صحيح.",
   },
   propertyRequest: {
     title: "هل تبحث عن عقار؟",

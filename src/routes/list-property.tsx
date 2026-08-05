@@ -74,7 +74,24 @@ function LeadIntakePage() {
     setType("");
     setCity("");
     setDistrict("");
+    setPrefYear("");
+    setPrefMonth("");
+    setPrefDay("");
+    setPrefTime("");
     formRef.current?.reset();
+  };
+
+  const buildPreferredContactAt = (): string | null => {
+    const parts = [prefYear, prefMonth, prefDay, prefTime];
+    if (parts.every((p) => !p)) return "";
+    if (!/^\d{4}$/.test(prefYear) || !/^\d{2}$/.test(prefMonth) || !/^\d{2}$/.test(prefDay) || !/^\d{2}:\d{2}$/.test(prefTime)) return null;
+    const y = Number(prefYear);
+    const m = Number(prefMonth);
+    const d = Number(prefDay);
+    if (m < 1 || m > 12 || d < 1 || d > 31) return null;
+    const dt = new Date(y, m - 1, d);
+    if (dt.getFullYear() !== y || dt.getMonth() !== m - 1 || dt.getDate() !== d) return null;
+    return `${prefYear}-${prefMonth}-${prefDay}T${prefTime}`;
   };
 
   const onSubmit = async (e: FormEvent<HTMLFormElement>) => {
@@ -82,6 +99,12 @@ function LeadIntakePage() {
     const fd = new FormData(e.currentTarget);
     fd.set("intent", intent);
     fd.set("propertyType", type);
+    const preferredContactAt = buildPreferredContactAt();
+    if (preferredContactAt === null) {
+      toast.error(t("lead.invalidPreferredContactAt"));
+      return;
+    }
+    fd.set("preferredContactAt", preferredContactAt);
     // Prepend city/district to property address
     const rawAddress = fd.get("propertyAddress") || "";
     const districtVal = fd.get("district");
@@ -263,7 +286,7 @@ function LeadIntakePage() {
           <Section title={t("lead.contactName")}>
             <Field id="fullName" label={t("lead.contactName")} required />
             <div className="grid gap-4 sm:grid-cols-2">
-              <PhoneField id="phone" label={t("lead.contactPhone")} readOnly={false} />
+              <PhoneField id="phone" label={t("lead.contactPhone")} readOnly={false} required />
               <Field id="email" label={t("lead.contactEmail")} type="email" />
             </div>
             <div className="space-y-2">
@@ -295,7 +318,11 @@ function LeadIntakePage() {
                     inputMode="numeric"
                     placeholder="MM"
                     value={prefMonth}
-                    onChange={(e) => setPrefMonth(e.target.value.replace(/\D/g, "").slice(0, 2))}
+                    onChange={(e) => {
+                      const v = e.target.value.replace(/\D/g, "").slice(0, 2);
+                      if (v && Number(v) > 12) return;
+                      setPrefMonth(v);
+                    }}
                     maxLength={2}
                   />
                   <span className="text-muted-foreground">/</span>
@@ -303,7 +330,11 @@ function LeadIntakePage() {
                     inputMode="numeric"
                     placeholder="DD"
                     value={prefDay}
-                    onChange={(e) => setPrefDay(e.target.value.replace(/\D/g, "").slice(0, 2))}
+                    onChange={(e) => {
+                      const v = e.target.value.replace(/\D/g, "").slice(0, 2);
+                      if (v && Number(v) > 31) return;
+                      setPrefDay(v);
+                    }}
                     maxLength={2}
                   />
                 </div>

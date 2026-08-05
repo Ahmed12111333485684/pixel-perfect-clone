@@ -20,9 +20,10 @@ interface PhoneFieldProps {
     label: string;
     defaultValue?: string | null;
     readOnly: boolean;
+    required?: boolean;
 }
 
-export function PhoneField({ id, label, defaultValue, readOnly }: PhoneFieldProps) {
+export function PhoneField({ id, label, defaultValue, readOnly, required }: PhoneFieldProps) {
     // Parse existing value if it contains a country code (e.g., "+966 512345678")
     const parseDefault = () => {
         if (!defaultValue) return { countryCode: "+966", number: "" };
@@ -39,19 +40,19 @@ export function PhoneField({ id, label, defaultValue, readOnly }: PhoneFieldProp
 
     const initial = parseDefault();
     const [countryCode, setCountryCode] = useState(initial.countryCode);
+    const [number, setNumber] = useState(initial.number);
+
+    const trimmed = number.trim();
+    const combinedValue = trimmed ? `${countryCode} ${trimmed}` : "";
 
     return (
         <div className="space-y-2">
-            <Label htmlFor={id} className="text-xs font-medium">
+            <Label htmlFor={`${id}-local`} className="text-xs font-medium">
                 {label}
             </Label>
 
             {/* Hidden input combines both parts so native FormData picks it up perfectly */}
-            <input
-                type="hidden"
-                name={id}
-                value={initial.number ? `${countryCode} ${initial.number}` : ""}
-            />
+            <input type="hidden" name={id} value={combinedValue} />
 
             <div className="flex mt-1 rounded-md shadow-sm border border-border bg-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
                 {/* Country Code Dropdown */}
@@ -76,20 +77,15 @@ export function PhoneField({ id, label, defaultValue, readOnly }: PhoneFieldProp
                 {/* Free text field for the remaining phone number digits */}
                 <Input
                     id={`${id}-local`}
-                    defaultValue={initial.number}
+                    value={number}
                     disabled={readOnly}
                     readOnly={readOnly}
                     type="tel"
                     maxLength={15}
+                    required={required}
                     placeholder="500000000"
                     className="border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 rounded-s-none flex-1"
-                    onChange={(e) => {
-                        const hiddenInput = e.target.form?.elements.namedItem(id) as HTMLInputElement;
-                        if (hiddenInput) {
-                            const typed = e.target.value.trim();
-                            hiddenInput.value = typed ? `${countryCode} ${typed}` : "";
-                        }
-                    }}
+                    onChange={(e) => setNumber(e.target.value)}
                 />
             </div>
         </div>
