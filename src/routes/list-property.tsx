@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useRef, useState, useEffect, type FormEvent } from "react";
+import { useRef, useState, type FormEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { api, ApiError, resolveApiAssetUrl, type Lead, type LeadIntent } from "@/lib/api";
 import { Button } from "@/components/ui/button";
@@ -53,18 +53,8 @@ function LeadIntakePage() {
   const [city, setCity] = useState("");
   const [district, setDistrict] = useState("");
   const formRef = useRef<HTMLFormElement>(null);
-  const parseDateParts = (value?: string) => {
-    const safe = value?.slice(0, 10) ?? "";
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(safe)) return { year: "", month: "", day: "" };
-    return { year: safe.slice(0, 4), month: safe.slice(5, 7), day: safe.slice(8, 10) };
-  };
-  const [prefYear, setPrefYear] = useState("");
-  const [prefMonth, setPrefMonth] = useState("");
-  const [prefDay, setPrefDay] = useState("");
+  const [prefDate, setPrefDate] = useState("");
   const [prefTime, setPrefTime] = useState("");
-  useEffect(() => {
-    /* keep blank by default */
-  }, []);
 
   const reset = () => {
     setSubmitted(null);
@@ -74,24 +64,18 @@ function LeadIntakePage() {
     setType("");
     setCity("");
     setDistrict("");
-    setPrefYear("");
-    setPrefMonth("");
-    setPrefDay("");
+    setPrefDate("");
     setPrefTime("");
     formRef.current?.reset();
   };
 
   const buildPreferredContactAt = (): string | null => {
-    const parts = [prefYear, prefMonth, prefDay, prefTime];
+    const parts = [prefDate, prefTime];
     if (parts.every((p) => !p)) return "";
-    if (!/^\d{4}$/.test(prefYear) || !/^\d{2}$/.test(prefMonth) || !/^\d{2}$/.test(prefDay) || !/^\d{2}:\d{2}$/.test(prefTime)) return null;
-    const y = Number(prefYear);
-    const m = Number(prefMonth);
-    const d = Number(prefDay);
-    if (m < 1 || m > 12 || d < 1 || d > 31) return null;
-    const dt = new Date(y, m - 1, d);
-    if (dt.getFullYear() !== y || dt.getMonth() !== m - 1 || dt.getDate() !== d) return null;
-    return `${prefYear}-${prefMonth}-${prefDay}T${prefTime}`;
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(prefDate) || !/^\d{2}:\d{2}$/.test(prefTime)) return null;
+    const dt = new Date(`${prefDate}T00:00:00`);
+    if (Number.isNaN(dt.getTime())) return null;
+    return `${prefDate}T${prefTime}`;
   };
 
   const onSubmit = async (e: FormEvent<HTMLFormElement>) => {
@@ -298,46 +282,15 @@ function LeadIntakePage() {
                 type="hidden"
                 id="preferredContactAt"
                 name="preferredContactAt"
-                value={
-                  prefYear && prefMonth && prefDay
-                    ? `${prefYear}-${prefMonth}-${prefDay}T${prefTime}`
-                    : ""
-                }
+                value={prefDate && prefTime ? `${prefDate}T${prefTime}` : ""}
               />
               <div className="flex items-center gap-2">
-                <div className="grid grid-cols-[1fr_auto_1fr_auto_1fr] items-center gap-2">
-                  <Input
-                    inputMode="numeric"
-                    placeholder="YYYY"
-                    value={prefYear}
-                    onChange={(e) => setPrefYear(e.target.value.replace(/\D/g, "").slice(0, 4))}
-                    maxLength={4}
-                  />
-                  <span className="text-muted-foreground">/</span>
-                  <Input
-                    inputMode="numeric"
-                    placeholder="MM"
-                    value={prefMonth}
-                    onChange={(e) => {
-                      const v = e.target.value.replace(/\D/g, "").slice(0, 2);
-                      if (v && Number(v) > 12) return;
-                      setPrefMonth(v);
-                    }}
-                    maxLength={2}
-                  />
-                  <span className="text-muted-foreground">/</span>
-                  <Input
-                    inputMode="numeric"
-                    placeholder="DD"
-                    value={prefDay}
-                    onChange={(e) => {
-                      const v = e.target.value.replace(/\D/g, "").slice(0, 2);
-                      if (v && Number(v) > 31) return;
-                      setPrefDay(v);
-                    }}
-                    maxLength={2}
-                  />
-                </div>
+                <Input
+                  type="date"
+                  value={prefDate}
+                  onChange={(e) => setPrefDate(e.target.value)}
+                  className="flex-1"
+                />
                 <Input type="time" value={prefTime} onChange={(e) => setPrefTime(e.target.value)} />
               </div>
             </div>
