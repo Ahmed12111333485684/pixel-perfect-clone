@@ -81,6 +81,11 @@ function PropertyRequestPage() {
       return;
     }
 
+    if (!propertyType.trim()) {
+      toast.error(t("propertyRequest.selectPropertyType") || "يرجى اختيار نوع العقار");
+      return;
+    }
+
     setLoading(true);
     try {
       const result = await api<ResidentialSeeker>("/residential-seekers/submit", {
@@ -92,6 +97,7 @@ function PropertyRequestPage() {
           propertyType,
           fullName,
           mobile: mobileNumber,
+          phone: mobileNumber,
           nationality: formData.get("nationality") || undefined,
           profession: formData.get("profession") || undefined,
           familyCount: formData.get("familyCount")
