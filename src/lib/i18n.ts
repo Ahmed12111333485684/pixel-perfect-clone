@@ -35,6 +35,8 @@ const en = {
     submitProperty: "Submit property",
     signIn: "Sign in",
     signOut: "Sign out",
+    collapseSidebar: "Collapse sidebar",
+    expandSidebar: "Expand sidebar",
   },
   expenses: {
     title: "Expenses",
@@ -729,6 +731,8 @@ const ar = {
     submitProperty: "إرسال عقار",
     signIn: "تسجيل الدخول",
     signOut: "تسجيل الخروج",
+    collapseSidebar: "طي القائمة الجانبية",
+    expandSidebar: "توسيع القائمة الجانبية",
   },
   expenses: {
     title: "المصروفات",

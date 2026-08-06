@@ -2,7 +2,16 @@ import { Outlet, Link, useRouterState } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/lib/auth";
-import { Building2, ChevronRight, ChevronDown, LogOut, Menu, X } from "lucide-react";
+import {
+  Building2,
+  ChevronRight,
+  ChevronDown,
+  LogOut,
+  Menu,
+  X,
+  ChevronsLeft,
+  ChevronsRight,
+} from "lucide-react";
 import { BrandLogo } from "@/components/BrandLogo";
 import { LanguageToggle } from "@/components/LanguageToggle";
 import { NotificationBell } from "@/components/NotificationBell";
@@ -15,12 +24,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  Sheet,
-  SheetTrigger,
-  SheetContent,
-  SheetClose,
-} from "@/components/ui/sheet";
+import { Sheet, SheetTrigger, SheetContent, SheetClose } from "@/components/ui/sheet";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { getVisibleNavItems, isCurrentPathAccessible } from "@/lib/navigation";
 import type { AppNavItem } from "@/lib/navigation";
@@ -30,6 +34,19 @@ export function AppLayout({ children }: { children?: React.ReactNode }) {
   const { t } = useTranslation();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const [expandedParents, setExpandedParents] = useState<Set<string>>(new Set());
+  const [collapsed, setCollapsed] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    return window.localStorage.getItem("pm.sidebar.collapsed") === "1";
+  });
+
+  const setCollapsedPersisted = (value: boolean) => {
+    setCollapsed(value);
+    try {
+      window.localStorage.setItem("pm.sidebar.collapsed", value ? "1" : "0");
+    } catch {
+      // ignore storage errors
+    }
+  };
 
   useEffect(() => {
     const cleanup = () => {
@@ -74,7 +91,7 @@ export function AppLayout({ children }: { children?: React.ReactNode }) {
     setExpandedParents(newExpanded);
   };
 
-  const renderNavItem = (item: AppNavItem, depth = 0, closeOnSelect = false) => {
+  const renderNavItem = (item: AppNavItem, depth = 0, closeOnSelect = false, collapsed = false) => {
     const isParentExpanded = expandedParents.has(item.to);
     const isActive =
       item.to === "/app"
@@ -82,6 +99,29 @@ export function AppLayout({ children }: { children?: React.ReactNode }) {
         : pathname === item.to || pathname.startsWith(item.to + "/");
 
     if (item.isParent && item.children) {
+      if (collapsed) {
+        // Collapsed mode: a parent becomes an icon that widens the rail and
+        // opens its children.
+        return (
+          <div key={item.to} className="flex justify-center">
+            <button
+              onClick={() => {
+                setCollapsedPersisted(false);
+                toggleParent(item.to);
+              }}
+              title={t(item.label)}
+              className={`group flex items-center justify-center rounded-lg px-0 py-2 text-sm transition ${
+                isActive
+                  ? "bg-sidebar-accent text-sidebar-accent-foreground shadow-sm"
+                  : "text-sidebar-foreground/80 hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground"
+              }`}
+            >
+              <item.icon className="h-5 w-5 shrink-0 opacity-80" />
+            </button>
+          </div>
+        );
+      }
+
       return (
         <div key={item.to}>
           <button
@@ -109,6 +149,30 @@ export function AppLayout({ children }: { children?: React.ReactNode }) {
       );
     }
 
+    if (collapsed && depth === 0) {
+      const link = (
+        <Link
+          key={item.to}
+          to={item.to}
+          title={t(item.label)}
+          className={`group flex items-center justify-center rounded-lg px-0 py-2 text-sm transition ${
+            isActive
+              ? "bg-sidebar-accent text-sidebar-accent-foreground shadow-sm"
+              : "text-sidebar-foreground/80 hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground"
+          }`}
+        >
+          <item.icon className="h-5 w-5 shrink-0 opacity-80" />
+        </Link>
+      );
+      return closeOnSelect ? (
+        <SheetClose asChild key={item.to}>
+          {link}
+        </SheetClose>
+      ) : (
+        link
+      );
+    }
+
     const link = (
       <Link
         key={item.to}
@@ -127,115 +191,156 @@ export function AppLayout({ children }: { children?: React.ReactNode }) {
       </Link>
     );
 
-    return closeOnSelect ? <SheetClose asChild key={item.to}>{link}</SheetClose> : link;
+    return closeOnSelect ? (
+      <SheetClose asChild key={item.to}>
+        {link}
+      </SheetClose>
+    ) : (
+      link
+    );
   };
 
   return (
     <NotificationsProvider>
-    <div className="flex min-h-screen bg-muted/30">
-      {/* Desktop Sidebar */}
-      <aside className="hidden w-64 shrink-0 flex-col border-e border-sidebar-border bg-sidebar text-sidebar-foreground md:flex">
-        <div className="flex h-16 items-center border-b border-sidebar-border px-5">
-          <Link to="/app" className="flex items-center gap-2 text-sidebar-foreground">
-            <span className="grid h-8 w-8 place-items-center rounded-lg bg-gold-gradient text-gold-foreground">
-              <Building2 className="h-4 w-4" />
-            </span>
-            <span className="font-display text-lg font-semibold">{t("brand.name")}</span>
-          </Link>
-        </div>
-        <nav className="flex-1 space-y-0.5 overflow-y-auto p-3">
-          {visible.map((item) => renderNavItem(item))}
-        </nav>
-        <div className="border-t border-sidebar-border p-3 text-xs text-sidebar-foreground/60">
-          <span className="rounded-md bg-sidebar-accent/50 px-2 py-1 font-medium">
-            {auth.user?.role ? t(`role.${auth.user.role}`) : ""}
-          </span>
-        </div>
-      </aside>
-
-      {/* Mobile Sheet Sidebar */}
-      <Sheet>
-        <SheetTrigger asChild>
-          <button className="fixed bottom-4 left-4 z-50 grid h-12 w-12 place-items-center rounded-full bg-primary text-primary-foreground shadow-lg md:hidden">
-            <Menu className="h-5 w-5" />
-          </button>
-        </SheetTrigger>
-        <SheetContent side="left" hideClose className="flex w-72 flex-col border-e border-sidebar-border bg-sidebar p-0 text-sidebar-foreground">
-          <div className="flex h-16 items-center justify-between border-b border-sidebar-border px-5">
-            <SheetClose asChild>
-              <Link to="/app" className="flex items-center gap-2 text-sidebar-foreground">
-                <span className="grid h-8 w-8 place-items-center rounded-lg bg-gold-gradient text-gold-foreground">
-                  <Building2 className="h-4 w-4" />
-                </span>
+      <div className="flex min-h-screen bg-muted/30">
+        {/* Desktop Sidebar */}
+        <aside
+          className={`hidden shrink-0 flex-col border-e border-sidebar-border bg-sidebar text-sidebar-foreground md:flex ${
+            collapsed ? "w-16" : "w-64"
+          }`}
+        >
+          <div
+            className={`flex h-16 items-center border-b border-sidebar-border ${collapsed ? "justify-center px-0" : "px-5"}`}
+          >
+            <Link
+              to="/app"
+              className="flex items-center gap-2 text-sidebar-foreground"
+              title={collapsed ? t("brand.name") : undefined}
+            >
+              <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-gold-gradient text-gold-foreground">
+                <Building2 className="h-4 w-4" />
+              </span>
+              {!collapsed && (
                 <span className="font-display text-lg font-semibold">{t("brand.name")}</span>
-              </Link>
-            </SheetClose>
-            <SheetClose className="rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2">
-              <X className="h-4 w-4" />
-              <span className="sr-only">Close</span>
-            </SheetClose>
+              )}
+            </Link>
           </div>
-          <nav className="flex-1 space-y-0.5 overflow-y-auto p-3">
-            {visible.map((item) => renderNavItem(item, 0, true))}
+          <nav className={`flex-1 space-y-0.5 overflow-y-auto p-3 ${collapsed ? "px-2" : ""}`}>
+            {visible.map((item) => renderNavItem(item, 0, false, collapsed))}
           </nav>
-          <div className="border-t border-sidebar-border p-3 text-xs text-sidebar-foreground/60">
-            <span className="rounded-md bg-sidebar-accent/50 px-2 py-1 font-medium">
-              {auth.user?.role ? t(`role.${auth.user.role}`) : ""}
-            </span>
-          </div>
-        </SheetContent>
-      </Sheet>
-
-      {/* Main */}
-      <div className="flex min-w-0 flex-1 flex-col">
-        <header className="sticky top-0 z-10 flex h-16 items-center justify-between gap-3 border-b border-border bg-background/80 px-4 backdrop-blur sm:px-6">
-          <div className="md:hidden">
-            <BrandLogo to="/app" />
-          </div>
-          <div className="hidden md:block">
-            <span className="font-display text-lg font-semibold">{t("brand.name")}</span>
-          </div>
-          <div className="flex-1" />
-          {auth.isStaff && <NotificationBell />}
-          <LanguageToggle />
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="gap-2">
-                <span className="grid h-8 w-8 place-items-center rounded-full bg-primary text-primary-foreground text-xs font-semibold">
-                  {auth.user?.username.slice(0, 1).toUpperCase()}
-                </span>
-                <span className="hidden text-sm font-medium sm:inline">{auth.user?.username}</span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48">
-              <div className="px-2 py-1.5 text-xs text-muted-foreground">
+          {!collapsed && (
+            <div className="border-t border-sidebar-border p-3 text-xs text-sidebar-foreground/60">
+              <span className="rounded-md bg-sidebar-accent/50 px-2 py-1 font-medium">
                 {auth.user?.role ? t(`role.${auth.user.role}`) : ""}
-              </div>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                onClick={() => {
-                  auth.logout();
-                  window.location.href = "/login";
-                }}
-              >
-                <LogOut className="me-2 h-4 w-4" />
-                {t("nav.signOut")}
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </header>
-
-        <main className="flex-1 p-4 sm:p-6">
-          {canViewCurrentScreen ? (
-            children ?? <Outlet />
-          ) : (
-            <div className="rounded-xl border border-border bg-card p-8 text-center text-muted-foreground">
-              {t("common.noScreenAccess")}
+              </span>
             </div>
           )}
-        </main>
+        </aside>
+
+        {/* Mobile Sheet Sidebar */}
+        <Sheet>
+          <SheetTrigger asChild>
+            <button className="fixed bottom-4 left-4 z-50 grid h-12 w-12 place-items-center rounded-full bg-primary text-primary-foreground shadow-lg md:hidden">
+              <Menu className="h-5 w-5" />
+            </button>
+          </SheetTrigger>
+          <SheetContent
+            side="left"
+            hideClose
+            className="flex w-72 flex-col border-e border-sidebar-border bg-sidebar p-0 text-sidebar-foreground"
+          >
+            <div className="flex h-16 items-center justify-between border-b border-sidebar-border px-5">
+              <SheetClose asChild>
+                <Link to="/app" className="flex items-center gap-2 text-sidebar-foreground">
+                  <span className="grid h-8 w-8 place-items-center rounded-lg bg-gold-gradient text-gold-foreground">
+                    <Building2 className="h-4 w-4" />
+                  </span>
+                  <span className="font-display text-lg font-semibold">{t("brand.name")}</span>
+                </Link>
+              </SheetClose>
+              <SheetClose className="rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2">
+                <X className="h-4 w-4" />
+                <span className="sr-only">Close</span>
+              </SheetClose>
+            </div>
+            <nav className="flex-1 space-y-0.5 overflow-y-auto p-3">
+              {visible.map((item) => renderNavItem(item, 0, true))}
+            </nav>
+            <div className="border-t border-sidebar-border p-3 text-xs text-sidebar-foreground/60">
+              <span className="rounded-md bg-sidebar-accent/50 px-2 py-1 font-medium">
+                {auth.user?.role ? t(`role.${auth.user.role}`) : ""}
+              </span>
+            </div>
+          </SheetContent>
+        </Sheet>
+
+        {/* Main */}
+        <div className="flex min-w-0 flex-1 flex-col">
+          <header className="sticky top-0 z-10 flex h-16 items-center justify-between gap-3 border-b border-border bg-background/80 px-4 backdrop-blur sm:px-6">
+            <div className="hidden md:block">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setCollapsedPersisted(!collapsed)}
+                title={collapsed ? t("nav.expandSidebar") : t("nav.collapseSidebar")}
+                className="text-muted-foreground"
+              >
+                {collapsed ? (
+                  <ChevronsRight className="h-5 w-5" />
+                ) : (
+                  <ChevronsLeft className="h-5 w-5" />
+                )}
+              </Button>
+            </div>
+            <div className="md:hidden">
+              <BrandLogo to="/app" />
+            </div>
+            <div className="hidden md:block">
+              <span className="font-display text-lg font-semibold">{t("brand.name")}</span>
+            </div>
+            <div className="flex-1" />
+            {auth.isStaff && <NotificationBell />}
+            <LanguageToggle />
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm" className="gap-2">
+                  <span className="grid h-8 w-8 place-items-center rounded-full bg-primary text-primary-foreground text-xs font-semibold">
+                    {auth.user?.username.slice(0, 1).toUpperCase()}
+                  </span>
+                  <span className="hidden text-sm font-medium sm:inline">
+                    {auth.user?.username}
+                  </span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                <div className="px-2 py-1.5 text-xs text-muted-foreground">
+                  {auth.user?.role ? t(`role.${auth.user.role}`) : ""}
+                </div>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={() => {
+                    auth.logout();
+                    window.location.href = "/login";
+                  }}
+                >
+                  <LogOut className="me-2 h-4 w-4" />
+                  {t("nav.signOut")}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </header>
+
+          <main className="flex-1 p-4 sm:p-6">
+            {canViewCurrentScreen ? (
+              (children ?? <Outlet />)
+            ) : (
+              <div className="rounded-xl border border-border bg-card p-8 text-center text-muted-foreground">
+                {t("common.noScreenAccess")}
+              </div>
+            )}
+          </main>
+        </div>
       </div>
-    </div>
     </NotificationsProvider>
   );
 }
