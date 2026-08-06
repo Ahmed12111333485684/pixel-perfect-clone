@@ -31,7 +31,7 @@ import type { AppNavItem } from "@/lib/navigation";
 
 export function AppLayout({ children }: { children?: React.ReactNode }) {
   const auth = useAuth();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const [expandedParents, setExpandedParents] = useState<Set<string>>(new Set());
   const [collapsed, setCollapsed] = useState<boolean>(() => {
@@ -47,6 +47,8 @@ export function AppLayout({ children }: { children?: React.ReactNode }) {
       // ignore storage errors
     }
   };
+
+  const isRtl = i18n.dir() === "rtl";
 
   useEffect(() => {
     const cleanup = () => {
@@ -279,16 +281,16 @@ export function AppLayout({ children }: { children?: React.ReactNode }) {
           <header className="sticky top-0 z-10 flex h-16 items-center justify-between gap-3 border-b border-border bg-background/80 px-4 backdrop-blur sm:px-6">
             <div className="hidden md:block">
               <Button
-                variant="ghost"
+                variant="outline"
                 size="icon"
                 onClick={() => setCollapsedPersisted(!collapsed)}
                 title={collapsed ? t("nav.expandSidebar") : t("nav.collapseSidebar")}
-                className="text-muted-foreground"
+                className="text-foreground"
               >
                 {collapsed ? (
-                  <ChevronsRight className="h-5 w-5" />
+                  isRtl ? <ChevronsLeft className="h-5 w-5" /> : <ChevronsRight className="h-5 w-5" />
                 ) : (
-                  <ChevronsLeft className="h-5 w-5" />
+                  isRtl ? <ChevronsRight className="h-5 w-5" /> : <ChevronsLeft className="h-5 w-5" />
                 )}
               </Button>
             </div>

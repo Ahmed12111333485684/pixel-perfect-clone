@@ -64,6 +64,8 @@ const COMMERCIAL_FIELDS = [
   "roomsCount",
   "buildingAge",
   "hasElevator",
+  "keyHolder",
+  "guardPhone",
   "adText1",
   "adText2",
   "rentAmount",
@@ -1087,6 +1089,7 @@ function CommercialListingDialog({
   const [propertyType, setPropertyType] = useState<string>(listing?.propertyType ?? "");
   const [dealThrough, setDealThrough] = useState<string>(listing?.dealThrough ?? DEAL_THROUGH_OWNER);
   const [hasKey, setHasKey] = useState<boolean>(Boolean(listing?.hasKey));
+  const [keyHolder, setKeyHolder] = useState<string>(listing?.keyHolder ?? "");
   const [isOfficeListing, setIsOfficeListing] = useState<boolean>(Boolean(listing?.isOfficeListing));
   const [publicVisible, setPublicVisible] = useState<boolean>(Boolean(listing?.publicVisible));
   const [selectedCity, setSelectedCity] = useState(listing?.city ?? "");
@@ -1135,6 +1138,7 @@ function CommercialListingDialog({
       setPropertyType(listing?.propertyType ?? "");
       setDealThrough(listing?.dealThrough ?? DEAL_THROUGH_OWNER);
       setHasKey(Boolean(listing?.hasKey));
+      setKeyHolder(listing?.keyHolder ?? "");
       setIsOfficeListing(Boolean(listing?.isOfficeListing));
       setPublicVisible(Boolean(listing?.publicVisible));
       setSelectedCity(listing?.city ?? "");
@@ -1404,12 +1408,39 @@ function CommercialListingDialog({
               </Button>
             )}
           </div>
-          <div className="flex items-center gap-3 rounded-lg border border-border bg-background px-3 py-3">
-            <Checkbox id="hasKey" checked={hasKey} onCheckedChange={(checked) => setHasKey(checked === true)} disabled={readOnly} />
-            <div className="space-y-1">
-              <Label htmlFor="hasKey" className="text-sm font-medium">{t("commercialListings.hasKey")}</Label>
+          <div className="space-y-3 rounded-lg border border-border bg-background px-3 py-3">
+            <div className="flex items-center gap-3">
+              <Checkbox id="hasKey" checked={hasKey} onCheckedChange={(checked) => {
+                setHasKey(checked === true);
+                if (!checked) setKeyHolder("");
+              }} disabled={readOnly} />
+              <div className="space-y-1">
+                <Label htmlFor="hasKey" className="text-sm font-medium">{t("commercialListings.hasKey")}</Label>
+              </div>
+              <input type="hidden" name="hasKey" value={String(hasKey)} />
             </div>
-            <input type="hidden" name="hasKey" value={String(hasKey)} />
+            {hasKey && (
+              <div className="space-y-3">
+                <div className="space-y-2">
+                  <Label htmlFor="keyHolder" className="text-xs font-medium">{t("commercialListings.keyHolder")}</Label>
+                  <Select value={keyHolder || "none"} onValueChange={(value) => setKeyHolder(value === "none" ? "" : value)} disabled={readOnly}>
+                    <SelectTrigger id="keyHolder" className="mt-1">
+                      <SelectValue placeholder={t("common.selectPartner")} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">{t("common.notProvided")}</SelectItem>
+                      <SelectItem value="مع المكتب">{t("commercialListings.keyWithOffice")}</SelectItem>
+                      <SelectItem value="مع المالك">{t("commercialListings.keyWithOwner")}</SelectItem>
+                      <SelectItem value="مع الحارس">{t("commercialListings.keyWithGuard")}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <input type="hidden" name="keyHolder" value={keyHolder} />
+                </div>
+                {keyHolder === "مع الحارس" && (
+                  <PhoneField id="guardPhone" label={t("commercialListings.guardPhone")} defaultValue={listing?.guardPhone} readOnly={readOnly} />
+                )}
+              </div>
+            )}
           </div>
         </div>
       </div>

@@ -483,6 +483,8 @@ export interface CommercialListing {
   location?: string | null;
   coordinates?: string | null;
   hasKey?: boolean | null;
+  keyHolder?: string | null;
+  guardPhone?: string | null;
   publishedTahmid?: string | null;
   publishedBoard?: string | null;
   publishedDesigns?: string | null;
