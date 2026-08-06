@@ -1,12 +1,13 @@
 import * as React from "react";
 
 import { cn } from "@/lib/utils";
+import { SyncedScrollArea } from "@/components/SyncedScrollArea";
 
 const Table = React.forwardRef<HTMLTableElement, React.HTMLAttributes<HTMLTableElement>>(
   ({ className, ...props }, ref) => (
-    <div className="relative w-full overflow-auto">
+    <SyncedScrollArea>
       <table ref={ref} className={cn("w-full caption-bottom text-sm", className)} {...props} />
-    </div>
+    </SyncedScrollArea>
   ),
 );
 Table.displayName = "Table";

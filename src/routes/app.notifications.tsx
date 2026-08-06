@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/select";
 import { ChevronLeft, ChevronRight, X, CheckCheck } from "lucide-react";
 import { toast } from "sonner";
+import { SyncedScrollArea } from "@/components/SyncedScrollArea";
 
 export const Route = createFileRoute("/app/notifications")({
   component: NotificationsPage,
@@ -109,7 +110,7 @@ function NotificationsPage() {
         <EmptyState message={t("notifications.empty")} />
       ) : (
         <div className="overflow-hidden rounded-xl border border-border bg-card shadow-card">
-          <div className="overflow-x-auto">
+          <SyncedScrollArea>
             <table className="w-full">
               <thead>
                 <tr className="bg-muted/50 text-left text-xs font-medium text-muted-foreground">
@@ -174,7 +175,7 @@ function NotificationsPage() {
                 ))}
               </tbody>
             </table>
-          </div>
+          </SyncedScrollArea>
         </div>
       )}
 
