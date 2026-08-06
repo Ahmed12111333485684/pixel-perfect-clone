@@ -100,7 +100,7 @@ export function MultiComboboxField({
                                         <Badge
                                             key={v}
                                             variant="secondary"
-                                            className="gap-1 whitespace-nowrap"
+                                            className="gap-1 whitespace-nowrap text-foreground"
                                         >
                                             {option?.label ?? v}
                                             {!readOnly && (

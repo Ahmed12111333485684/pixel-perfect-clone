@@ -55,7 +55,6 @@ const COMMERCIAL_FIELDS = [
   "listingType",
   "dealThrough",
   "employee",
-  "broker",
   "ownerName",
   "mobile1",
   "mobile2",
@@ -276,6 +275,12 @@ function buildCommercialPayload(
   if (districtRaw) {
     try { payload.district = JSON.parse(String(districtRaw)); }
     catch { payload.district = [String(districtRaw)]; }
+  }
+
+  const brokerRaw = fd.get("broker");
+  if (brokerRaw) {
+    try { payload.broker = JSON.parse(String(brokerRaw)); }
+    catch { payload.broker = [String(brokerRaw)]; }
   }
 
   payload.brokerageContracts = normalizeBrokerageContracts(contracts);
@@ -1072,7 +1077,6 @@ function CommercialListingDialog({
   const dialogAuth = useAuth();
   const isAdmin = dialogAuth.hasRole("Admin");
   const [publishing, setPublishing] = useState<PublishingState>(() => buildPublishingState(listing));
-  const [broker, setBroker] = useState<string>(listing?.broker ?? "");
   const [employee, setEmployee] = useState<string>(listing?.employee ?? "");
   const [listingCategory, setListingCategory] = useState<ListingCategoryValue>(normalizeListingCategory(listing?.listingCategory));
   const [propertyStatus, setPropertyStatus] = useState<string>(listing?.propertyStatus ?? STATUS_AVAILABLE);
@@ -1100,7 +1104,6 @@ function CommercialListingDialog({
     .filter((partner) => partner.fullName.trim().length > 0)
     .sort((a, b) => a.fullName.localeCompare(b.fullName)), [partners]);
 
-  const hasCurrentBrokerInPartners = broker ? partnerOptions.some((partner) => partner.fullName === broker) : true;
   const hasCurrentEmployeeInUsers = employee ? users.some((user) => user.username === employee) : true;
 
   const updateContract = useCallback((id: string, field: keyof Omit<BrokerageContractFormValue, "id">, value: string) => {
@@ -1121,7 +1124,6 @@ function CommercialListingDialog({
   useEffect(() => {
     if (open) {
       setPublishing(buildPublishingState(listing));
-      setBroker(listing?.broker ?? "");
       setEmployee(listing?.employee ?? "");
       setListingCategory(normalizeListingCategory(listing?.listingCategory));
       setPropertyStatus(listing?.propertyStatus ?? STATUS_AVAILABLE);
@@ -1236,34 +1238,28 @@ function CommercialListingDialog({
             <input type="hidden" name="employee" value={employee} />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="broker" className="text-xs font-medium">{t("commercialListings.broker")}</Label>
-            <div className="flex gap-2">
+            <div className="flex items-end gap-2">
               <div className="flex-1">
-                <Select value={broker || "none"} onValueChange={(value) => setBroker(value === "none" ? "" : value)} disabled={readOnly}>
-                  <SelectTrigger id="broker" className="mt-1">
-                    <SelectValue placeholder={partnersLoading ? t("common.loadingPartners") : t("common.selectPartner")} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">{t("common.notProvided")}</SelectItem>
-                    {partnerOptions.map((partner) => (
-                      <SelectItem key={partner.id} value={partner.fullName}>{partner.fullName}</SelectItem>
-                    ))}
-                    {broker && !hasCurrentBrokerInPartners && <SelectItem value={broker}>{broker}</SelectItem>}
-                  </SelectContent>
-                </Select>
+                <MultiComboboxField
+                  id="broker"
+                  label={t("commercialListings.broker")}
+                  defaultValue={listing?.broker ?? null}
+                  readOnly={readOnly}
+                  options={partnerOptions.map((partner) => ({ value: partner.fullName, label: partner.fullName }))}
+                />
               </div>
               <Button
                 type="button"
                 variant="outline"
                 size="icon"
-                className="mt-1 shrink-0"
+                className="shrink-0"
                 onClick={onAddPartner}
                 title={t("common.add")}
+                disabled={readOnly}
               >
                 <Plus className="h-4 w-4" />
               </Button>
             </div>
-            <input type="hidden" name="broker" value={broker} />
           </div>
           <div className="flex items-center gap-3">
             {/* Office Listing checkbox - only visible to admin/staff */}

@@ -460,7 +460,7 @@ export interface CommercialListing {
   adNumber?: string | null;
   dealThrough?: string | null;
   employee?: string | null;
-  broker?: string | null;
+  broker?: string[] | null;
   ownerName?: string | null;
   mobile1?: string | null;
   mobile2?: string | null;
