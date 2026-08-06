@@ -580,7 +580,7 @@ function ListingDetailsDialog({
   isLightboxOpen?: boolean;
   onOpenImage?: (index: number) => void;
 }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
 
   if (!listing) return null;
 
@@ -695,7 +695,7 @@ function ListingDetailsDialog({
                       </div>
                     )}
                     {listing.adText2 && (
-                      <div className={"text-sm whitespace-pre-wrap" + (detailFields.length > 0 ? " mt-4 border-t border-border pt-4" : "")}>
+                      <div dir={i18n.language === "ar" ? "rtl" : "ltr"} className={"text-sm whitespace-pre-wrap" + (detailFields.length > 0 ? " mt-4 border-t border-border pt-4" : "")}>
                         {listing.adText2}
                       </div>
                     )}
