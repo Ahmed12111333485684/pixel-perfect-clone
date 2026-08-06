@@ -469,7 +469,7 @@ function LeadsPage() {
                     {selected.listedPrice
                       ? new Intl.NumberFormat(undefined, {
                         style: "currency",
-                        currency: "USD",
+                        currency: "SAR",
                       }).format(selected.listedPrice)
                       : t("common.notProvided")}
                   </div>
@@ -495,7 +495,7 @@ function LeadsPage() {
                     <span className="text-xs font-medium text-muted-foreground">
                       {t("common.district")}:
                     </span>
-                    <div>{selected.district}</div>
+                    <div>{Array.isArray(selected.district) ? selected.district.join(", ") : selected.district}</div>
                   </div>
                 )}
                 {selected.commercialListingId && (
