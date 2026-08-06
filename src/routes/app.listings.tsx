@@ -22,7 +22,6 @@ import { PhoneField } from "@/components/form/PhoneField";
 import { ComboboxField } from "@/components/form/ComboboxField";
 import { MultiComboboxField } from "@/components/form/MultiComboboxField";
 import { CITIES, getDistricts } from "@/lib/locations";
-import { PAYMENT_TYPES } from "@/lib/payment-types";
 import { PROPERTY_TYPES_BY_CATEGORY, getPropertyTypesByCategory } from "@/lib/property-types";
 import { CommercialListingImageManager } from "@/components/CommercialListingImageManager";
 import { resolveApiAssetUrl } from "@/lib/api";
@@ -143,6 +142,9 @@ function normalizeListingType(value: string | null | undefined): ListingTypeValu
   if (normalized === "sale" || normalized === "بيع") return "Sale";
   return "Rental";
 }
+
+const SALE_PAYMENT_TYPES = ["تمويل", "كاش"];
+const RENTAL_PAYMENT_TYPES = ["شهري", "دفعتين", "ثلاث دفعات", "خمس دفعات"];
 
 type PropertyTypeKey =
   | "Apartment"
@@ -1081,6 +1083,7 @@ function CommercialListingDialog({
   const [listingCategory, setListingCategory] = useState<ListingCategoryValue>(normalizeListingCategory(listing?.listingCategory));
   const [propertyStatus, setPropertyStatus] = useState<string>(listing?.propertyStatus ?? STATUS_AVAILABLE);
   const [listingType, setListingType] = useState<ListingTypeValue>(normalizeListingType(listing?.listingType));
+  const [paymentType, setPaymentType] = useState<string>(listing?.paymentType ?? "");
   const [propertyType, setPropertyType] = useState<string>(listing?.propertyType ?? "");
   const [dealThrough, setDealThrough] = useState<string>(listing?.dealThrough ?? DEAL_THROUGH_OWNER);
   const [hasKey, setHasKey] = useState<boolean>(Boolean(listing?.hasKey));
@@ -1128,6 +1131,7 @@ function CommercialListingDialog({
       setListingCategory(normalizeListingCategory(listing?.listingCategory));
       setPropertyStatus(listing?.propertyStatus ?? STATUS_AVAILABLE);
       setListingType(normalizeListingType(listing?.listingType));
+      setPaymentType(listing?.paymentType ?? "");
       setPropertyType(listing?.propertyType ?? "");
       setDealThrough(listing?.dealThrough ?? DEAL_THROUGH_OWNER);
       setHasKey(Boolean(listing?.hasKey));
@@ -1189,7 +1193,12 @@ function CommercialListingDialog({
           </div>
           <div className="space-y-2">
             <Label htmlFor="listingType" className="text-xs font-medium">{t("commercialListings.listingType")}</Label>
-            <Select value={listingType} onValueChange={(v) => setListingType(v as ListingTypeValue)} disabled={readOnly}>
+            <Select value={listingType} onValueChange={(v) => {
+              const next = v as ListingTypeValue;
+              setListingType(next);
+              const validForType = next === "Sale" ? SALE_PAYMENT_TYPES : RENTAL_PAYMENT_TYPES;
+              setPaymentType((current) => (current && validForType.includes(current) ? current : ""));
+            }} disabled={readOnly}>
               <SelectTrigger id="listingType" className="mt-1">
                 <SelectValue placeholder={t("commercialListings.listingType")} />
               </SelectTrigger>
@@ -1327,13 +1336,13 @@ function CommercialListingDialog({
           <TextField id="rentAmount" label={listingType === "Sale" ? t("commercialListings.salePrice") : t("commercialListings.rentAmount")} defaultValue={listing?.rentAmount} readOnly={readOnly} type="number" min={0} />
           <div className="space-y-2">
             <Label htmlFor="paymentType" className="text-xs font-medium">{t("commercialListings.paymentType")}</Label>
-            <Select name="paymentType" defaultValue={listing?.paymentType ?? ""} disabled={readOnly}>
+            <Select name="paymentType" value={paymentType} onValueChange={setPaymentType} defaultValue={listing?.paymentType ?? ""} disabled={readOnly}>
               <SelectTrigger id="paymentType" className="mt-1">
                 <SelectValue placeholder={t("commercialListings.paymentType")} />
               </SelectTrigger>
               <SelectContent>
-                {PAYMENT_TYPES.map((p) => (
-                  <SelectItem key={p} value={p}>{p === "كاش" ? t("common.cash") : p === "حوالة" ? t("common.transfer") : p === "سداد" ? t("common.repayment") : p === "مدى" ? t("common.mada") : p}</SelectItem>
+                {(listingType === "Sale" ? SALE_PAYMENT_TYPES : RENTAL_PAYMENT_TYPES).map((p) => (
+                  <SelectItem key={p} value={p}>{p}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
