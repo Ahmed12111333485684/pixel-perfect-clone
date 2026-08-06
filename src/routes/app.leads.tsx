@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   api,
@@ -51,7 +51,12 @@ import { toast } from "sonner";
 const INTENTS: LeadIntent[] = ["Buy", "Rent", "Sell", "LetOut"];
 const STATUSES: LeadStatus[] = ["New", "Contacted", "Qualified", "ClosedLost", "ClosedWon"];
 
-export const Route = createFileRoute("/app/leads")({ component: LeadsPage });
+export const Route = createFileRoute("/app/leads")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    selected: search.selected ? Number(search.selected) : undefined,
+  }),
+  component: LeadsPage,
+});
 
 function useAuthenticatedMedia(src: string) {
   const [media, setMedia] = useState<{ src: string; mimeType?: string } | null>(null);
@@ -217,6 +222,24 @@ function LeadsPage() {
     queryFn: () => api<Lead[]>("/leads"),
   });
 
+  const { selected: selectedId } = Route.useSearch();
+  const autoOpenedRef = useRef(false);
+  useEffect(() => {
+    if (!selectedId || autoOpenedRef.current || !list.data) return;
+    const match = list.data.find((l) => l.id === selectedId);
+    if (match) {
+      autoOpenedRef.current = true;
+      setSelected(match);
+      window.history.replaceState({}, "", "/app/leads");
+      requestAnimationFrame(() => {
+        document.querySelector(`[data-lead-id="${match.id}"]`)?.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+        });
+      });
+    }
+  }, [selectedId, list.data]);
+
   const update = useMutation({
     mutationFn: (vals: {
       id: number;
@@ -368,6 +391,7 @@ function LeadsPage() {
                 {grouped[s].map((l) => (
                   <button
                     key={l.id}
+                    data-lead-id={l.id}
                     onClick={() => setSelected(l)}
                     className="block w-full rounded-lg border border-border bg-background p-3 text-start transition hover:border-gold hover:shadow-card"
                   >

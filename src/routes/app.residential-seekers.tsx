@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState, useMemo } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { api, resolveApiAssetUrl, createPartner, type ResidentialSeeker, type RequestPropertySuggestion, fetchPartners, type UserDto, type Partner, ApiError } from "@/lib/api";
 import { PartnerDialog } from "@/components/partners/PartnerDialog";
@@ -28,6 +28,9 @@ import { PhoneField } from "@/components/form/PhoneField";
 import { CITIES, getDistricts } from "@/lib/locations";
 
 export const Route = createFileRoute("/app/residential-seekers")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    selected: search.selected ? Number(search.selected) : undefined,
+  }),
   component: ResidentialSeekersPage,
 });
 
@@ -188,6 +191,24 @@ function ResidentialSeekersPage() {
     }),
     enabled: hasAccess,
   });
+
+  const { selected: selectedId } = Route.useSearch();
+  const autoOpenedRef = useRef(false);
+  useEffect(() => {
+    if (!selectedId || autoOpenedRef.current || !seekers.data) return;
+    const match = seekers.data.items.find((r) => r.id === selectedId);
+    if (match) {
+      autoOpenedRef.current = true;
+      setSelected(match);
+      window.history.replaceState({}, "", "/app/residential-seekers");
+      requestAnimationFrame(() => {
+        document.querySelector(`[data-seeker-id="${match.id}"]`)?.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+        });
+      });
+    }
+  }, [selectedId, seekers.data]);
 
   const suggestionsQuery = useQuery({
     queryKey: ["residential-seeker-suggestions", selected?.id],
@@ -516,6 +537,7 @@ function ResidentialSeekersPage() {
           {filteredSeekers.map((r) => (
             <div
               key={r.id}
+              data-seeker-id={r.id}
               className="group cursor-pointer flex flex-col justify-between rounded-xl border border-border bg-card p-4 transition-all hover:border-primary/50 hover:shadow-md"
               onClick={() => setSelected(r)}
             >

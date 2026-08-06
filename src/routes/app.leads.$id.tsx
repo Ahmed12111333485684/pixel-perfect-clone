@@ -5,6 +5,8 @@ export const Route = createFileRoute("/app/leads/$id")({
 });
 
 function LeadRedirect() {
-  // Lead details are shown inline on the leads board.
-  return <Navigate to="/app/leads" />;
+  // Lead details are shown inline on the leads board, so redirect there and
+  // auto-open the item via the `selected` search param.
+  const { id } = Route.useParams();
+  return <Navigate to="/app/leads" search={{ selected: Number(id) }} />;
 }

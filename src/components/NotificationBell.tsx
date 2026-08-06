@@ -35,8 +35,7 @@ export function NotificationBell() {
   const handleItemClick = async (item: (typeof items)[0]) => {
     if (!item.read) await markRead(item.id);
     setOpen(false);
-    const link = item.link.replace(/\/app\/residential-seekers\/\d+$/, "/app/residential-seekers");
-    navigate({ to: link });
+    navigate({ to: item.link });
   };
 
   return (

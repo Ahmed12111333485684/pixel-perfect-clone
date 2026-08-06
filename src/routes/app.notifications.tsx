@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -49,6 +49,7 @@ function timeAgo(dateStr: string, t: TFunction): string {
 
 function NotificationsPage() {
   const { t, i18n } = useTranslation();
+  const navigate = useNavigate();
   const qc = useQueryClient();
   const isAr = i18n.language === "ar";
   const [page, setPage] = useState(1);
@@ -123,16 +124,23 @@ function NotificationsPage() {
               </thead>
               <tbody>
                 {list.data.notifications.map((item: NotificationItem) => (
-                  <tr key={item.id} className="border-t border-border transition hover:bg-muted/30">
+                  <tr
+                    key={item.id}
+                    className="cursor-pointer border-t border-border transition hover:bg-muted/30"
+                    onClick={() => {
+                      if (!item.read) markReadMut.mutate(item.id);
+                      navigate({ to: item.link });
+                    }}
+                  >
                     <td className="px-4 py-3">
                       <StatusBadge tone={item.type === "seeker" ? "info" : "success"}>
                         {item.type === "seeker" ? t("notifications.newSeeker") : t("notifications.newLead")}
                       </StatusBadge>
                     </td>
                     <td className="px-4 py-3 text-sm">
-                      <Link to={item.link.replace(/\/app\/residential-seekers\/\d+$/, "/app/residential-seekers")} className="font-medium hover:underline">
+                      <span className="font-medium hover:underline">
                         {isAr ? item.title : item.titleEn}
-                      </Link>
+                      </span>
                       <div className="mt-0.5 text-xs text-muted-foreground">
                         {isAr ? item.summary : item.summaryEn}
                       </div>
@@ -154,7 +162,10 @@ function NotificationsPage() {
                             variant="ghost"
                             size="icon"
                             className="h-8 w-8"
-                            onClick={() => markReadMut.mutate(item.id)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              markReadMut.mutate(item.id);
+                            }}
                             title={t("notifications.markRead")}
                           >
                             <CheckCheck className="h-4 w-4" />
@@ -164,7 +175,10 @@ function NotificationsPage() {
                           variant="ghost"
                           size="icon"
                           className="h-8 w-8 text-destructive hover:text-destructive"
-                          onClick={() => deleteMut.mutate(item.id)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            deleteMut.mutate(item.id);
+                          }}
                           title={t("common.delete")}
                         >
                           <X className="h-4 w-4" />
