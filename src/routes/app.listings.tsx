@@ -22,13 +22,25 @@ import { PhoneField } from "@/components/form/PhoneField";
 import { ComboboxField } from "@/components/form/ComboboxField";
 import { MultiComboboxField } from "@/components/form/MultiComboboxField";
 import { CITIES, getDistricts } from "@/lib/locations";
-import { PROPERTY_TYPES_BY_CATEGORY, getPropertyTypesByCategory } from "@/lib/property-types";
+import { getPropertyTypesByCategory } from "@/lib/property-types";
 import { CommercialListingImageManager } from "@/components/CommercialListingImageManager";
 import { resolveApiAssetUrl } from "@/lib/api";
 import { MediaLightbox } from "@/components/MediaLightbox";
+import { FilterBar } from "@/components/search/FilterBar";
+import { useUrlSearchState, matchesQuery, normalizeForSearch, parseAmount } from "@/lib/search";
 export const Route = createFileRoute("/app/listings")({
   validateSearch: (search: Record<string, unknown>) => ({
     selected: search.selected ? Number(search.selected) : undefined,
+    q: typeof search.q === "string" ? search.q : "",
+    deedQ: typeof search.deedQ === "string" ? search.deedQ : "",
+    status: typeof search.status === "string" && search.status ? search.status : "all",
+    dealType: typeof search.dealType === "string" && search.dealType ? search.dealType : "all",
+    listingCategory: typeof search.listingCategory === "string" && search.listingCategory ? search.listingCategory : "all",
+    city: typeof search.city === "string" ? search.city : "",
+    district: typeof search.district === "string" ? search.district : "",
+    page: typeof search.page === "number" && search.page > 0 ? search.page : 1,
+    sortBy: typeof search.sortBy === "string" ? search.sortBy : "createdAt",
+    sortDir: search.sortDir === "asc" ? "asc" : "desc",
   }),
   component: CommercialListingsPage,
 });
@@ -304,14 +316,34 @@ function CommercialListingsPage() {
   const auth = useAuth();
   const qc = useQueryClient();
 
-  const [q, setQ] = useState("");
-  const [deedQ, setDeedQ] = useState("");
-  const [status, setStatus] = useState<string>("all");
-  const [dealTypeFilter, setDealTypeFilter] = useState<string>("all");
-  const [page, setPage] = useState(1);
+  const [urlState, setUrlState] = useUrlSearchState(Route, {
+    selected: undefined as number | undefined,
+    q: "",
+    deedQ: "",
+    status: "all",
+    dealType: "all",
+    listingCategory: "all",
+    city: "",
+    district: "",
+    page: 1,
+    sortBy: "createdAt",
+    sortDir: "desc" as "asc" | "desc",
+  });
+  const { q, deedQ, status, dealType: dealTypeFilter, listingCategory: listingCategoryFilter, city, district, page, sortBy, sortDir } = urlState;
   const [pageSize] = useState(100);
-  const [sortBy, setSortBy] = useState<string>("createdAt");
-  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
+  const setQ = (value: string) => setUrlState({ q: value, page: 1 });
+  const setDeedQ = (value: string) => setUrlState({ deedQ: value, page: 1 });
+  const setStatus = (value: string) => setUrlState({ status: value, page: 1 });
+  const setDealTypeFilter = (value: string) => setUrlState({ dealType: value, page: 1 });
+  const setListingCategoryFilter = (value: string) => setUrlState({ listingCategory: value, page: 1 });
+  const setCity = (value: string) => setUrlState({ city: value, district: "", page: 1 });
+  const setDistrict = (value: string) => setUrlState({ district: value, page: 1 });
+  const setSortBy = (value: string) => setUrlState({ sortBy: value, page: 1 });
+  const setSortDir = (value: "asc" | "desc") => setUrlState({ sortDir: value, page: 1 });
+  const setPage = (value: number | ((current: number) => number)) =>
+    setUrlState((prev) => ({
+      page: typeof value === "function" ? value(prev.page) : Math.max(1, value),
+    }));
 
   const handleSort = (key: string) => {
     if (sortBy === key) {
@@ -384,7 +416,7 @@ function CommercialListingsPage() {
   const hasAccess = auth.hasRole("Admin") || auth.isPartner || auth.user?.screenPermissions.includes("/app/listings");
   const canManage = auth.isStaff || auth.isPartner;
 
-  // Aggregate all listing pages so we can search locally (including deed number)
+  // Aggregate all listing pages so we can search/filter locally (including deed number)
   const listings = useQuery<CommercialListing[]>({
     queryKey: ["commercial-listings"],
     queryFn: async () => {
@@ -393,8 +425,6 @@ function CommercialListingsPage() {
           query: {
             page: pageNumber,
             pageSize: 100,
-            sortBy: sortBy || undefined,
-            sortDir: sortDir || undefined,
           },
         });
 
@@ -409,6 +439,7 @@ function CommercialListingsPage() {
       return [...(firstPage.items ?? []), ...extraPages.flatMap((r) => r.items ?? [])];
     },
     enabled: hasAccess,
+    placeholderData: (prev) => prev,
   });
 
   const partners = useQuery({ queryKey: ["partners", "lookup"], queryFn: fetchPartners, enabled: hasAccess });
@@ -416,6 +447,7 @@ function CommercialListingsPage() {
   const amenities = useQuery({ queryKey: ["amenities"], queryFn: () => api<Amenity[]>("/amenities"), enabled: hasAccess });
 
   const { selected: selectedId } = Route.useSearch();
+  const navigate = Route.useNavigate();
   const autoOpenedRef = useRef(false);
   useEffect(() => {
     if (!selectedId || autoOpenedRef.current || !listings.data) return;
@@ -423,15 +455,21 @@ function CommercialListingsPage() {
     if (match) {
       autoOpenedRef.current = true;
       setSelected(match);
-      window.history.replaceState({}, "", "/app/listings");
+      navigate({
+        search: (prev: Record<string, unknown>) => ({ ...prev, selected: undefined }),
+        replace: true,
+      });
     }
-  }, [selectedId, listings.data]);
+  }, [selectedId, listings.data, navigate]);
 
   const handleReset = () => {
     setQ("");
     setDeedQ("");
     setStatus("all");
     setDealTypeFilter("all");
+    setListingCategoryFilter("all");
+    setCity("");
+    setDistrict("");
     setPage(1);
   };
 
@@ -547,28 +585,29 @@ function CommercialListingsPage() {
     { key: "employee", header: t("common.employee"), cell: (r) => r.employee || t("common.notProvided"), sortable: true },
   ];
 
-  if (!hasAccess) {
-    return (
-      <div className="rounded-xl border border-border bg-card p-8 text-center text-muted-foreground">
-        {t("common.noScreenAccess")}
-      </div>
-    );
-  }
-
-  // Client-side filtering so `رقم الصك` (deedNumber) is searchable
+  // Client-side filtering so `رقم الصك` (deedNumber) and every facet is searchable
   const filteredListings = useMemo(() => {
-    const lower = q.trim().toLowerCase();
-    const deedLower = deedQ.trim().toLowerCase();
     const items = listings.data ?? [];
-    return items.filter((record) => {
-      const qMatch =
-        !lower ||
-        [record.ownerName, record.deedNumber, record.city, Array.isArray(record.district) ? record.district.join(" ") : record.district, record.location, record.propertyType, record.propertyStatus, record.offerCode, record.mobile1, record.mobile2]
-          .some((v) => (v ?? "").toLowerCase().includes(lower));
+    const cityMatch = (record: CommercialListing) =>
+      !city || normalizeForSearch(record.city) === normalizeForSearch(city);
+    const districtMatch = (record: CommercialListing) => {
+      if (!district) return true;
+      const normalizedDistrict = normalizeForSearch(district);
+      return Array.isArray(record.district)
+        && record.district.some((d) => normalizeForSearch(d) === normalizedDistrict);
+    };
 
-      const deedMatch = !deedLower || (record.deedNumber ?? "").toLowerCase().includes(deedLower);
+    return items.filter((record) => {
+      const qMatch = matchesQuery(
+        [record.ownerName, record.deedNumber, record.city, record.district, record.location, record.propertyType, record.propertyStatus, record.offerCode, record.mobile1, record.mobile2, record.listingType, record.listingCategory],
+        q,
+      );
+      const deedMatch = matchesQuery([record.deedNumber], deedQ);
 
       const statusMatch = status === "all" || record.propertyStatus === status;
+
+      const listingCategoryMatch = listingCategoryFilter === "all"
+        || normalizeListingCategory(record.listingCategory) === normalizeListingCategory(listingCategoryFilter);
 
       let dealTypeMatch = true;
       if (dealTypeFilter !== "all") {
@@ -583,9 +622,9 @@ function CommercialListingsPage() {
         }
       }
 
-      return qMatch && deedMatch && statusMatch && dealTypeMatch;
+      return qMatch && deedMatch && statusMatch && listingCategoryMatch && dealTypeMatch && cityMatch(record) && districtMatch(record);
     });
-  }, [listings.data, q, deedQ, status, dealTypeFilter]);
+  }, [listings.data, q, deedQ, status, listingCategoryFilter, dealTypeFilter, city, district]);
 
   const totalPages = Math.max(1, Math.ceil(filteredListings.length / pageSize));
 
@@ -594,13 +633,55 @@ function CommercialListingsPage() {
   }, [totalPages]);
 
   const visibleListings = useMemo(() => {
+    const dir = sortDir === "asc" ? 1 : -1;
+    const sorted = [...filteredListings].sort((a, b) => {
+      let av: number | string;
+      let bv: number | string;
+      switch (sortBy) {
+        case "contactDate":
+          av = a.contactDate ?? ""; bv = b.contactDate ?? ""; break;
+        case "ownerName":
+          av = a.ownerName ?? ""; bv = b.ownerName ?? ""; break;
+        case "propertyStatus":
+          av = a.propertyStatus ?? ""; bv = b.propertyStatus ?? ""; break;
+        case "propertyType":
+          av = a.propertyType ?? ""; bv = b.propertyType ?? ""; break;
+        case "rentAmount":
+          av = parseAmount(a.rentAmount) ?? Number.MIN_SAFE_INTEGER;
+          bv = parseAmount(b.rentAmount) ?? Number.MIN_SAFE_INTEGER;
+          break;
+        case "listingCategory":
+          av = a.listingCategory ?? ""; bv = b.listingCategory ?? ""; break;
+        case "dealThrough":
+          av = a.dealThrough ?? ""; bv = b.dealThrough ?? ""; break;
+        case "paymentType":
+          av = a.paymentType ?? ""; bv = b.paymentType ?? ""; break;
+        case "city":
+          av = a.city ?? ""; bv = b.city ?? ""; break;
+        case "district":
+          av = Array.isArray(a.district) ? a.district.join(" - ") : (a.district ?? "");
+          bv = Array.isArray(b.district) ? b.district.join(" - ") : (b.district ?? "");
+          break;
+        case "location":
+          av = a.location ?? ""; bv = b.location ?? ""; break;
+        case "employee":
+          av = a.employee ?? ""; bv = b.employee ?? ""; break;
+        default:
+          av = a.createdAt ?? ""; bv = b.createdAt ?? ""; break;
+      }
+      if (av === bv) return 0;
+      const cmp = typeof av === "number" && typeof bv === "number"
+        ? av - bv
+        : String(av).localeCompare(String(bv), "ar");
+      return cmp * dir;
+    });
     const start = (page - 1) * pageSize;
-    return filteredListings.slice(start, start + pageSize);
-  }, [filteredListings, page, pageSize]);
+    return sorted.slice(start, start + pageSize);
+  }, [filteredListings, page, pageSize, sortBy, sortDir]);
 
   const unitInitialState = useMemo(() => {
     if (!creatingUnitFor) return null;
-    const src = creatingUnitFor as any;
+    const src = creatingUnitFor;
     return {
       parentId: src.id,
       contactDate: src.contactDate,
@@ -620,6 +701,14 @@ function CommercialListingsPage() {
     } as unknown as CommercialListing;
   }, [creatingUnitFor]);
 
+  if (!hasAccess) {
+    return (
+      <div className="rounded-xl border border-border bg-card p-8 text-center text-muted-foreground">
+        {t("common.noScreenAccess")}
+      </div>
+    );
+  }
+
   return (
     <div>
       <PageHeader
@@ -635,138 +724,116 @@ function CommercialListingsPage() {
         }
       />
 
-      <div className="mb-6 space-y-4 rounded-xl border border-border bg-card p-4">
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-          <div>
-            <Label htmlFor="q" className="text-xs font-medium">
-              {t("common.search")}
-            </Label>
-            <Input
-              id="q"
-              placeholder={t("common.search")}
-              value={q}
-              onChange={(e) => {
-                setQ(e.target.value);
-                setPage(1);
-              }}
-              className="mt-1"
-            />
-          </div>
+      <FilterBar
+        city={city}
+        district={district}
+        onCityChange={setCity}
+        onDistrictChange={setDistrict}
+        onReset={handleReset}
+        activeCount={[
+          q,
+          deedQ,
+          status !== "all" ? status : "",
+          dealTypeFilter !== "all" ? dealTypeFilter : "",
+          listingCategoryFilter !== "all" ? listingCategoryFilter : "",
+          city,
+          district,
+        ].filter(Boolean).length}
+        search={
+          <>
+            <div className="min-w-[220px] flex-1">
+              <Label htmlFor="q" className="text-xs font-medium">
+                {t("common.search")}
+              </Label>
+              <Input
+                id="q"
+                placeholder={t("common.search")}
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+                className="mt-1 w-full"
+              />
+            </div>
+            <div className="min-w-[200px]">
+              <Label htmlFor="deedQ" className="text-xs font-medium">{t("commercialListings.deedNumber")}</Label>
+              <Input
+                id="deedQ"
+                name="deedQ"
+                placeholder={t("commercialListings.deedNumber")}
+                value={deedQ}
+                onChange={(e) => setDeedQ(e.target.value)}
+                className="mt-1 w-full"
+              />
+            </div>
+          </>
+        }
+        facets={[
+          {
+            label: t("commercialListings.propertyStatus"),
+            value: status,
+            onValueChange: setStatus,
+            options: PROPERTY_STATUS_OPTIONS.map((option) => ({
+              value: option.value,
+              label: t(option.labelKey),
+            })),
+          },
+          {
+            label: t("commercialListings.listingType"),
+            value: dealTypeFilter,
+            onValueChange: setDealTypeFilter,
+            options: [
+              { value: "sale", label: t("listingType.Sale") },
+              { value: "rental", label: t("listingType.Rental") },
+              { value: "rental_commercial", label: t("residentialSeekers.investment") },
+            ],
+          },
+          {
+            label: t("commercialListings.listingCategory"),
+            value: listingCategoryFilter,
+            onValueChange: setListingCategoryFilter,
+            options: [
+              { value: "Commercial", label: t("listingCategory.Commercial") },
+              { value: "Residential", label: t("listingCategory.Residential") },
+            ],
+          },
+          {
+            label: t("common.sortBy"),
+            value: `${sortBy}-${sortDir}`,
+            allowAll: false,
+            onValueChange: (val) => {
+              const [k, d] = val.split("-");
+              setSortBy(k);
+              setSortDir(d as "asc" | "desc");
+            },
+            options: [
+              { value: "createdAt-desc", label: t("common.sortNewest") },
+              { value: "createdAt-asc", label: t("common.sortOldest") },
+              { value: "contactDate-desc", label: t("common.sortContactDateNewest") },
+              { value: "contactDate-asc", label: t("common.sortContactDateOldest") },
+              { value: "rentAmount-desc", label: t("common.sortPriceHighest") },
+              { value: "rentAmount-asc", label: t("common.sortPriceLowest") },
+            ],
+          },
+        ]}
+      />
 
-          <div className="sm:col-span-2 lg:col-span-1">
-            <Label htmlFor="deedQ" className="text-xs font-medium">{t("commercialListings.deedNumber")}</Label>
-            <Input
-              id="deedQ"
-              name="deedQ"
-              placeholder={t("commercialListings.deedNumber")}
-              value={deedQ}
-              onChange={(e) => {
-                setDeedQ(e.target.value);
-                setPage(1);
-              }}
-              className="mt-1"
-            />
-          </div>
-
-          <div>
-            <Label htmlFor="status" className="text-xs font-medium">
-              {t("commercialListings.propertyStatus")}
-            </Label>
-            <Select
-              value={status}
-              onValueChange={(value) => {
-                setStatus(value);
-                setPage(1);
-              }}
-            >
-              <SelectTrigger id="status" className="mt-1">
-                <SelectValue placeholder={t("common.all")} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">{t("common.all")}</SelectItem>
-                {PROPERTY_STATUS_OPTIONS.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {t(option.labelKey)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div>
-            <Label htmlFor="dealTypeFilter" className="text-xs font-medium">
-              {t("common.filter")}
-            </Label>
-            <Select
-              value={dealTypeFilter}
-              onValueChange={(value) => {
-                setDealTypeFilter(value);
-                setPage(1);
-              }}
-            >
-              <SelectTrigger id="dealTypeFilter" className="mt-1">
-                <SelectValue placeholder={t("common.all")} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">{t("common.all")}</SelectItem>
-                <SelectItem value="sale">{t("listingType.Sale")}</SelectItem>
-                <SelectItem value="rental">{t("listingType.Rental")}</SelectItem>
-                <SelectItem value="rental_commercial">{t("residentialSeekers.investment")}</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="w-full">
-            <Label className="text-xs font-medium">{t("common.sortBy")}</Label>
-            <Select
-              value={`${sortBy}-${sortDir}`}
-              onValueChange={(val) => {
-                const [k, d] = val.split("-");
-                setSortBy(k);
-                setSortDir(d as "asc" | "desc");
-                setPage(1);
-              }}
-            >
-              <SelectTrigger className="mt-1 w-full">
-                <SelectValue placeholder={t("common.sortBy")} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="createdAt-desc">{t("common.sortNewest")}</SelectItem>
-                <SelectItem value="createdAt-asc">{t("common.sortOldest")}</SelectItem>
-                <SelectItem value="contactDate-desc">{t("common.sortContactDateNewest")}</SelectItem>
-                <SelectItem value="contactDate-asc">{t("common.sortContactDateOldest")}</SelectItem>
-                <SelectItem value="rentAmount-desc">{t("common.sortPriceHighest")}</SelectItem>
-                <SelectItem value="rentAmount-asc">{t("common.sortPriceLowest")}</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-
-        <div className="flex items-center justify-between">
-          <div className="flex gap-2">
-            <Button size="sm" variant="outline" onClick={handleReset} className="w-fit">
-              {t("common.filter")}
-              {(q || status !== "all" || dealTypeFilter !== "all") && <X className="ms-1 h-3 w-3" />}
-            </Button>
-          </div>
-          <div className="flex items-center rounded-md border border-border p-1 bg-muted/50">
-            <Button
-              size="sm"
-              variant={viewMode === "card" ? "secondary" : "ghost"}
-              className="h-7 px-2"
-              onClick={() => setViewMode("card")}
-            >
-              <LayoutGrid className="h-4 w-4" />
-            </Button>
-            <Button
-              size="sm"
-              variant={viewMode === "table" ? "secondary" : "ghost"}
-              className="h-7 px-2"
-              onClick={() => setViewMode("table")}
-            >
-              <List className="h-4 w-4" />
-            </Button>
-          </div>
+      <div className="mb-4 flex items-center justify-end">
+        <div className="flex items-center rounded-md border border-border p-1 bg-muted/50">
+          <Button
+            size="sm"
+            variant={viewMode === "card" ? "secondary" : "ghost"}
+            className="h-7 px-2"
+            onClick={() => setViewMode("card")}
+          >
+            <LayoutGrid className="h-4 w-4" />
+          </Button>
+          <Button
+            size="sm"
+            variant={viewMode === "table" ? "secondary" : "ghost"}
+            className="h-7 px-2"
+            onClick={() => setViewMode("table")}
+          >
+            <List className="h-4 w-4" />
+          </Button>
         </div>
       </div>
 

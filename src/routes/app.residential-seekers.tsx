@@ -7,7 +7,7 @@ import { api, resolveApiAssetUrl, createPartner, type ResidentialSeeker, type Re
 import { PartnerDialog } from "@/components/partners/PartnerDialog";
 import { useAuth } from "@/lib/auth";
 import { todayLocal } from "@/lib/format";
-import { PROPERTY_TYPES_BY_CATEGORY, PROPERTY_CATEGORIES, getPropertyTypesByCategory, localizePropertyType } from "@/lib/property-types";
+import { PROPERTY_CATEGORIES, getPropertyTypesByCategory, localizePropertyType } from "@/lib/property-types";
 import { NATIONALITIES } from "@/lib/nationalities";
 import { PAYMENT_TYPES } from "@/lib/payment-types";
 import { PageHeader, StatusBadge } from "@/components/PageHeader";
@@ -19,17 +19,28 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Building2, MapPin, Plus, Sparkles, X, LayoutGrid, List } from "lucide-react";
+import { Building2, MapPin, Plus, Sparkles, LayoutGrid, List } from "lucide-react";
 import { RiyalIcon } from "@/components/icons/RiyalIcon";
 import { toast } from "sonner";
 import { ComboboxField } from "@/components/form/ComboboxField";
 import { MultiComboboxField } from "@/components/form/MultiComboboxField";
 import { PhoneField } from "@/components/form/PhoneField";
 import { CITIES, getDistricts } from "@/lib/locations";
+import { FilterBar } from "@/components/search/FilterBar";
+import { useUrlSearchState, matchesQuery, normalizeForSearch } from "@/lib/search";
 
 export const Route = createFileRoute("/app/residential-seekers")({
   validateSearch: (search: Record<string, unknown>) => ({
     selected: search.selected ? Number(search.selected) : undefined,
+    q: typeof search.q === "string" ? search.q : "",
+    status: typeof search.status === "string" && search.status ? search.status : "all",
+    listingType: typeof search.listingType === "string" && search.listingType ? search.listingType : "all",
+    requestCategory: typeof search.requestCategory === "string" && search.requestCategory ? search.requestCategory : "all",
+    city: typeof search.city === "string" ? search.city : "",
+    district: typeof search.district === "string" ? search.district : "",
+    page: typeof search.page === "number" && search.page > 0 ? search.page : 1,
+    sortBy: typeof search.sortBy === "string" ? search.sortBy : "createdAt",
+    sortDir: search.sortDir === "asc" ? "asc" : "desc",
   }),
   component: ResidentialSeekersPage,
 });
@@ -111,12 +122,32 @@ function ResidentialSeekersPage() {
   const auth = useAuth();
   const qc = useQueryClient();
 
-  const [q, setQ] = useState("");
-  const [status, setStatus] = useState<string>("all");
-  const [page, setPage] = useState(1);
+  const [urlState, setUrlState] = useUrlSearchState(Route, {
+    selected: undefined as number | undefined,
+    q: "",
+    status: "all",
+    listingType: "all",
+    requestCategory: "all",
+    city: "",
+    district: "",
+    page: 1,
+    sortBy: "createdAt",
+    sortDir: "desc" as "asc" | "desc",
+  });
+  const { q, status, listingType, requestCategory, city, district, page, sortBy, sortDir } = urlState;
   const [pageSize] = useState(100);
-  const [sortBy, setSortBy] = useState<string>("createdAt");
-  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
+  const setQ = (value: string) => setUrlState({ q: value, page: 1 });
+  const setStatus = (value: string) => setUrlState({ status: value, page: 1 });
+  const setListingType = (value: string) => setUrlState({ listingType: value, page: 1 });
+  const setRequestCategory = (value: string) => setUrlState({ requestCategory: value, page: 1 });
+  const setCity = (value: string) => setUrlState({ city: value, district: "", page: 1 });
+  const setDistrict = (value: string) => setUrlState({ district: value, page: 1 });
+  const setSortBy = (value: string) => setUrlState({ sortBy: value, page: 1 });
+  const setSortDir = (value: "asc" | "desc") => setUrlState({ sortDir: value, page: 1 });
+  const setPage = (value: number | ((current: number) => number)) =>
+    setUrlState((prev) => ({
+      page: typeof value === "function" ? value(prev.page) : Math.max(1, value),
+    }));
 
   const handleSort = (key: string) => {
     if (sortBy === key) {
@@ -177,30 +208,42 @@ function ResidentialSeekersPage() {
   const canManage = auth.isStaff || auth.isPartner;
   const isAdmin = auth.hasRole("Admin");
 
-  const seekers = useQuery({
-    queryKey: ["residential-seekers", { q, status, page, pageSize, sortBy, sortDir }],
-    queryFn: () => api<ResidentialSeekersSearchResult>("/residential-seekers", {
-      query: {
-        q: q || undefined,
-        status: status !== "all" ? status : undefined,
-        page,
-        pageSize,
-        sortBy: sortBy || undefined,
-        sortDir: sortDir || undefined,
-      },
-    }),
+  // Fetch all seekers (paginated client-side) so we can filter locally on every facet.
+  const seekers = useQuery<ResidentialSeeker[]>({
+    queryKey: ["residential-seekers", "all"],
+    queryFn: async () => {
+      const fetchPage = (pageNumber: number) =>
+        api<ResidentialSeekersSearchResult>("/residential-seekers", {
+          query: { page: pageNumber, pageSize: 100 },
+        });
+
+      const firstPage = await fetchPage(1);
+      const totalPages = Math.max(1, Math.ceil((firstPage.total ?? 0) / 100));
+      if (totalPages === 1) return firstPage.items ?? [];
+
+      const extraPages = await Promise.all(
+        Array.from({ length: totalPages - 1 }, (_, index) => fetchPage(index + 2)),
+      );
+
+      return [...(firstPage.items ?? []), ...extraPages.flatMap((r) => r.items ?? [])];
+    },
     enabled: hasAccess,
+    placeholderData: (prev) => prev,
   });
 
   const { selected: selectedId } = Route.useSearch();
+  const navigate = Route.useNavigate();
   const autoOpenedRef = useRef(false);
   useEffect(() => {
     if (!selectedId || autoOpenedRef.current || !seekers.data) return;
-    const match = seekers.data.items.find((r) => r.id === selectedId);
+    const match = seekers.data.find((r) => r.id === selectedId);
     if (match) {
       autoOpenedRef.current = true;
       setSelected(match);
-      window.history.replaceState({}, "", "/app/residential-seekers");
+      navigate({
+        search: (prev: Record<string, unknown>) => ({ ...prev, selected: undefined }),
+        replace: true,
+      });
       requestAnimationFrame(() => {
         document.querySelector(`[data-seeker-id="${match.id}"]`)?.scrollIntoView({
           behavior: "smooth",
@@ -208,7 +251,7 @@ function ResidentialSeekersPage() {
         });
       });
     }
-  }, [selectedId, seekers.data]);
+  }, [selectedId, seekers.data, navigate]);
 
   const suggestionsQuery = useQuery({
     queryKey: ["residential-seeker-suggestions", selected?.id],
@@ -221,6 +264,10 @@ function ResidentialSeekersPage() {
   const handleReset = () => {
     setQ("");
     setStatus("all");
+    setListingType("all");
+    setRequestCategory("all");
+    setCity("");
+    setDistrict("");
     setPage(1);
   };
 
@@ -292,6 +339,11 @@ function ResidentialSeekersPage() {
     if (normalized === STATUS_NOT_DONE) return t("residentialSeekers.statusNotDone");
     return value ?? t("common.notProvided");
   };
+
+  const maxBudgetLabelFor = (value?: string | null) =>
+    normalizeValue(value).toLowerCase() === "rental"
+      ? t("residentialSeekers.maxRentalBudget")
+      : t("residentialSeekers.maxBudget");
 
   const columns: Column<ResidentialSeeker>[] = [
     {
@@ -385,6 +437,64 @@ function ResidentialSeekersPage() {
     },
   ];
 
+  const filteredSeekers = useMemo(() => {
+    const items = seekers.data ?? [];
+    const cityMatch = (r: ResidentialSeeker) =>
+      !city || normalizeForSearch(r.city) === normalizeForSearch(city);
+    const districtMatch = (r: ResidentialSeeker) => {
+      if (!district) return true;
+      const normalizedDistrict = normalizeForSearch(district);
+      return Array.isArray(r.district)
+        && r.district.some((d) => normalizeForSearch(d) === normalizedDistrict);
+    };
+
+    const filtered = items.filter((r) => {
+      const qMatch = matchesQuery(
+        [r.serialNumber, r.fullName, r.mobile, r.preferredLocation, r.city, r.district, r.requestDescription, r.notes, r.listingType, r.propertyType],
+        q,
+      );
+      const statusMatch = status === "all" || r.status === status;
+      const listingTypeMatch = listingType === "all"
+        || normalizeForSearch(r.listingType) === normalizeForSearch(listingType);
+      const requestCategoryMatch = requestCategory === "all"
+        || normalizeForSearch(r.requestCategory) === normalizeForSearch(requestCategory);
+      return qMatch && statusMatch && listingTypeMatch && requestCategoryMatch && cityMatch(r) && districtMatch(r);
+    });
+
+    const dir = sortDir === "asc" ? 1 : -1;
+    return [...filtered].sort((a, b) => {
+      let av: string;
+      let bv: string;
+      switch (sortBy) {
+        case "requestDate":
+          av = a.requestDate ?? ""; bv = b.requestDate ?? ""; break;
+        case "reviewDate":
+          av = a.reviewDate ?? ""; bv = b.reviewDate ?? ""; break;
+        case "fullName":
+          av = a.fullName ?? ""; bv = b.fullName ?? ""; break;
+        case "status":
+          av = a.status ?? ""; bv = b.status ?? ""; break;
+        case "employee":
+          av = a.employee ?? ""; bv = b.employee ?? ""; break;
+        default:
+          av = a.createdAt ?? ""; bv = b.createdAt ?? ""; break;
+      }
+      if (av === bv) return 0;
+      return av.localeCompare(bv, "ar") * dir;
+    });
+  }, [seekers.data, q, status, listingType, requestCategory, city, district, sortBy, sortDir]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredSeekers.length / pageSize));
+
+  const visibleSeekers = useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return filteredSeekers.slice(start, start + pageSize);
+  }, [filteredSeekers, page, pageSize]);
+
+  useEffect(() => {
+    setPage((current) => Math.min(current, totalPages));
+  }, [totalPages]);
+
   if (!hasAccess) {
     return (
       <div className="rounded-xl border border-border bg-card p-8 text-center text-muted-foreground">
@@ -392,12 +502,6 @@ function ResidentialSeekersPage() {
       </div>
     );
   }
-
-  const filteredSeekers = useMemo(() => {
-    return seekers.data?.items ?? [];
-  }, [seekers.data?.items]);
-
-  const totalPages = Math.ceil((seekers.data?.total ?? 0) / pageSize);
 
   return (
     <div>
@@ -412,9 +516,22 @@ function ResidentialSeekersPage() {
         ) : undefined}
       />
 
-      <div className="mb-6 space-y-4 rounded-xl border border-border bg-card p-4">
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <div>
+      <FilterBar
+        city={city}
+        district={district}
+        onCityChange={setCity}
+        onDistrictChange={setDistrict}
+        onReset={handleReset}
+        activeCount={[
+          q,
+          status !== "all" ? status : "",
+          listingType !== "all" ? listingType : "",
+          requestCategory !== "all" ? requestCategory : "",
+          city,
+          district,
+        ].filter(Boolean).length}
+        search={
+          <div className="min-w-[220px] flex-1">
             <Label htmlFor="q" className="text-xs font-medium">
               {t("common.search")}
             </Label>
@@ -422,87 +539,78 @@ function ResidentialSeekersPage() {
               id="q"
               placeholder={t("residentialSeekers.searchPlaceholder")}
               value={q}
-              onChange={(e) => {
-                setQ(e.target.value);
-                setPage(1);
-              }}
-              className="mt-1"
+              onChange={(e) => setQ(e.target.value)}
+              className="mt-1 w-full"
             />
           </div>
+        }
+        facets={[
+          {
+            label: t("residentialSeekers.status"),
+            value: status,
+            onValueChange: setStatus,
+            options: [
+              { value: STATUS_NOT_DONE, label: t("residentialSeekers.statusNotDone") },
+              { value: STATUS_DONE, label: t("residentialSeekers.statusDone") },
+            ],
+          },
+          {
+            label: t("residentialSeekers.listingType"),
+            value: listingType,
+            onValueChange: setListingType,
+            options: [
+              { value: "Rental", label: t("listingType.Rental") },
+              { value: "Sale", label: t("listingType.Sale") },
+            ],
+          },
+          {
+            label: t("residentialSeekers.requestCategory"),
+            value: requestCategory,
+            onValueChange: setRequestCategory,
+            options: PROPERTY_CATEGORIES.map((cat) => ({
+              value: cat,
+              label: t(`listingCategory.${cat === "سكني" ? "Residential" : "Commercial"}`),
+            })),
+          },
+          {
+            label: t("residentialSeekers.sortBy"),
+            value: `${sortBy}-${sortDir}`,
+            allowAll: false,
+            onValueChange: (val) => {
+              const [k, d] = val.split("-");
+              setSortBy(k);
+              setSortDir(d as "asc" | "desc");
+            },
+            options: [
+              { value: "createdAt-desc", label: t("residentialSeekers.sortNewest") },
+              { value: "createdAt-asc", label: t("residentialSeekers.sortOldest") },
+              { value: "requestDate-desc", label: t("residentialSeekers.sortRequestDateNewest") },
+              { value: "requestDate-asc", label: t("residentialSeekers.sortRequestDateOldest") },
+              { value: "fullName-asc", label: t("residentialSeekers.sortNameAsc") },
+              { value: "fullName-desc", label: t("residentialSeekers.sortNameDesc") },
+            ],
+          },
+        ]}
+      />
 
-          <div>
-            <Label htmlFor="status" className="text-xs font-medium">
-              {t("residentialSeekers.status")}
-            </Label>
-            <Select
-              value={status}
-              onValueChange={(value) => {
-                setStatus(value);
-                setPage(1);
-              }}
-            >
-              <SelectTrigger id="status" className="mt-1">
-                <SelectValue placeholder={t("common.all")} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">{t("common.all")}</SelectItem>
-                <SelectItem value={STATUS_NOT_DONE}>{t("residentialSeekers.statusNotDone")}</SelectItem>
-                <SelectItem value={STATUS_DONE}>{t("residentialSeekers.statusDone")}</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="w-full">
-            <Label className="text-xs font-medium">{t("residentialSeekers.sortBy")}</Label>
-            <Select
-              value={`${sortBy}-${sortDir}`}
-              onValueChange={(val) => {
-                const [k, d] = val.split("-");
-                setSortBy(k);
-                setSortDir(d as "asc" | "desc");
-                setPage(1);
-              }}
-            >
-              <SelectTrigger className="mt-1 w-full">
-                <SelectValue placeholder={t("residentialSeekers.sortBy")} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="createdAt-desc">{t("residentialSeekers.sortNewest")}</SelectItem>
-                <SelectItem value="createdAt-asc">{t("residentialSeekers.sortOldest")}</SelectItem>
-                <SelectItem value="requestDate-desc">{t("residentialSeekers.sortRequestDateNewest")}</SelectItem>
-                <SelectItem value="requestDate-asc">{t("residentialSeekers.sortRequestDateOldest")}</SelectItem>
-                <SelectItem value="fullName-asc">{t("residentialSeekers.sortNameAsc")}</SelectItem>
-                <SelectItem value="fullName-desc">{t("residentialSeekers.sortNameDesc")}</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-
-        <div className="flex items-center justify-between">
-          <div className="flex gap-2">
-            <Button size="sm" variant="outline" onClick={handleReset} className="w-fit">
-              {t("common.filter")}
-              {(q || status !== "all") && <X className="ms-1 h-3 w-3" />}
-            </Button>
-          </div>
-          <div className="flex items-center rounded-md border border-border p-1 bg-muted/50">
-            <Button
-              size="sm"
-              variant={viewMode === "card" ? "secondary" : "ghost"}
-              className="h-7 px-2"
-              onClick={() => setViewMode("card")}
-            >
-              <LayoutGrid className="h-4 w-4" />
-            </Button>
-            <Button
-              size="sm"
-              variant={viewMode === "table" ? "secondary" : "ghost"}
-              className="h-7 px-2"
-              onClick={() => setViewMode("table")}
-            >
-              <List className="h-4 w-4" />
-            </Button>
-          </div>
+      <div className="mb-4 flex items-center justify-end">
+        <div className="flex items-center rounded-md border border-border p-1 bg-muted/50">
+          <Button
+            size="sm"
+            variant={viewMode === "card" ? "secondary" : "ghost"}
+            className="h-7 px-2"
+            onClick={() => setViewMode("card")}
+          >
+            <LayoutGrid className="h-4 w-4" />
+          </Button>
+          <Button
+            size="sm"
+            variant={viewMode === "table" ? "secondary" : "ghost"}
+            className="h-7 px-2"
+            onClick={() => setViewMode("table")}
+          >
+            <List className="h-4 w-4" />
+          </Button>
         </div>
       </div>
 
@@ -521,7 +629,7 @@ function ResidentialSeekersPage() {
       ) : viewMode === "table" ? (
         <DataTable
           columns={columns}
-          rows={filteredSeekers}
+          rows={visibleSeekers}
           loading={seekers.isLoading}
           error={seekers.error}
           rowKey={(r) => r.id}
@@ -534,7 +642,7 @@ function ResidentialSeekersPage() {
         />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {filteredSeekers.map((r) => (
+          {visibleSeekers.map((r) => (
             <div
               key={r.id}
               data-seeker-id={r.id}
@@ -573,7 +681,7 @@ function ResidentialSeekersPage() {
                     <span>{Array.isArray(r.district) ? r.district.join(" - ") : (r.district || t("common.notProvided"))}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">{t("residentialSeekers.maxBudget")}</span>
+                    <span className="text-muted-foreground">{maxBudgetLabelFor(r.listingType)}</span>
                     <span>{r.maxBudget || t("common.notProvided")}</span>
                   </div>
                   {r.requestDescription && (
@@ -627,7 +735,7 @@ function ResidentialSeekersPage() {
         </div>
       )}
 
-      {(seekers.data?.total ?? 0) > 0 && (
+      {filteredSeekers.length > 0 && (
         <div className="mt-4 flex items-center justify-between">
           <div className="text-sm text-muted-foreground">
             {t("common.of", { defaultValue: "Showing" })} {(page - 1) * pageSize + 1}

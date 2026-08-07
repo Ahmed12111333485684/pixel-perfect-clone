@@ -18,11 +18,23 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, X } from "lucide-react";
+import { Plus } from "lucide-react";
 import { toast } from "sonner";
 import { formatDate } from "@/lib/format";
+import { FilterBar } from "@/components/search/FilterBar";
+import { useUrlSearchState, matchesQuery, normalizeForSearch, parseAmount } from "@/lib/search";
 
 export const Route = createFileRoute("/app/advertisements")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    q: typeof search.q === "string" ? search.q : "",
+    status: typeof search.status === "string" && search.status ? search.status : "all",
+    adType: typeof search.adType === "string" && search.adType ? search.adType : "all",
+    installationType: typeof search.installationType === "string" && search.installationType ? search.installationType : "all",
+    propertyType: typeof search.propertyType === "string" && search.propertyType ? search.propertyType : "all",
+    page: typeof search.page === "number" && search.page > 0 ? search.page : 1,
+    sortBy: typeof search.sortBy === "string" ? search.sortBy : "createdAt",
+    sortDir: search.sortDir === "asc" ? "asc" : "desc",
+  }),
   component: AdvertisementsPage,
 });
 
@@ -164,12 +176,29 @@ function AdvertisementsPage() {
   const auth = useAuth();
   const qc = useQueryClient();
 
-  const [q, setQ] = useState("");
-  const [status, setStatus] = useState<string>("all");
-  const [page, setPage] = useState(1);
+  const [urlState, setUrlState] = useUrlSearchState(Route, {
+    q: "",
+    status: "all",
+    adType: "all",
+    installationType: "all",
+    propertyType: "all",
+    page: 1,
+    sortBy: "createdAt",
+    sortDir: "desc" as "asc" | "desc",
+  });
+  const { q, status, adType, installationType, propertyType, page, sortBy, sortDir } = urlState;
   const [pageSize] = useState(100);
-  const [sortBy, setSortBy] = useState<string>("createdAt");
-  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
+  const setQ = (value: string) => setUrlState({ q: value, page: 1 });
+  const setStatus = (value: string) => setUrlState({ status: value, page: 1 });
+  const setAdType = (value: string) => setUrlState({ adType: value, page: 1 });
+  const setInstallationType = (value: string) => setUrlState({ installationType: value, page: 1 });
+  const setPropertyType = (value: string) => setUrlState({ propertyType: value, page: 1 });
+  const setSortBy = (value: string) => setUrlState({ sortBy: value, page: 1 });
+  const setSortDir = (value: "asc" | "desc") => setUrlState({ sortDir: value, page: 1 });
+  const setPage = (value: number | ((current: number) => number)) =>
+    setUrlState((prev) => ({
+      page: typeof value === "function" ? value(prev.page) : Math.max(1, value),
+    }));
 
   const handleSort = (key: string) => {
     if (sortBy === key) {
@@ -178,7 +207,6 @@ function AdvertisementsPage() {
       setSortBy(key);
       setSortDir("asc");
     }
-    setPage(1);
   };
   const [creating, setCreating] = useState(false);
   const [selected, setSelected] = useState<Advertisement | null>(null);
@@ -200,8 +228,6 @@ function AdvertisementsPage() {
           query: {
             page: pageNumber,
             pageSize: 100,
-            sortBy: sortBy || undefined,
-            sortDir: sortDir || undefined,
           },
         });
 
@@ -227,16 +253,16 @@ function AdvertisementsPage() {
   const handleReset = () => {
     setQ("");
     setStatus("all");
-    setPage(1);
+    setAdType("all");
+    setInstallationType("all");
+    setPropertyType("all");
   };
 
   const filteredAdvertisements = useMemo(() => {
-    const lowerSearch = q.trim().toLowerCase();
-    return (advertisements.data ?? []).filter((advertisement) => {
+    const filtered = (advertisements.data ?? []).filter((advertisement) => {
       const propertyDeed =
         properties.data?.find((p) => p.id === advertisement.propertyId)?.deedNumber ?? "";
-      const searchMatch =
-        !lowerSearch ||
+      const searchMatch = matchesQuery(
         [
           advertisement.code,
           advertisement.status,
@@ -254,11 +280,67 @@ function AdvertisementsPage() {
           String(advertisement.remainingAmount ?? ""),
           advertisement.notes,
           propertyDeed,
-        ].some((value) => (value ?? "").toLowerCase().includes(lowerSearch));
+        ],
+        q,
+      );
       const statusMatch = status === "all" || advertisement.status === status;
-      return searchMatch && statusMatch;
+      const adTypeMatch = adType === "all"
+        || normalizeForSearch(advertisement.adType) === normalizeForSearch(adType);
+      const installationTypeMatch = installationType === "all"
+        || normalizeForSearch(advertisement.installationType) === normalizeForSearch(installationType);
+      const propertyTypeMatch = propertyType === "all"
+        || normalizeForSearch(advertisement.propertyType) === normalizeForSearch(propertyType);
+      return searchMatch && statusMatch && adTypeMatch && installationTypeMatch && propertyTypeMatch;
     });
-  }, [advertisements.data, q, status]);
+
+    const dir = sortDir === "asc" ? 1 : -1;
+    return [...filtered].sort((a, b) => {
+      let av: string;
+      let bv: string;
+      switch (sortBy) {
+        case "code":
+          av = a.code; bv = b.code; break;
+        case "status":
+          av = a.status; bv = b.status; break;
+        case "propertyType":
+          av = a.propertyType; bv = b.propertyType; break;
+        case "adType":
+          av = a.adType; bv = b.adType; break;
+        case "installationType":
+          av = a.installationType; bv = b.installationType; break;
+        case "officeName":
+          av = a.officeName ?? ""; bv = b.officeName ?? ""; break;
+        case "boardPrice": {
+          const an = parseAmount(a.boardPrice ?? "");
+          const bn = parseAmount(b.boardPrice ?? "");
+          return (an - bn) * dir;
+        }
+        case "remainingAmount": {
+          const an = parseAmount(a.remainingAmount ?? "");
+          const bn = parseAmount(b.remainingAmount ?? "");
+          return (an - bn) * dir;
+        }
+        case "quantity": {
+          const an = Number(a.quantity) || 0;
+          const bn = Number(b.quantity) || 0;
+          return (an - bn) * dir;
+        }
+        case "locationChangeCount": {
+          const an = Number(a.locationChangeCount) || 0;
+          const bn = Number(b.locationChangeCount) || 0;
+          return (an - bn) * dir;
+        }
+        case "visitDate":
+          av = a.visitDate ?? ""; bv = b.visitDate ?? ""; break;
+        case "expiryDate":
+          av = a.expiryDate ?? ""; bv = b.expiryDate ?? ""; break;
+        default:
+          av = a.createdAt ?? ""; bv = b.createdAt ?? ""; break;
+      }
+      if (av === bv) return 0;
+      return av.localeCompare(bv, "ar") * dir;
+    });
+  }, [advertisements.data, properties.data, q, status, adType, installationType, propertyType, sortBy, sortDir]);
 
   const totalPages = Math.max(1, Math.ceil(filteredAdvertisements.length / pageSize));
 
@@ -439,9 +521,18 @@ function AdvertisementsPage() {
         }
       />
 
-      <div className="mb-6 space-y-4 rounded-xl border border-border bg-card p-4">
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <div>
+      <FilterBar
+        showLocation={false}
+        onReset={handleReset}
+        activeCount={[
+          q,
+          status !== "all" ? status : "",
+          adType !== "all" ? adType : "",
+          installationType !== "all" ? installationType : "",
+          propertyType !== "all" ? propertyType : "",
+        ].filter(Boolean).length}
+        search={
+          <div className="min-w-[220px] flex-1">
             <Label htmlFor="q" className="text-xs font-medium">
               {t("common.search")}
             </Label>
@@ -449,47 +540,50 @@ function AdvertisementsPage() {
               id="q"
               placeholder={t("common.search")}
               value={q}
-              onChange={(e) => {
-                setQ(e.target.value);
-                setPage(1);
-              }}
-              className="mt-1"
+              onChange={(e) => setQ(e.target.value)}
+              className="mt-1 w-full"
             />
           </div>
-
-          <div>
-            <Label htmlFor="status" className="text-xs font-medium">
-              {t("advertisements.status")}
-            </Label>
-            <Select
-              value={status}
-              onValueChange={(value) => {
-                setStatus(value);
-                setPage(1);
-              }}
-            >
-              <SelectTrigger id="status" className="mt-1">
-                <SelectValue placeholder={t("common.all")} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">{t("common.all")}</SelectItem>
-                {STATUS_VALUES.map((value) => (
-                  <SelectItem key={value} value={value}>
-                    {t(STATUS_KEY_MAP[value])}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-
-        <div className="flex gap-2">
-          <Button size="sm" variant="outline" onClick={handleReset} className="w-fit">
-            {t("common.filter")}
-            {(q || status !== "all") && <X className="ms-1 h-3 w-3" />}
-          </Button>
-        </div>
-      </div>
+        }
+        facets={[
+          {
+            label: t("advertisements.status"),
+            value: status,
+            onValueChange: setStatus,
+            options: STATUS_VALUES.map((value) => ({
+              value,
+              label: t(STATUS_KEY_MAP[value]),
+            })),
+          },
+          {
+            label: t("advertisements.adType"),
+            value: adType,
+            onValueChange: setAdType,
+            options: AD_TYPE_VALUES.map((value) => ({
+              value,
+              label: t(AD_TYPE_KEY_MAP[value]),
+            })),
+          },
+          {
+            label: t("advertisements.installationType"),
+            value: installationType,
+            onValueChange: setInstallationType,
+            options: INSTALLATION_TYPE_VALUES.map((value) => ({
+              value,
+              label: t(INSTALLATION_TYPE_KEY_MAP[value]),
+            })),
+          },
+          {
+            label: t("advertisements.propertyType"),
+            value: propertyType,
+            onValueChange: setPropertyType,
+            options: PROPERTY_TYPE_VALUES.map((value) => ({
+              value,
+              label: t(PROPERTY_TYPE_KEY_MAP[value]),
+            })),
+          },
+        ]}
+      />
 
       <DataTable
         columns={columns}

@@ -12,6 +12,7 @@ import { PageHeader } from "@/components/PageHeader";
 import { PublicFooter } from "@/components/PublicFooter";
 import { MediaPreview } from "@/components/MediaPreview";
 import { formatDate } from "@/lib/format";
+import { parseAmount, normalizeForSearch } from "@/lib/search";
 import {
   Building2,
   MapPin,
@@ -87,14 +88,14 @@ function AvailablePropertiesPage() {
         );
       }
       if (filters.location) {
-        const q = filters.location.toLowerCase();
-        result = result.filter(l => l.location?.toLowerCase().includes(q));
+        const q = normalizeForSearch(filters.location);
+        result = result.filter(l => normalizeForSearch(l.location ?? "").includes(q));
       }
       if (filters.maxBudget) {
-        const budget = Number(filters.maxBudget);
+        const budget = parseAmount(filters.maxBudget);
         if (!isNaN(budget)) {
           result = result.filter(l => {
-            const price = parseFloat(l.rentAmount ?? "0");
+            const price = parseAmount(l.rentAmount ?? "");
             return !isNaN(price) && price <= budget;
           });
         }
