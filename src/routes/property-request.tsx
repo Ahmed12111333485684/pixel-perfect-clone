@@ -22,6 +22,7 @@ import { PROPERTY_TYPES_BY_CATEGORY, PROPERTY_CATEGORIES, getPropertyTypesByCate
 import { NATIONALITIES } from "@/lib/nationalities";
 import { ComboboxField } from "@/components/form/ComboboxField";
 import { MultiComboboxField } from "@/components/form/MultiComboboxField";
+import { PhoneField } from "@/components/form/PhoneField";
 import { CITIES, getDistricts } from "@/lib/locations";
 
 export const Route = createFileRoute("/property-request")({
@@ -331,15 +332,11 @@ function PropertyRequestPage() {
                 </div>
 
                 <div>
-                  <Label htmlFor="mobileNumber" className="text-xs font-medium">
-                    {t("common.mobileNumber")} *
-                  </Label>
-                  <Input
+                  <PhoneField
                     id="mobileNumber"
-                    name="mobileNumber"
+                    label={t("common.mobileNumber")}
+                    readOnly={false}
                     required
-                    placeholder={t("common.mobileNumber")}
-                    className="mt-1"
                   />
                 </div>
 
