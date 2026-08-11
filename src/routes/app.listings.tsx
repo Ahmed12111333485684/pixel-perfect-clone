@@ -1531,7 +1531,9 @@ function CommercialListingDialog({
         <Label className="text-sm font-medium">{t("nav.amenities", { defaultValue: "Amenities" })}</Label>
         {amenities.length > 0 ? (
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {amenities.map((amenity) => (
+            {amenities
+              .filter((amenity) => amenity.isSelectable || selectedAmenityIds.includes(amenity.id))
+              .map((amenity) => (
               <label key={amenity.id} className="flex items-center gap-2 text-sm">
                 <Checkbox
                   checked={selectedAmenityIds.includes(amenity.id)}

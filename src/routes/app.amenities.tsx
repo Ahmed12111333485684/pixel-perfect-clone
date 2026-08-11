@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import { FormDialog, ConfirmDialog } from "@/components/FormDialog";
 import { MediaPreview } from "@/components/MediaPreview";
 import { MediaLightbox } from "@/components/MediaLightbox";
@@ -33,11 +34,13 @@ function AmenitiesPage() {
   const [deleting, setDeleting] = useState<Amenity | null>(null);
   const [search, setSearch] = useState("");
   const [photoDraft, setPhotoDraft] = useState<PhotoDraft>({ files: [], removedUrls: [] });
+  const [isSelectable, setIsSelectable] = useState(true);
   const [lightboxImages, setLightboxImages] = useState<{ src: string; alt: string }[]>([]);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
 
   useEffect(() => {
     setPhotoDraft({ files: [], removedUrls: [] });
+    setIsSelectable(editing?.isSelectable ?? true);
   }, [creating, editing]);
 
   const openLightbox = (amenity: Amenity, startIndex: number) => {
@@ -52,11 +55,13 @@ function AmenitiesPage() {
       id?: number;
       name: string;
       description?: string;
+      isSelectable: boolean;
       photos?: File[] | null;
       removePhotoUrls?: string[] | null;
     }) => {
       const fd = new FormData();
       fd.append("name", vals.name);
+      fd.append("isSelectable", String(vals.isSelectable));
       if (vals.description) fd.append("description", vals.description);
       for (const photo of vals.photos ?? []) fd.append("photos", photo);
 
@@ -185,6 +190,7 @@ function AmenitiesPage() {
             id: editing?.id,
             name: String(fd.get("name") ?? ""),
             description: String(fd.get("description") ?? "") || undefined,
+            isSelectable,
             photos: photoDraft.files,
             removePhotoUrls: photoDraft.removedUrls,
           });
@@ -203,6 +209,13 @@ function AmenitiesPage() {
               defaultValue={editing?.description ?? ""}
               rows={3}
             />
+          </div>
+          <div className="sm:col-span-2 flex items-center gap-3 rounded-lg border border-border bg-muted/30 p-4">
+            <Checkbox id="isSelectable" checked={isSelectable} onCheckedChange={(v) => setIsSelectable(v === true)} />
+            <div className="space-y-1">
+              <Label htmlFor="isSelectable" className="text-sm font-medium">{t("common.selectable")}</Label>
+              <p className="text-xs text-muted-foreground">{t("common.selectableHelp")}</p>
+            </div>
           </div>
           <div className="sm:col-span-2 rounded-lg border border-border bg-muted/30 p-4">
             <FileManager

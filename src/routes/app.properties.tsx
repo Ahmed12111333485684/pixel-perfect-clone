@@ -614,7 +614,9 @@ function PropertyDialog({
           {amenities.length === 0 ? (
             <span className="text-xs text-muted-foreground">{t("common.empty")}</span>
           ) : (
-            amenities.map((a) => {
+            amenities
+              .filter((a) => a.isSelectable || picked.has(a.id))
+              .map((a) => {
               const checked = picked.has(a.id);
               return (
                 <label key={a.id} className="flex items-center gap-2 text-sm">

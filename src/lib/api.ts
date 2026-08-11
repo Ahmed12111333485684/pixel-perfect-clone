@@ -222,6 +222,7 @@ export interface Amenity {
   name: string;
   description?: string;
   photoUrls: string[];
+  isSelectable: boolean;
   createdAt: string;
 }
 export interface PropertyDto {
