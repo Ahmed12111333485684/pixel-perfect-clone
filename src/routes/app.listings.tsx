@@ -599,7 +599,10 @@ function CommercialListingsPage() {
 
     return items.filter((record) => {
       const qMatch = matchesQuery(
-        [record.ownerName, record.deedNumber, record.city, record.district, record.location, record.propertyType, record.propertyStatus, record.offerCode, record.mobile1, record.mobile2, record.listingType, record.listingCategory],
+        [
+          record.ownerName, record.deedNumber, record.city, record.district, record.location, record.propertyType, record.propertyStatus, record.offerCode, record.mobile1, record.mobile2, record.listingType, record.listingCategory,
+          ...(record.brokerageContracts ?? []).flatMap((c) => [c.brokerageContract, c.licenseNumber]),
+        ],
         q,
       );
       const deedMatch = matchesQuery([record.deedNumber], deedQ);
