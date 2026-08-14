@@ -3,11 +3,25 @@ import { Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { api, resolveApiAssetUrl, createPartner, type ResidentialSeeker, type RequestPropertySuggestion, fetchPartners, type UserDto, type Partner, ApiError } from "@/lib/api";
+import {
+  api,
+  resolveApiAssetUrl,
+  createPartner,
+  type ResidentialSeeker,
+  type RequestPropertySuggestion,
+  fetchPartners,
+  type UserDto,
+  type Partner,
+  ApiError,
+} from "@/lib/api";
 import { PartnerDialog } from "@/components/partners/PartnerDialog";
 import { useAuth } from "@/lib/auth";
 import { todayLocal } from "@/lib/format";
-import { PROPERTY_CATEGORIES, getPropertyTypesByCategory, localizePropertyType } from "@/lib/property-types";
+import {
+  PROPERTY_CATEGORIES,
+  getPropertyTypesByCategory,
+  localizePropertyType,
+} from "@/lib/property-types";
 import { NATIONALITIES } from "@/lib/nationalities";
 import { PAYMENT_TYPES } from "@/lib/payment-types";
 import { PageHeader, StatusBadge } from "@/components/PageHeader";
@@ -17,7 +31,13 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Building2, MapPin, Plus, Sparkles, LayoutGrid, List } from "lucide-react";
 import { RiyalIcon } from "@/components/icons/RiyalIcon";
@@ -34,8 +54,12 @@ export const Route = createFileRoute("/app/residential-seekers")({
     selected: search.selected ? Number(search.selected) : undefined,
     q: typeof search.q === "string" ? search.q : "",
     status: typeof search.status === "string" && search.status ? search.status : "all",
-    listingType: typeof search.listingType === "string" && search.listingType ? search.listingType : "all",
-    requestCategory: typeof search.requestCategory === "string" && search.requestCategory ? search.requestCategory : "all",
+    listingType:
+      typeof search.listingType === "string" && search.listingType ? search.listingType : "all",
+    requestCategory:
+      typeof search.requestCategory === "string" && search.requestCategory
+        ? search.requestCategory
+        : "all",
     city: typeof search.city === "string" ? search.city : "",
     district: typeof search.district === "string" ? search.district : "",
     page: typeof search.page === "number" && search.page > 0 ? search.page : 1,
@@ -81,8 +105,6 @@ const RESIDENTIAL_FIELDS = [
   "requestCategory",
 ] as const;
 
-
-
 type ResidentialFieldKey = (typeof RESIDENTIAL_FIELDS)[number];
 
 function normalizeValue(value: string | string[] | null | undefined) {
@@ -106,8 +128,11 @@ function buildResidentialPayload(fd: FormData, original?: ResidentialSeeker | nu
 
   const districtRaw = fd.get("district");
   if (districtRaw) {
-    try { payload.district = JSON.parse(String(districtRaw)); }
-    catch { payload.district = [String(districtRaw)]; }
+    try {
+      payload.district = JSON.parse(String(districtRaw));
+    } catch {
+      payload.district = [String(districtRaw)];
+    }
   }
 
   return payload;
@@ -135,7 +160,8 @@ function ResidentialSeekersPage() {
     sortBy: "createdAt",
     sortDir: "desc" as "asc" | "desc",
   });
-  const { q, status, listingType, requestCategory, city, district, page, sortBy, sortDir } = urlState;
+  const { q, status, listingType, requestCategory, city, district, page, sortBy, sortDir } =
+    urlState;
   const [pageSize] = useState(100);
   const setQ = (value: string) => setUrlState({ q: value, page: 1 });
   const setStatus = (value: string) => setUrlState({ status: value, page: 1 });
@@ -203,9 +229,10 @@ function ResidentialSeekersPage() {
   });
   const [viewMode, setViewMode] = useState<"card" | "table">("card");
 
-  const hasAccess = auth.hasRole("Admin")
-    || auth.isPartner
-    || auth.user?.screenPermissions.includes("/app/residential-seekers");
+  const hasAccess =
+    auth.hasRole("Admin") ||
+    auth.isPartner ||
+    auth.user?.screenPermissions.includes("/app/residential-seekers");
   const canManage = auth.isStaff || auth.isPartner;
   const isAdmin = auth.hasRole("Admin");
 
@@ -256,11 +283,18 @@ function ResidentialSeekersPage() {
 
   const suggestionsQuery = useQuery({
     queryKey: ["residential-seeker-suggestions", selected?.id],
-    queryFn: () => api<RequestPropertySuggestion[]>(`/api/residential-seekers/${selected?.id}/property-suggestions`),
+    queryFn: () =>
+      api<RequestPropertySuggestion[]>(
+        `/api/residential-seekers/${selected?.id}/property-suggestions`,
+      ),
     enabled: !!selected?.id,
   });
 
-  const users = useQuery({ queryKey: ["users", "lookup"], queryFn: () => api<UserDto[]>("/users"), enabled: hasAccess });
+  const users = useQuery({
+    queryKey: ["users", "lookup"],
+    queryFn: () => api<UserDto[]>("/users"),
+    enabled: hasAccess,
+  });
 
   const handleReset = () => {
     setQ("");
@@ -283,7 +317,13 @@ function ResidentialSeekersPage() {
       setCreating(false);
       qc.invalidateQueries({ queryKey: ["residential-seekers"] });
     } catch (error) {
-      toast.error(error instanceof ApiError && error.detail ? error.detail : (error instanceof Error ? error.message : t("common.error")));
+      toast.error(
+        error instanceof ApiError && error.detail
+          ? error.detail
+          : error instanceof Error
+            ? error.message
+            : t("common.error"),
+      );
     } finally {
       setSubmitting(false);
     }
@@ -300,12 +340,21 @@ function ResidentialSeekersPage() {
         setSelected(null);
         return;
       }
-      await api<ResidentialSeeker>(`/api/residential-seekers/${selected.id}`, { method: "PUT", body: payload });
+      await api<ResidentialSeeker>(`/api/residential-seekers/${selected.id}`, {
+        method: "PUT",
+        body: payload,
+      });
       toast.success(t("common.updated"));
       setSelected(null);
       qc.invalidateQueries({ queryKey: ["residential-seekers"] });
     } catch (error) {
-      toast.error(error instanceof ApiError && error.detail ? error.detail : (error instanceof Error ? error.message : t("common.error")));
+      toast.error(
+        error instanceof ApiError && error.detail
+          ? error.detail
+          : error instanceof Error
+            ? error.message
+            : t("common.error"),
+      );
     } finally {
       setSubmitting(false);
     }
@@ -350,7 +399,9 @@ function ResidentialSeekersPage() {
     {
       key: "serialNumber",
       header: t("residentialSeekers.serialNumber"),
-      cell: (r) => <span className="font-mono font-medium">{r.serialNumber || t("common.notProvided")}</span>,
+      cell: (r) => (
+        <span className="font-mono font-medium">{r.serialNumber || t("common.notProvided")}</span>
+      ),
     },
     {
       key: "requestDate",
@@ -367,9 +418,7 @@ function ResidentialSeekersPage() {
     {
       key: "status",
       header: t("residentialSeekers.status"),
-      cell: (r) => (
-        <StatusBadge tone={statusTone(r.status)}>{statusLabel(r.status)}</StatusBadge>
-      ),
+      cell: (r) => <StatusBadge tone={statusTone(r.status)}>{statusLabel(r.status)}</StatusBadge>,
       sortable: true,
     },
     {
@@ -391,9 +440,8 @@ function ResidentialSeekersPage() {
     {
       key: "requestDescription",
       header: t("residentialSeekers.requestDescription"),
-      cell: (r) => r.requestDescription
-        ? truncateText(r.requestDescription, 60)
-        : t("common.notProvided"),
+      cell: (r) =>
+        r.requestDescription ? truncateText(r.requestDescription, 60) : t("common.notProvided"),
     },
     {
       key: "maxBudget",
@@ -408,12 +456,16 @@ function ResidentialSeekersPage() {
     {
       key: "listingType",
       header: t("residentialSeekers.listingType"),
-      cell: (r) => r.listingType ? t(`listingType.${r.listingType}`, { defaultValue: r.listingType }) : t("common.notProvided"),
+      cell: (r) =>
+        r.listingType
+          ? t(`listingType.${r.listingType}`, { defaultValue: r.listingType })
+          : t("common.notProvided"),
     },
     {
       key: "propertyType",
       header: t("residentialSeekers.propertyType"),
-      cell: (r) => r.propertyType ? localizePropertyType(t, r.propertyType) : t("common.notProvided"),
+      cell: (r) =>
+        r.propertyType ? localizePropertyType(t, r.propertyType) : t("common.notProvided"),
     },
     {
       key: "preferredLocation",
@@ -428,7 +480,8 @@ function ResidentialSeekersPage() {
     {
       key: "district",
       header: t("common.district"),
-      cell: (r) => Array.isArray(r.district) ? r.district.join(" - ") : (r.district || t("common.notProvided")),
+      cell: (r) =>
+        Array.isArray(r.district) ? r.district.join(" - ") : r.district || t("common.notProvided"),
     },
     {
       key: "employee",
@@ -445,21 +498,44 @@ function ResidentialSeekersPage() {
     const districtMatch = (r: ResidentialSeeker) => {
       if (!district) return true;
       const normalizedDistrict = normalizeForSearch(district);
-      return Array.isArray(r.district)
-        && r.district.some((d) => normalizeForSearch(d) === normalizedDistrict);
+      return (
+        Array.isArray(r.district) &&
+        r.district.some((d) => normalizeForSearch(d) === normalizedDistrict)
+      );
     };
 
     const filtered = items.filter((r) => {
       const qMatch = matchesQuery(
-        [r.serialNumber, r.fullName, r.mobile, r.mobile2, r.preferredLocation, r.city, r.district, r.requestDescription, r.notes, r.listingType, r.propertyType],
+        [
+          r.serialNumber,
+          r.fullName,
+          r.mobile,
+          r.mobile2,
+          r.preferredLocation,
+          r.city,
+          r.district,
+          r.requestDescription,
+          r.notes,
+          r.listingType,
+          r.propertyType,
+        ],
         q,
       );
       const statusMatch = status === "all" || r.status === status;
-      const listingTypeMatch = listingType === "all"
-        || normalizeForSearch(r.listingType) === normalizeForSearch(listingType);
-      const requestCategoryMatch = requestCategory === "all"
-        || normalizeForSearch(r.requestCategory) === normalizeForSearch(requestCategory);
-      return qMatch && statusMatch && listingTypeMatch && requestCategoryMatch && cityMatch(r) && districtMatch(r);
+      const listingTypeMatch =
+        listingType === "all" ||
+        normalizeForSearch(r.listingType) === normalizeForSearch(listingType);
+      const requestCategoryMatch =
+        requestCategory === "all" ||
+        normalizeForSearch(r.requestCategory) === normalizeForSearch(requestCategory);
+      return (
+        qMatch &&
+        statusMatch &&
+        listingTypeMatch &&
+        requestCategoryMatch &&
+        cityMatch(r) &&
+        districtMatch(r)
+      );
     });
 
     const dir = sortDir === "asc" ? 1 : -1;
@@ -468,17 +544,29 @@ function ResidentialSeekersPage() {
       let bv: string;
       switch (sortBy) {
         case "requestDate":
-          av = a.requestDate ?? ""; bv = b.requestDate ?? ""; break;
+          av = a.requestDate ?? "";
+          bv = b.requestDate ?? "";
+          break;
         case "reviewDate":
-          av = a.reviewDate ?? ""; bv = b.reviewDate ?? ""; break;
+          av = a.reviewDate ?? "";
+          bv = b.reviewDate ?? "";
+          break;
         case "fullName":
-          av = a.fullName ?? ""; bv = b.fullName ?? ""; break;
+          av = a.fullName ?? "";
+          bv = b.fullName ?? "";
+          break;
         case "status":
-          av = a.status ?? ""; bv = b.status ?? ""; break;
+          av = a.status ?? "";
+          bv = b.status ?? "";
+          break;
         case "employee":
-          av = a.employee ?? ""; bv = b.employee ?? ""; break;
+          av = a.employee ?? "";
+          bv = b.employee ?? "";
+          break;
         default:
-          av = a.createdAt ?? ""; bv = b.createdAt ?? ""; break;
+          av = a.createdAt ?? "";
+          bv = b.createdAt ?? "";
+          break;
       }
       if (av === bv) return 0;
       return av.localeCompare(bv, "ar") * dir;
@@ -509,12 +597,14 @@ function ResidentialSeekersPage() {
       <PageHeader
         title={t("residentialSeekers.pageTitle")}
         subtitle={t("residentialSeekers.pageSubtitle")}
-        actions={canManage ? (
-          <Button onClick={() => setCreating(true)}>
-            <Plus className="me-1 h-4 w-4" />
-            {t("common.add")}
-          </Button>
-        ) : undefined}
+        actions={
+          canManage ? (
+            <Button onClick={() => setCreating(true)}>
+              <Plus className="me-1 h-4 w-4" />
+              {t("common.add")}
+            </Button>
+          ) : undefined
+        }
       />
 
       <FilterBar
@@ -523,14 +613,16 @@ function ResidentialSeekersPage() {
         onCityChange={setCity}
         onDistrictChange={setDistrict}
         onReset={handleReset}
-        activeCount={[
-          q,
-          status !== "all" ? status : "",
-          listingType !== "all" ? listingType : "",
-          requestCategory !== "all" ? requestCategory : "",
-          city,
-          district,
-        ].filter(Boolean).length}
+        activeCount={
+          [
+            q,
+            status !== "all" ? status : "",
+            listingType !== "all" ? listingType : "",
+            requestCategory !== "all" ? requestCategory : "",
+            city,
+            district,
+          ].filter(Boolean).length
+        }
         search={
           <div className="min-w-[220px] flex-1">
             <Label htmlFor="q" className="text-xs font-medium">
@@ -652,26 +744,46 @@ function ResidentialSeekersPage() {
             >
               <div>
                 <div className="flex items-start justify-between gap-2 mb-3">
-                  <div className="font-medium truncate" title={r.fullName || t("common.notProvided")}>
+                  <div
+                    className="font-medium truncate"
+                    title={r.fullName || t("common.notProvided")}
+                  >
                     {r.fullName || t("common.notProvided")}
                   </div>
-                  <StatusBadge tone={statusTone(r.status)}>
-                    {statusLabel(r.status)}
-                  </StatusBadge>
+                  <StatusBadge tone={statusTone(r.status)}>{statusLabel(r.status)}</StatusBadge>
                 </div>
 
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">{t("residentialSeekers.propertyType")}</span>
-                    <span>{r.propertyType ? localizePropertyType(t, r.propertyType) : t("common.notProvided")}</span>
+                    <span className="text-muted-foreground">
+                      {t("residentialSeekers.propertyType")}
+                    </span>
+                    <span>
+                      {r.propertyType
+                        ? localizePropertyType(t, r.propertyType)
+                        : t("common.notProvided")}
+                    </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">{t("residentialSeekers.listingType")}</span>
-                    <span>{r.listingType ? t(`listingType.${r.listingType}`, { defaultValue: r.listingType }) : t("common.notProvided")}</span>
+                    <span className="text-muted-foreground">
+                      {t("residentialSeekers.listingType")}
+                    </span>
+                    <span>
+                      {r.listingType
+                        ? t(`listingType.${r.listingType}`, { defaultValue: r.listingType })
+                        : t("common.notProvided")}
+                    </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">{t("residentialSeekers.preferredLocation")}</span>
-                    <span className="truncate max-w-[120px]" title={r.preferredLocation ?? undefined}>{r.preferredLocation || t("common.notProvided")}</span>
+                    <span className="text-muted-foreground">
+                      {t("residentialSeekers.preferredLocation")}
+                    </span>
+                    <span
+                      className="truncate max-w-[120px]"
+                      title={r.preferredLocation ?? undefined}
+                    >
+                      {r.preferredLocation || t("common.notProvided")}
+                    </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">{t("common.city")}</span>
@@ -679,15 +791,24 @@ function ResidentialSeekersPage() {
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">{t("common.district")}</span>
-                    <span>{Array.isArray(r.district) ? r.district.join(" - ") : (r.district || t("common.notProvided"))}</span>
+                    <span>
+                      {Array.isArray(r.district)
+                        ? r.district.join(" - ")
+                        : r.district || t("common.notProvided")}
+                    </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">{maxBudgetLabelFor(r.listingType)}</span>
+                    <span className="text-muted-foreground">
+                      {maxBudgetLabelFor(r.listingType)}
+                    </span>
                     <span>{r.maxBudget || t("common.notProvided")}</span>
                   </div>
                   {r.requestDescription && (
                     <div className="pt-2">
-                      <p className="text-xs text-muted-foreground line-clamp-2" title={r.requestDescription}>
+                      <p
+                        className="text-xs text-muted-foreground line-clamp-2"
+                        title={r.requestDescription}
+                      >
                         {r.requestDescription}
                       </p>
                     </div>
@@ -698,13 +819,14 @@ function ResidentialSeekersPage() {
               <div className="mt-4 pt-4 border-t border-border flex flex-col gap-1 text-xs text-muted-foreground">
                 <div className="flex items-center justify-between">
                   <div>
-                    {t("residentialSeekers.requestDate")}: {r.requestDate || t("common.notProvided")}
+                    {t("residentialSeekers.requestDate")}:{" "}
+                    {r.requestDate || t("common.notProvided")}
                   </div>
                   {canManage && (
                     <div className="flex gap-1">
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
+                      <Button
+                        variant="ghost"
+                        size="sm"
                         className="h-7 px-2"
                         onClick={(e) => {
                           e.stopPropagation();
@@ -713,9 +835,9 @@ function ResidentialSeekersPage() {
                       >
                         {t("common.edit")}
                       </Button>
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
+                      <Button
+                        variant="ghost"
+                        size="sm"
                         className="h-7 px-2 text-destructive hover:text-destructive/90 hover:bg-destructive/10"
                         onClick={(e) => {
                           e.stopPropagation();
@@ -741,7 +863,8 @@ function ResidentialSeekersPage() {
           <div className="text-sm text-muted-foreground">
             {t("common.of", { defaultValue: "Showing" })} {(page - 1) * pageSize + 1}
             {" - "}
-            {Math.min(page * pageSize, filteredSeekers.length)} {t("common.of", { defaultValue: "of" })} {filteredSeekers.length}
+            {Math.min(page * pageSize, filteredSeekers.length)}{" "}
+            {t("common.of", { defaultValue: "of" })} {filteredSeekers.length}
           </div>
           <div className="flex gap-2">
             <Button
@@ -800,10 +923,14 @@ function ResidentialSeekersPage() {
         submitting={submitting}
         title={canManage ? t("common.edit") : t("common.details")}
         submitLabel={canManage ? t("common.save") : t("common.close")}
-        onSubmit={canManage ? handleUpdate : (e) => {
-          e.preventDefault();
-          setSelected(null);
-        }}
+        onSubmit={
+          canManage
+            ? handleUpdate
+            : (e) => {
+                e.preventDefault();
+                setSelected(null);
+              }
+        }
         onAddPartner={() => setPartnerDialogOpen(true)}
         isAdmin={isAdmin}
       />
@@ -870,9 +997,10 @@ function ResidentialSeekerDialog({
   const [requestCategory, setRequestCategory] = useState(seeker?.requestCategory ?? "سكني");
   const [propertyType, setPropertyType] = useState(seeker?.propertyType ?? "");
   const [selectedCity, setSelectedCity] = useState(seeker?.city ?? "");
-  const maxBudgetLabel = listingType === "Rental"
-    ? t("residentialSeekers.maxRentalBudget")
-    : t("residentialSeekers.maxBudget");
+  const maxBudgetLabel =
+    listingType === "Rental"
+      ? t("residentialSeekers.maxRentalBudget")
+      : t("residentialSeekers.maxBudget");
 
   return (
     <FormDialog
@@ -888,17 +1016,36 @@ function ResidentialSeekerDialog({
       <div className="space-y-4 rounded-lg border border-border bg-muted/30 p-4">
         <div className="grid gap-4 sm:grid-cols-2">
           {isAdmin ? (
-            <TextField id="serialNumber" label={t("residentialSeekers.serialNumber")} defaultValue={seeker?.serialNumber} readOnly={readOnly} />
+            <TextField
+              id="serialNumber"
+              label={t("residentialSeekers.serialNumber")}
+              defaultValue={seeker?.serialNumber}
+              readOnly={readOnly}
+            />
           ) : (
             <div className="space-y-2">
-              <Label htmlFor="serialNumber" className="text-xs font-medium">{t("residentialSeekers.serialNumber")}</Label>
+              <Label htmlFor="serialNumber" className="text-xs font-medium">
+                {t("residentialSeekers.serialNumber")}
+              </Label>
               <div className="mt-1 rounded-md border-2 border-gold/30 bg-gold/5 px-3 py-2 text-sm font-bold tracking-wide text-foreground">
                 {seeker?.serialNumber || "—"}
               </div>
             </div>
           )}
-          <DateField id="requestDate" label={t("residentialSeekers.requestDate")} defaultValue={seeker?.requestDate || todayLocal()} readOnly={readOnly} className="mt-1 w-full [color-scheme:light] [&::-webkit-calendar-picker-indicator]:ml-auto" />
-          <DateField id="reviewDate" label={t("residentialSeekers.reviewDate")} defaultValue={seeker?.reviewDate} readOnly={readOnly} className="mt-1 w-full [color-scheme:light] [&::-webkit-calendar-picker-indicator]:ml-auto" />
+          <DateField
+            id="requestDate"
+            label={t("residentialSeekers.requestDate")}
+            defaultValue={seeker?.requestDate || todayLocal()}
+            readOnly={readOnly}
+            className="mt-1 w-full [color-scheme:light] [&::-webkit-calendar-picker-indicator]:ml-auto"
+          />
+          <DateField
+            id="reviewDate"
+            label={t("residentialSeekers.reviewDate")}
+            defaultValue={seeker?.reviewDate}
+            readOnly={readOnly}
+            className="mt-1 w-full [color-scheme:light] [&::-webkit-calendar-picker-indicator]:ml-auto"
+          />
           <SelectField
             id="status"
             label={t("residentialSeekers.status")}
@@ -915,17 +1062,22 @@ function ResidentialSeekerDialog({
             label={t("common.employee")}
             defaultValue={seeker?.employee ?? ""}
             readOnly={readOnly || usersLoading}
-            options={users.map(u => ({ value: u.username, label: u.username }))}
+            options={users.map((u) => ({ value: u.username, label: u.username }))}
           />
           <SelectField
             id="receiver"
             label={t("residentialSeekers.receiver")}
             defaultValue={seeker?.receiver ?? ""}
             readOnly={readOnly || usersLoading}
-            options={users.map(u => ({ value: u.username, label: u.username }))}
+            options={users.map((u) => ({ value: u.username, label: u.username }))}
           />
           {readOnly ? (
-            <TextField id="sourceChannel" label={t("residentialSeekers.sourceChannel")} defaultValue={seeker?.sourceChannel} readOnly={readOnly} />
+            <TextField
+              id="sourceChannel"
+              label={t("residentialSeekers.sourceChannel")}
+              defaultValue={seeker?.sourceChannel}
+              readOnly={readOnly}
+            />
           ) : (
             <div className="space-y-2">
               <Label htmlFor="sourceChannel" className="text-xs font-medium">
@@ -970,8 +1122,14 @@ function ResidentialSeekerDialog({
             label={t("residentialSeekers.requestCategory")}
             defaultValue={requestCategory}
             readOnly={readOnly}
-            onValueChange={(v) => { setRequestCategory(v); setPropertyType(""); }}
-            options={PROPERTY_CATEGORIES.map((cat) => ({ value: cat, label: t(`listingCategory.${cat === "سكني" ? "Residential" : "Commercial"}`) }))}
+            onValueChange={(v) => {
+              setRequestCategory(v);
+              setPropertyType("");
+            }}
+            options={PROPERTY_CATEGORIES.map((cat) => ({
+              value: cat,
+              label: t(`listingCategory.${cat === "سكني" ? "Residential" : "Commercial"}`),
+            }))}
           />
           <div key={requestCategory}>
             <SelectField
@@ -980,7 +1138,10 @@ function ResidentialSeekerDialog({
               defaultValue={propertyType}
               readOnly={readOnly || !requestCategory}
               onValueChange={setPropertyType}
-              options={getPropertyTypesByCategory(requestCategory).map((type) => ({ value: type, label: localizePropertyType(t, type) }))}
+              options={getPropertyTypesByCategory(requestCategory).map((type) => ({
+                value: type,
+                label: localizePropertyType(t, type),
+              }))}
             />
           </div>
         </div>
@@ -989,9 +1150,24 @@ function ResidentialSeekerDialog({
       {/* --> Personal Info */}
       <div className="space-y-4 rounded-lg border border-border bg-muted/30 p-4">
         <div className="grid gap-4 sm:grid-cols-2">
-          <TextField id="fullName" label={t("residentialSeekers.fullName")} defaultValue={seeker?.fullName} readOnly={readOnly} />
-          <PhoneField id="mobile" label={t("common.mobileNumber")} defaultValue={seeker?.mobile} readOnly={readOnly} />
-          <PhoneField id="mobile2" label={t("common.secondMobileNumber")} defaultValue={seeker?.mobile2} readOnly={readOnly} />
+          <TextField
+            id="fullName"
+            label={t("residentialSeekers.fullName")}
+            defaultValue={seeker?.fullName}
+            readOnly={readOnly}
+          />
+          <PhoneField
+            id="mobile"
+            label={t("common.mobileNumber")}
+            defaultValue={seeker?.mobile}
+            readOnly={readOnly}
+          />
+          <PhoneField
+            id="mobile2"
+            label={t("common.secondMobileNumber")}
+            defaultValue={seeker?.mobile2}
+            readOnly={readOnly}
+          />
           <ComboboxField
             id="nationality"
             label={t("residentialSeekers.nationality")}
@@ -1004,15 +1180,24 @@ function ResidentialSeekerDialog({
           />
           {listingType === "Rental" && requestCategory === "سكني" && (
             <>
-              <TextField id="profession" label={t("residentialSeekers.profession")} defaultValue={seeker?.profession} readOnly={readOnly} />
-              <TextField id="familyCount" label={t("residentialSeekers.familyCount")} defaultValue={seeker?.familyCount} readOnly={readOnly} type="number" min={1} />
+              <TextField
+                id="profession"
+                label={t("residentialSeekers.profession")}
+                defaultValue={seeker?.profession}
+                readOnly={readOnly}
+              />
+              <TextField
+                id="familyCount"
+                label={t("residentialSeekers.familyCount")}
+                defaultValue={seeker?.familyCount}
+                readOnly={readOnly}
+                type="number"
+                min={1}
+              />
             </>
           )}
         </div>
       </div>
-
-
-
 
       <div className="space-y-4 rounded-lg border border-border bg-muted/30 p-4">
         <div className="grid gap-4 sm:grid-cols-2">
@@ -1023,15 +1208,33 @@ function ResidentialSeekerDialog({
             readOnly={readOnly}
             className="sm:col-span-2"
           />
-          <TextField id="maxBudget" label={maxBudgetLabel} defaultValue={seeker?.maxBudget} readOnly={readOnly} type="number" />
+          <TextField
+            id="maxBudget"
+            label={maxBudgetLabel}
+            defaultValue={seeker?.maxBudget}
+            readOnly={readOnly}
+            type="number"
+          />
           <SelectField
             id="paymentType"
             label={t("residentialSeekers.paymentType")}
             defaultValue={seeker?.paymentType ?? ""}
             readOnly={readOnly}
-            options={PAYMENT_TYPES.map((p) => ({ value: p, label: p === "كاش" ? t("paymentTypes.cash") : t("paymentTypes.finance") }))}
+            options={
+              listingType === "Rental"
+                ? [{ value: "دفعات", label: "دفعات" }]
+                : PAYMENT_TYPES.map((p) => ({
+                    value: p,
+                    label: p === "كاش" ? t("paymentTypes.cash") : t("paymentTypes.finance"),
+                  }))
+            }
           />
-          <TextField id="preferredLocation" label={t("residentialSeekers.preferredLocation")} defaultValue={seeker?.preferredLocation} readOnly={readOnly} />
+          <TextField
+            id="preferredLocation"
+            label={t("residentialSeekers.preferredLocation")}
+            defaultValue={seeker?.preferredLocation}
+            readOnly={readOnly}
+          />
           <ComboboxField
             id="city"
             label={t("common.city")}
@@ -1048,26 +1251,29 @@ function ResidentialSeekerDialog({
             readOnly={readOnly}
             disabled={!selectedCity}
             options={
-              selectedCity
-                ? getDistricts(selectedCity).map((d) => ({ value: d, label: d }))
-                : []
+              selectedCity ? getDistricts(selectedCity).map((d) => ({ value: d, label: d })) : []
             }
           />
         </div>
       </div>
 
       <div className="space-y-4 rounded-lg border border-border bg-muted/30 p-4">
-        <TextareaField id="notes" label={t("common.notes")} defaultValue={seeker?.notes} readOnly={readOnly} />
+        <TextareaField
+          id="notes"
+          label={t("common.notes")}
+          defaultValue={seeker?.notes}
+          readOnly={readOnly}
+        />
       </div>
 
       {seeker && (
         <div className="space-y-4 rounded-lg border border-border bg-muted/30 p-4">
           <div className="mb-3 flex items-center justify-between gap-2">
             <div>
-              <p className="text-sm font-semibold">{t("common.suggestions", { defaultValue: "Suggested properties" })}</p>
-              <p className="text-xs text-muted-foreground">
-                {t("common.autoMatched")}
+              <p className="text-sm font-semibold">
+                {t("common.suggestions", { defaultValue: "Suggested properties" })}
               </p>
+              <p className="text-xs text-muted-foreground">{t("common.autoMatched")}</p>
             </div>
             <Badge variant="outline" className="gap-1">
               <Sparkles className="h-3.5 w-3.5" />
@@ -1090,7 +1296,10 @@ function ResidentialSeekerDialog({
           ) : (
             <div className="space-y-3">
               {suggestions.map((property) => (
-                <div key={property.id} className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
+                <div
+                  key={property.id}
+                  className="overflow-hidden rounded-xl border border-border bg-card shadow-sm"
+                >
                   <div className="flex gap-3 p-3">
                     <div className="h-20 w-28 shrink-0 overflow-hidden rounded-lg border border-border bg-muted">
                       {property.primaryImageUrl ? (
@@ -1122,7 +1331,11 @@ function ResidentialSeekerDialog({
                           </div>
                         </div>
 
-                        <Badge variant="outline">{t(`listingType.${property.listingType}`, { defaultValue: property.listingType })}</Badge>
+                        <Badge variant="outline">
+                          {t(`listingType.${property.listingType}`, {
+                            defaultValue: property.listingType,
+                          })}
+                        </Badge>
                       </div>
 
                       <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
@@ -1142,14 +1355,20 @@ function ResidentialSeekerDialog({
                         {property.reasons.slice(0, 3).map((reason, index) => {
                           const args = reason.args ? { ...reason.args } : undefined;
                           if (args && args.listingType) {
-                            args.listingType = t(`requestType.${args.listingType}`, { defaultValue: args.listingType });
+                            args.listingType = t(`requestType.${args.listingType}`, {
+                              defaultValue: args.listingType,
+                            });
                           }
                           if (args && args.propertyType) {
                             args.propertyType = localizePropertyType(t, args.propertyType);
                           }
 
                           return (
-                            <Badge key={`${reason.key}-${index}`} variant="outline" className="text-[11px]">
+                            <Badge
+                              key={`${reason.key}-${index}`}
+                              variant="outline"
+                              className="text-[11px]"
+                            >
                               {t(`suggestions.reasons.${reason.key}`, args || {})}
                             </Badge>
                           );
@@ -1236,9 +1455,7 @@ function DateField({
         id={id}
         name={id}
         type="date"
-        defaultValue={
-          defaultValue ?? todayLocal()
-        }
+        defaultValue={defaultValue ?? todayLocal()}
         readOnly={readOnly}
         disabled={readOnly}
         className={className ?? "mt-1 w-full [&::-webkit-calendar-picker-indicator]:ml-auto"}
@@ -1298,7 +1515,12 @@ function SelectField({
       <Label htmlFor={id} className="text-xs font-medium">
         {label}
       </Label>
-      <Select name={id} defaultValue={defaultValue} disabled={readOnly} onValueChange={onValueChange}>
+      <Select
+        name={id}
+        defaultValue={defaultValue}
+        disabled={readOnly}
+        onValueChange={onValueChange}
+      >
         <SelectTrigger id={id} className="mt-1">
           <SelectValue />
         </SelectTrigger>
@@ -1327,7 +1549,9 @@ function PartnersSelect({ defaultValue }: { defaultValue?: string | null }) {
     >
       <option value="">—</option>
       {partners.map((p) => (
-        <option key={p.id} value={p.fullName}>{p.fullName}</option>
+        <option key={p.id} value={p.fullName}>
+          {p.fullName}
+        </option>
       ))}
     </select>
   );

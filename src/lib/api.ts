@@ -631,6 +631,7 @@ export interface Expense {
   notes?: string;
   createdAt: string;
   updatedAt?: string;
+  photoUrls?: string[] | null;
 }
 
 export interface ExpenseCreate {
@@ -809,6 +810,16 @@ export function uploadRevenuePhoto(entryId: number, file: File) {
 
 export function deleteRevenuePhoto(entryId: number, url: string) {
   return api(`/api/RevenueEntries/${entryId}/photos`, { method: "DELETE", query: { url } });
+}
+
+export function uploadExpensePhoto(expenseId: number, file: File) {
+  const formData = new FormData();
+  formData.append("file", file);
+  return api<{ url: string }>(`/api/expenses/${expenseId}/photos`, { method: "POST", formData });
+}
+
+export function deleteExpensePhoto(expenseId: number, url: string) {
+  return api(`/api/expenses/${expenseId}/photos`, { method: "DELETE", query: { url } });
 }
 
 export function uploadAmenityPhoto(amenityId: number, file: File) {

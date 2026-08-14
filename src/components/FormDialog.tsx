@@ -23,6 +23,10 @@ function getMissingRequiredLabels(form: HTMLFormElement, fallback: string): stri
       label =
         form.querySelector<HTMLLabelElement>(`label[for="${el.id}"]`)?.textContent?.trim() ?? "";
     }
+    if (!label && el.name) {
+      label =
+        form.querySelector<HTMLLabelElement>(`label[for="${el.name}"]`)?.textContent?.trim() ?? "";
+    }
     if (!label) label = el.name || el.id || fallback;
     if (!missing.includes(label)) missing.push(label);
   }
