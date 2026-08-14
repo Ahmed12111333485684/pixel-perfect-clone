@@ -67,6 +67,7 @@ const RESIDENTIAL_FIELDS = [
   "propertyType",
   "fullName",
   "mobile",
+  "mobile2",
   "nationality",
   "profession",
   "familyCount",
@@ -450,7 +451,7 @@ function ResidentialSeekersPage() {
 
     const filtered = items.filter((r) => {
       const qMatch = matchesQuery(
-        [r.serialNumber, r.fullName, r.mobile, r.preferredLocation, r.city, r.district, r.requestDescription, r.notes, r.listingType, r.propertyType],
+        [r.serialNumber, r.fullName, r.mobile, r.mobile2, r.preferredLocation, r.city, r.district, r.requestDescription, r.notes, r.listingType, r.propertyType],
         q,
       );
       const statusMatch = status === "all" || r.status === status;
@@ -990,6 +991,7 @@ function ResidentialSeekerDialog({
         <div className="grid gap-4 sm:grid-cols-2">
           <TextField id="fullName" label={t("residentialSeekers.fullName")} defaultValue={seeker?.fullName} readOnly={readOnly} />
           <PhoneField id="mobile" label={t("common.mobileNumber")} defaultValue={seeker?.mobile} readOnly={readOnly} />
+          <PhoneField id="mobile2" label={t("common.secondMobileNumber")} defaultValue={seeker?.mobile2} readOnly={readOnly} />
           <ComboboxField
             id="nationality"
             label={t("residentialSeekers.nationality")}

@@ -578,6 +578,7 @@ export interface ResidentialSeeker {
   listingType?: string | null;
   propertyType?: string | null;
   mobile?: string | null;
+  mobile2?: string | null;
   fullName?: string | null;
   nationality?: string | null;
   profession?: string | null;

@@ -100,6 +100,7 @@ function PropertyRequestPage() {
           propertyType,
           fullName,
           mobile: mobileNumber,
+          mobile2: formData.get("mobile2") || undefined,
           phone: mobileNumber,
           nationality: formData.get("nationality") || undefined,
           profession: formData.get("profession") || undefined,
@@ -337,6 +338,12 @@ function PropertyRequestPage() {
                     label={t("common.mobileNumber")}
                     readOnly={false}
                     required
+                  />
+
+                  <PhoneField
+                    id="mobile2"
+                    label={t("common.secondMobileNumber")}
+                    readOnly={false}
                   />
                 </div>
 
