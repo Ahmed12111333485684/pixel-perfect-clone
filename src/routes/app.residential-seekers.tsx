@@ -1144,6 +1144,24 @@ function ResidentialSeekerDialog({
               }))}
             />
           </div>
+          {listingType === "Rental" && requestCategory === "تجاري" && (
+            <>
+              <TextField
+                id="activity"
+                label={t("residentialSeekers.activity")}
+                defaultValue={seeker?.activity}
+                readOnly={readOnly}
+              />
+              <TextField
+                id="requiredSpace"
+                label={t("residentialSeekers.requiredSpace")}
+                defaultValue={seeker?.requiredSpace}
+                readOnly={readOnly}
+                type="number"
+                min={0}
+              />
+            </>
+          )}
         </div>
       </div>
 

@@ -583,6 +583,8 @@ export interface ResidentialSeeker {
   nationality?: string | null;
   profession?: string | null;
   familyCount?: string | null;
+  activity?: string | null;
+  requiredSpace?: string | null;
   requestDescription?: string | null;
   maxBudget?: string | null;
   paymentType?: string | null;
