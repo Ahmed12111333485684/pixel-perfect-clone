@@ -36,6 +36,7 @@ export const Route = createFileRoute("/app/listings")({
     status: typeof search.status === "string" && search.status ? search.status : "all",
     dealType: typeof search.dealType === "string" && search.dealType ? search.dealType : "all",
     listingCategory: typeof search.listingCategory === "string" && search.listingCategory ? search.listingCategory : "all",
+    roomCount: typeof search.roomCount === "string" && search.roomCount ? search.roomCount : "all",
     city: typeof search.city === "string" ? search.city : "",
     district: typeof search.district === "string" ? search.district : "",
     page: typeof search.page === "number" && search.page > 0 ? search.page : 1,
@@ -329,13 +330,14 @@ function CommercialListingsPage() {
     sortBy: "createdAt",
     sortDir: "desc" as "asc" | "desc",
   });
-  const { q, deedQ, status, dealType: dealTypeFilter, listingCategory: listingCategoryFilter, city, district, page, sortBy, sortDir } = urlState;
+  const { q, deedQ, status, dealType: dealTypeFilter, listingCategory: listingCategoryFilter, roomCount, city, district, page, sortBy, sortDir } = urlState;
   const [pageSize] = useState(100);
   const setQ = (value: string) => setUrlState({ q: value, page: 1 });
   const setDeedQ = (value: string) => setUrlState({ deedQ: value, page: 1 });
   const setStatus = (value: string) => setUrlState({ status: value, page: 1 });
   const setDealTypeFilter = (value: string) => setUrlState({ dealType: value, page: 1 });
   const setListingCategoryFilter = (value: string) => setUrlState({ listingCategory: value, page: 1 });
+  const setRoomCount = (value: string) => setUrlState({ roomCount: value, page: 1 });
   const setCity = (value: string) => setUrlState({ city: value, district: "", page: 1 });
   const setDistrict = (value: string) => setUrlState({ district: value, page: 1 });
   const setSortBy = (value: string) => setUrlState({ sortBy: value, page: 1 });
@@ -468,6 +470,7 @@ function CommercialListingsPage() {
     setStatus("all");
     setDealTypeFilter("all");
     setListingCategoryFilter("all");
+    setRoomCount("all");
     setCity("");
     setDistrict("");
     setPage(1);
@@ -625,9 +628,15 @@ function CommercialListingsPage() {
         }
       }
 
-      return qMatch && deedMatch && statusMatch && listingCategoryMatch && dealTypeMatch && cityMatch(record) && districtMatch(record);
+      const roomCountMatch =
+        roomCount === "all" ||
+        (roomCount === "6"
+          ? Number(record.roomsCount ?? "0") >= 6
+          : record.roomsCount === roomCount);
+
+      return qMatch && deedMatch && statusMatch && listingCategoryMatch && dealTypeMatch && roomCountMatch && cityMatch(record) && districtMatch(record);
     });
-  }, [listings.data, q, deedQ, status, listingCategoryFilter, dealTypeFilter, city, district]);
+  }, [listings.data, q, deedQ, status, listingCategoryFilter, dealTypeFilter, roomCount, city, district]);
 
   const totalPages = Math.max(1, Math.ceil(filteredListings.length / pageSize));
 
@@ -739,6 +748,7 @@ function CommercialListingsPage() {
           status !== "all" ? status : "",
           dealTypeFilter !== "all" ? dealTypeFilter : "",
           listingCategoryFilter !== "all" ? listingCategoryFilter : "",
+          roomCount !== "all" ? roomCount : "",
           city,
           district,
         ].filter(Boolean).length}
@@ -796,6 +806,19 @@ function CommercialListingsPage() {
             options: [
               { value: "Commercial", label: t("listingCategory.Commercial") },
               { value: "Residential", label: t("listingCategory.Residential") },
+            ],
+          },
+          {
+            label: t("commercialListings.roomsCount"),
+            value: roomCount,
+            onValueChange: setRoomCount,
+            options: [
+              { value: "1", label: "1" },
+              { value: "2", label: "2" },
+              { value: "3", label: "3" },
+              { value: "4", label: "4" },
+              { value: "5", label: "5" },
+              { value: "6", label: "6+" },
             ],
           },
           {
