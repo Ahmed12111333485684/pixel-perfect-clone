@@ -583,6 +583,7 @@ export interface ResidentialSeeker {
   nationality?: string | null;
   profession?: string | null;
   familyCount?: string | null;
+  roomCount?: number | null;
   activity?: string | null;
   requiredSpace?: string | null;
   requestDescription?: string | null;

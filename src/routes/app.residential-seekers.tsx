@@ -60,6 +60,10 @@ export const Route = createFileRoute("/app/residential-seekers")({
       typeof search.requestCategory === "string" && search.requestCategory
         ? search.requestCategory
         : "all",
+    roomCount:
+      typeof search.roomCount === "string" && search.roomCount
+        ? search.roomCount
+        : "all",
     city: typeof search.city === "string" ? search.city : "",
     district: typeof search.district === "string" ? search.district : "",
     page: typeof search.page === "number" && search.page > 0 ? search.page : 1,
@@ -160,13 +164,14 @@ function ResidentialSeekersPage() {
     sortBy: "createdAt",
     sortDir: "desc" as "asc" | "desc",
   });
-  const { q, status, listingType, requestCategory, city, district, page, sortBy, sortDir } =
+  const { q, status, listingType, requestCategory, roomCount, city, district, page, sortBy, sortDir } =
     urlState;
   const [pageSize] = useState(100);
   const setQ = (value: string) => setUrlState({ q: value, page: 1 });
   const setStatus = (value: string) => setUrlState({ status: value, page: 1 });
   const setListingType = (value: string) => setUrlState({ listingType: value, page: 1 });
   const setRequestCategory = (value: string) => setUrlState({ requestCategory: value, page: 1 });
+  const setRoomCount = (value: string) => setUrlState({ roomCount: value, page: 1 });
   const setCity = (value: string) => setUrlState({ city: value, district: "", page: 1 });
   const setDistrict = (value: string) => setUrlState({ district: value, page: 1 });
   const setSortBy = (value: string) => setUrlState({ sortBy: value, page: 1 });
@@ -301,6 +306,7 @@ function ResidentialSeekersPage() {
     setStatus("all");
     setListingType("all");
     setRequestCategory("all");
+    setRoomCount("all");
     setCity("");
     setDistrict("");
     setPage(1);
@@ -528,11 +534,17 @@ function ResidentialSeekersPage() {
       const requestCategoryMatch =
         requestCategory === "all" ||
         normalizeForSearch(r.requestCategory) === normalizeForSearch(requestCategory);
+      const roomCountMatch =
+        roomCount === "all" ||
+        (roomCount === "6"
+          ? (r.roomCount ?? 0) >= 6
+          : String(r.roomCount) === roomCount);
       return (
         qMatch &&
         statusMatch &&
         listingTypeMatch &&
         requestCategoryMatch &&
+        roomCountMatch &&
         cityMatch(r) &&
         districtMatch(r)
       );
@@ -571,7 +583,7 @@ function ResidentialSeekersPage() {
       if (av === bv) return 0;
       return av.localeCompare(bv, "ar") * dir;
     });
-  }, [seekers.data, q, status, listingType, requestCategory, city, district, sortBy, sortDir]);
+  }, [seekers.data, q, status, listingType, requestCategory, roomCount, city, district, sortBy, sortDir]);
 
   const totalPages = Math.max(1, Math.ceil(filteredSeekers.length / pageSize));
 
@@ -619,6 +631,7 @@ function ResidentialSeekersPage() {
             status !== "all" ? status : "",
             listingType !== "all" ? listingType : "",
             requestCategory !== "all" ? requestCategory : "",
+            roomCount !== "all" ? roomCount : "",
             city,
             district,
           ].filter(Boolean).length
@@ -664,6 +677,19 @@ function ResidentialSeekersPage() {
               value: cat,
               label: t(`listingCategory.${cat === "سكني" ? "Residential" : "Commercial"}`),
             })),
+          },
+          {
+            label: t("residentialSeekers.roomCount"),
+            value: roomCount,
+            onValueChange: setRoomCount,
+            options: [
+              { value: "1", label: "1" },
+              { value: "2", label: "2" },
+              { value: "3", label: "3" },
+              { value: "4", label: "4" },
+              { value: "5", label: "5" },
+              { value: "6", label: "6+" },
+            ],
           },
           {
             label: t("residentialSeekers.sortBy"),
@@ -1211,6 +1237,14 @@ function ResidentialSeekerDialog({
                 readOnly={readOnly}
                 type="number"
                 min={1}
+              />
+              <TextField
+                id="roomCount"
+                label={t("residentialSeekers.roomCount")}
+                defaultValue={seeker?.roomCount}
+                readOnly={readOnly}
+                type="number"
+                min={0}
               />
             </>
           )}
