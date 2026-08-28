@@ -84,7 +84,7 @@ function ExpensesPage() {
 
   const users = useQuery({
     queryKey: ["users", "lookup"],
-    queryFn: () => api<UserDto[]>("/api/users"),
+    queryFn: () => api<UserDto[]>("/api/users/lookup"),
     enabled: hasAccess,
   });
 

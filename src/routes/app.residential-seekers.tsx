@@ -297,7 +297,7 @@ function ResidentialSeekersPage() {
 
   const users = useQuery({
     queryKey: ["users", "lookup"],
-    queryFn: () => api<UserDto[]>("/users"),
+    queryFn: () => api<UserDto[]>("/users/lookup"),
     enabled: hasAccess,
   });
 

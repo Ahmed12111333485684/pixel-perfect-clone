@@ -445,7 +445,7 @@ function CommercialListingsPage() {
   });
 
   const partners = useQuery({ queryKey: ["partners", "lookup"], queryFn: fetchPartners, enabled: hasAccess });
-  const users = useQuery({ queryKey: ["users", "lookup"], queryFn: () => api<UserDto[]>("/users"), enabled: hasAccess });
+  const users = useQuery({ queryKey: ["users", "lookup"], queryFn: () => api<UserDto[]>("/users/lookup"), enabled: hasAccess });
   const amenities = useQuery({ queryKey: ["amenities"], queryFn: () => api<Amenity[]>("/amenities"), enabled: hasAccess });
 
   const { selected: selectedId } = Route.useSearch();
