@@ -182,6 +182,11 @@ export interface Partner {
   createdAt: string;
 }
 
+export interface PartnerLookup {
+  id: string;
+  fullName: string;
+}
+
 export interface CreatePartnerDto {
   fullName: string;
   phone: string;
@@ -574,7 +579,7 @@ export interface ResidentialSeeker {
   status?: string | null;
   employee?: string | null;
   receiver?: string | null;
-  sourceChannel?: string | null;
+  sourceChannel?: string[] | null;
   listingType?: string | null;
   propertyType?: string | null;
   mobile?: string | null;
@@ -732,6 +737,10 @@ export function fetchAllNotifications(page: number, pageSize: number, read?: boo
 // ============ Partner helpers ============
 export function fetchPartners() {
   return api<Partner[]>("/api/partners");
+}
+
+export function fetchPartnersLookup() {
+  return api<PartnerLookup[]>("/api/partners/lookup");
 }
 
 export function fetchPartner(id: string) {

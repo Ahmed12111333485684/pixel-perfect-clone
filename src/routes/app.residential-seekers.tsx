@@ -9,7 +9,7 @@ import {
   createPartner,
   type ResidentialSeeker,
   type RequestPropertySuggestion,
-  fetchPartners,
+  fetchPartnersLookup,
   type UserDto,
   type Partner,
   ApiError,
@@ -139,6 +139,15 @@ function buildResidentialPayload(fd: FormData, original?: ResidentialSeeker | nu
     }
   }
 
+  const sourceChannelRaw = fd.get("sourceChannel");
+  if (sourceChannelRaw) {
+    try {
+      payload.sourceChannel = JSON.parse(String(sourceChannelRaw));
+    } catch {
+      payload.sourceChannel = [String(sourceChannelRaw)];
+    }
+  }
+
   return payload;
 }
 
@@ -227,6 +236,7 @@ function ResidentialSeekersPage() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["partners"] });
+      qc.invalidateQueries({ queryKey: ["partners", "lookup"] });
       toast.success(t("common.success"));
       setPartnerDialogOpen(false);
     },
@@ -1101,28 +1111,30 @@ function ResidentialSeekerDialog({
             <TextField
               id="sourceChannel"
               label={t("residentialSeekers.sourceChannel")}
-              defaultValue={seeker?.sourceChannel}
+              defaultValue={seeker?.sourceChannel?.join("، ") ?? ""}
               readOnly={readOnly}
             />
           ) : (
             <div className="space-y-2">
-              <Label htmlFor="sourceChannel" className="text-xs font-medium">
-                {t("residentialSeekers.sourceChannel")}
-              </Label>
-              <div className="flex gap-2">
+              <div className="flex items-end gap-2">
                 <div className="flex-1">
-                  <PartnersSelect defaultValue={seeker?.sourceChannel} />
+                  <SourceChannelField
+                    label={t("residentialSeekers.sourceChannel")}
+                    defaultValue={seeker?.sourceChannel ?? null}
+                  />
                 </div>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon"
-                  className="mt-1 shrink-0"
-                  onClick={onAddPartner}
-                  title={t("common.add")}
-                >
-                  <Plus className="h-4 w-4" />
-                </Button>
+                {isAdmin && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    className="shrink-0"
+                    onClick={onAddPartner}
+                    title={t("common.add")}
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                )}
               </div>
             </div>
           )}
@@ -1588,23 +1600,26 @@ function SelectField({
   );
 }
 
-function PartnersSelect({ defaultValue }: { defaultValue?: string | null }) {
-  const { data } = useQuery({ queryKey: ["partners"], queryFn: fetchPartners });
+function SourceChannelField({
+  defaultValue,
+  label,
+}: {
+  defaultValue?: string[] | null;
+  label: string;
+}) {
+  const { data } = useQuery({ queryKey: ["partners", "lookup"], queryFn: fetchPartnersLookup });
   const partners = data ?? [];
 
+  const partnerOptions = partners
+    .filter((partner) => partner.fullName.trim().length > 0)
+    .sort((a, b) => a.fullName.localeCompare(b.fullName));
+
   return (
-    <select
+    <MultiComboboxField
       id="sourceChannel"
-      name="sourceChannel"
-      defaultValue={defaultValue ?? ""}
-      className="mt-1 block w-full rounded-md border border-border bg-background px-3 py-2 text-sm focus:outline-none"
-    >
-      <option value="">—</option>
-      {partners.map((p) => (
-        <option key={p.id} value={p.fullName}>
-          {p.fullName}
-        </option>
-      ))}
-    </select>
+      label={label}
+      defaultValue={defaultValue ?? null}
+      options={partnerOptions.map((partner) => ({ value: partner.fullName, label: partner.fullName }))}
+    />
   );
 }

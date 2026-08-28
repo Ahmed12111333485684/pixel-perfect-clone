@@ -94,7 +94,7 @@ function PropertyRequestPage() {
       const result = await api<ResidentialSeeker>("/residential-seekers/submit", {
         method: "POST",
         body: {
-          sourceChannel: "Public website",
+          sourceChannel: ["Public website"],
           listingType: requestType,
           requestCategory,
           propertyType,

@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { api, fetchPartners, createPartner, type CommercialListing, type Partner, type CommercialListingImage, type UserDto, type Amenity, ApiError } from "@/lib/api";
+import { api, fetchPartnersLookup, createPartner, type CommercialListing, type Partner, type CommercialListingImage, type UserDto, type Amenity, ApiError } from "@/lib/api";
 import { PartnerDialog } from "@/components/partners/PartnerDialog";
 import { useAuth } from "@/lib/auth";
 import { todayLocal } from "@/lib/format";
@@ -444,7 +444,7 @@ function CommercialListingsPage() {
     placeholderData: (prev) => prev,
   });
 
-  const partners = useQuery({ queryKey: ["partners", "lookup"], queryFn: fetchPartners, enabled: hasAccess });
+  const partners = useQuery({ queryKey: ["partners", "lookup"], queryFn: fetchPartnersLookup, enabled: hasAccess });
   const users = useQuery({ queryKey: ["users", "lookup"], queryFn: () => api<UserDto[]>("/users/lookup"), enabled: hasAccess });
   const amenities = useQuery({ queryKey: ["amenities"], queryFn: () => api<Amenity[]>("/amenities"), enabled: hasAccess });
 
@@ -1354,17 +1354,19 @@ function CommercialListingDialog({
                   options={partnerOptions.map((partner) => ({ value: partner.fullName, label: partner.fullName }))}
                 />
               </div>
-              <Button
-                type="button"
-                variant="outline"
-                size="icon"
-                className="shrink-0"
-                onClick={onAddPartner}
-                title={t("common.add")}
-                disabled={readOnly}
-              >
-                <Plus className="h-4 w-4" />
-              </Button>
+              {isAdmin && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  className="shrink-0"
+                  onClick={onAddPartner}
+                  title={t("common.add")}
+                  disabled={readOnly}
+                >
+                  <Plus className="h-4 w-4" />
+                </Button>
+              )}
             </div>
           </div>
           <div className="flex items-center gap-3">
