@@ -14,6 +14,7 @@ import {
   type Partner,
   ApiError,
 } from "@/lib/api";
+import { syncCreated, syncUpdated, syncRemoved } from "@/lib/queryCache";
 import { PartnerDialog } from "@/components/partners/PartnerDialog";
 import { useAuth } from "@/lib/auth";
 import { todayLocal } from "@/lib/format";
@@ -338,10 +339,10 @@ function ResidentialSeekersPage() {
     try {
       const fd = new FormData(e.currentTarget);
       const payload = buildResidentialPayload(fd);
-      await api<ResidentialSeeker>("/residential-seekers", { method: "POST", body: payload });
+      const saved = await api<ResidentialSeeker>("/residential-seekers", { method: "POST", body: payload });
       toast.success(t("common.created"));
       setCreating(false);
-      qc.invalidateQueries({ queryKey: ["residential-seekers"] });
+      syncCreated(qc, "residential-seekers", saved);
     } catch (error) {
       toast.error(
         error instanceof ApiError && error.detail
@@ -366,13 +367,13 @@ function ResidentialSeekersPage() {
         setSelected(null);
         return;
       }
-      await api<ResidentialSeeker>(`/api/residential-seekers/${selected.id}`, {
+      const saved = await api<ResidentialSeeker>(`/api/residential-seekers/${selected.id}`, {
         method: "PUT",
         body: payload,
       });
       toast.success(t("common.updated"));
       setSelected(null);
-      qc.invalidateQueries({ queryKey: ["residential-seekers"] });
+      syncUpdated(qc, "residential-seekers", saved);
     } catch (error) {
       toast.error(
         error instanceof ApiError && error.detail
@@ -393,7 +394,7 @@ function ResidentialSeekersPage() {
       await api(`/api/residential-seekers/${deleting.id}`, { method: "DELETE" });
       toast.success(t("common.deleted"));
       setDeleting(null);
-      qc.invalidateQueries({ queryKey: ["residential-seekers"] });
+      syncRemoved(qc, "residential-seekers", deleting.id);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : t("common.error"));
     } finally {

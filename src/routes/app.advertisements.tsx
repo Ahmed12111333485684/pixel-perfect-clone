@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { api, type Advertisement, type PropertyDto } from "@/lib/api";
+import { syncCreated, syncUpdated, syncRemoved } from "@/lib/queryCache";
 import { useAuth } from "@/lib/auth";
 import { PageHeader, StatusBadge } from "@/components/PageHeader";
 import { DataTable, type Column } from "@/components/DataTable";
@@ -242,6 +243,7 @@ function AdvertisementsPage() {
       return [...(firstPage.items ?? []), ...extraPages.flatMap((result) => result.items ?? [])];
     },
     enabled: hasAccess,
+    placeholderData: (prev) => prev,
   });
 
   const properties = useQuery({
@@ -359,10 +361,10 @@ function AdvertisementsPage() {
     try {
       const fd = new FormData(e.currentTarget);
       const payload = buildAdvertisementPayload(fd);
-      await api<Advertisement>("/advertisements", { method: "POST", body: payload });
+      const saved = await api<Advertisement>("/advertisements", { method: "POST", body: payload });
       toast.success(t("common.created"));
       setCreating(false);
-      qc.invalidateQueries({ queryKey: ["advertisements"] });
+      syncCreated(qc, "advertisements", saved);
     } catch {
       toast.error(t("common.error"));
     } finally {
@@ -381,13 +383,13 @@ function AdvertisementsPage() {
         setSelected(null);
         return;
       }
-      await api<Advertisement>(`/api/advertisements/${selected.id}`, {
+      const saved = await api<Advertisement>(`/api/advertisements/${selected.id}`, {
         method: "PUT",
         body: payload,
       });
       toast.success(t("common.updated"));
       setSelected(null);
-      qc.invalidateQueries({ queryKey: ["advertisements"] });
+      syncUpdated(qc, "advertisements", saved);
     } catch {
       toast.error(t("common.error"));
     } finally {
@@ -402,7 +404,7 @@ function AdvertisementsPage() {
       await api(`/api/advertisements/${deleting.id}`, { method: "DELETE" });
       toast.success(t("common.deleted"));
       setDeleting(null);
-      qc.invalidateQueries({ queryKey: ["advertisements"] });
+      syncRemoved(qc, "advertisements", deleting.id);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : t("common.error"));
     } finally {

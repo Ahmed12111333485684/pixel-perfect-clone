@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { api, fetchPartnersLookup, createPartner, type CommercialListing, type Partner, type CommercialListingImage, type UserDto, type Amenity, ApiError } from "@/lib/api";
+import { syncCreated, syncUpdated, syncRemoved } from "@/lib/queryCache";
 import { PartnerDialog } from "@/components/partners/PartnerDialog";
 import { useAuth } from "@/lib/auth";
 import { todayLocal } from "@/lib/format";
@@ -482,10 +483,10 @@ function CommercialListingsPage() {
     try {
       const fd = new FormData(e.currentTarget);
       const payload = buildCommercialPayload(fd, publishing, contracts);
-      await api<CommercialListing>("/listings", { method: "POST", body: payload });
+      const saved = await api<CommercialListing>("/listings", { method: "POST", body: payload });
       toast.success(t("common.created"));
       setCreating(false);
-      qc.invalidateQueries({ queryKey: ["commercial-listings"] });
+      syncCreated(qc, "commercial-listings", saved);
     } catch (error) {
       if (error instanceof ApiError) {
         toast.error(error.message);
@@ -508,10 +509,10 @@ function CommercialListingsPage() {
         setSelected(null);
         return;
       }
-      await api<CommercialListing>(`/api/listings/${selected.id}`, { method: "PUT", body: payload });
+      const saved = await api<CommercialListing>(`/api/listings/${selected.id}`, { method: "PUT", body: payload });
       toast.success(t("common.updated"));
       setSelected(null);
-      qc.invalidateQueries({ queryKey: ["commercial-listings"] });
+      syncUpdated(qc, "commercial-listings", saved);
     } catch (error) {
       if (error instanceof ApiError) {
         toast.error(error.message);
@@ -530,7 +531,7 @@ function CommercialListingsPage() {
       await api(`/api/listings/${deleting.id}`, { method: "DELETE" });
       toast.success(t("common.deleted"));
       setDeleting(null);
-      qc.invalidateQueries({ queryKey: ["commercial-listings"] });
+      syncRemoved(qc, "commercial-listings", deleting.id);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : t("common.error"));
     } finally {
