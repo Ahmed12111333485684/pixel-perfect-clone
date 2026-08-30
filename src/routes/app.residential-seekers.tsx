@@ -99,6 +99,7 @@ const RESIDENTIAL_FIELDS = [
   "nationality",
   "profession",
   "familyCount",
+  "roomCount",
   "requestDescription",
   "maxBudget",
   "paymentType",
@@ -107,6 +108,8 @@ const RESIDENTIAL_FIELDS = [
   "district",
   "notes",
   "requestCategory",
+  "activity",
+  "requiredSpace",
 ] as const;
 
 type ResidentialFieldKey = (typeof RESIDENTIAL_FIELDS)[number];
@@ -124,10 +127,17 @@ function buildResidentialPayload(fd: FormData, original?: ResidentialSeeker | nu
   const payload: Record<string, unknown> = {};
 
   RESIDENTIAL_FIELDS.forEach((key) => {
-    const value = readFieldValue(fd, key);
-    if (!original || value !== normalizeValue(original[key as ResidentialFieldKey])) {
-      payload[key] = value;
-    }
+    let value: string | null = readFieldValue(fd, key);
+    const originalValue = original?.[key as ResidentialFieldKey];
+    const numericFields = ["roomCount", "familyCount", "maxBudget", "requiredSpace"];
+    const unchanged =
+      original &&
+      (numericFields.includes(key)
+        ? value === String(originalValue ?? "")
+        : value === normalizeValue(originalValue as string | string[] | null | undefined));
+    if (original && unchanged) return;
+    if (numericFields.includes(key) && value === "") value = null;
+    payload[key] = value;
   });
 
   const districtRaw = fd.get("district");
