@@ -137,6 +137,7 @@ function buildResidentialPayload(fd: FormData, original?: ResidentialSeeker | nu
         ? value === String(originalValue ?? "")
         : value === normalizeValue(originalValue as string | string[] | null | undefined));
     if (original && unchanged) return;
+    if (key === "serialNumber" && value === "") return;
     if (numericFields.includes(key) && value === "") value = null;
     payload[key] = value;
   });
