@@ -315,6 +315,17 @@ const en = {
   },
   error: {
     soldStatusRequiresSale: "Sold status requires listing type to be Sale",
+    generic: "An unexpected error occurred. Please try again.",
+    network: "Unable to connect to server. Please check your internet connection.",
+    notFound: "The requested item was not found.",
+    unauthorized: "Session expired or you do not have permission.",
+    forbidden: "You do not have permission to perform this action.",
+    badRequest: "Invalid request data.",
+    validation: "Please fix the following validation errors:",
+    dbUpdate: "Could not save data. Please verify the entered data.",
+    invalidOperation: "Operation not allowed in current state.",
+    duplicateKey: "Duplicate value: A record with this information already exists.",
+    serverError: "Internal server error. Please try again later.",
   },
   auth: {
     title: "Sign in to نور الاستشارة",
@@ -1032,9 +1043,6 @@ const ar = {
     bank: "البنك",
     iban: "رقم الايبان",
   },
-  error: {
-    soldStatusRequiresSale: "حالة المُباع تتطلب أن يكون نوع العرض بيع",
-  },
   auth: {
     title: "تسجيل الدخول إلى نور الاستشارة",
     subtitle: "إدارة العقارات والملاك والعقود والعملاء.",
@@ -1414,6 +1422,20 @@ const ar = {
     Residential: "سكني",
     Industrial: "صناعي",
     Agricultural: "زراعي",
+  },
+  error: {
+    soldStatusRequiresSale: "حالة مباع تتطلب أن يكون نوع العرض للبيع",
+    generic: "حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى.",
+    network: "تعذر الاتصال بالخادم. يرجى التحقق من اتصال الإنترنت.",
+    notFound: "العنصر المطلوب غير موجود.",
+    unauthorized: "انتهت الجلسة أو ليس لديك صلاحية للوصول.",
+    forbidden: "ليس لديك الصلاحية المطلوبة للقيام بهذا الإجراء.",
+    badRequest: "بيانات الطلب غير صالحة. يرجى التحقق من البيانات المدخلة.",
+    validation: "يرجى تصحيح الأخطاء التالية:",
+    dbUpdate: "تعذر حفظ البيانات. يرجى التأكد من عدم وجود بيانات مكررة أو خاطئة.",
+    invalidOperation: "الإجراء غير مسموح به في الحالة الحالية.",
+    duplicateKey: "بيانات مكررة: البيانات المدخلة مكررة وموجودة بالفعل في النظام.",
+    serverError: "حدث خطأ في الخادم. يرجى التواصل مع الدعم أو المحاولة لاحقاً.",
   },
 };
 

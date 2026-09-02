@@ -68,10 +68,7 @@ type SearchUpdater = (prev: Record<string, unknown>) => Record<string, unknown>;
  * `update(patch)` navigates (replace, to avoid history spam) with the patch.
  */
 export function useUrlSearchState<S>(
-  route: {
-    useSearch: () => S;
-    useNavigate: () => (opts: { search: SearchUpdater; replace?: boolean }) => void;
-  },
+  route: any,
   defaults: S,
 ): readonly [S, (patch: Partial<S> | ((prev: S) => Partial<S>)) => void] {
   const search = route.useSearch();
@@ -80,12 +77,12 @@ export function useUrlSearchState<S>(
   const update = useCallback(
     (patch: Partial<S> | ((prev: S) => Partial<S>)) => {
       navigate({
-        search: (prev: Record<string, unknown>) => ({
+        search: (prev: any) => ({
           ...prev,
           ...(typeof patch === "function" ? patch(prev as S) : patch),
         }),
         replace: true,
-      });
+      } as any);
     },
     [navigate],
   );

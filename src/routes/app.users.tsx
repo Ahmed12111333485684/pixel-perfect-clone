@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { api, getStoredToken, resolveApiAssetUrl, type UserDto, type Role } from "@/lib/api";
+import { getFriendlyErrorMessage } from "@/lib/errorUtils";
 import type { AppNavItem } from "@/lib/navigation";
 import { useAuth } from "@/lib/auth";
 import { PageHeader, StatusBadge } from "@/components/PageHeader";
@@ -178,7 +179,7 @@ function UsersPage() {
       setCreating(false);
       setEditing(null);
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: unknown) => toast.error(getFriendlyErrorMessage(e, t)),
   });
 
   const del = useMutation({
@@ -188,7 +189,7 @@ function UsersPage() {
       toast.success(t("common.deleted"));
       setDeleting(null);
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: unknown) => toast.error(getFriendlyErrorMessage(e, t)),
   });
 
   const reset = useMutation({
@@ -201,7 +202,7 @@ function UsersPage() {
       toast.success(t("common.success"));
       setResetting(null);
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: unknown) => toast.error(getFriendlyErrorMessage(e, t)),
   });
 
   if (!auth.hasRole("Admin")) {

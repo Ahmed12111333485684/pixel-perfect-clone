@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useRef, useState, type FormEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { api, ApiError, resolveApiAssetUrl, type Lead, type LeadIntent } from "@/lib/api";
+import { getFriendlyErrorMessage, formatMissingFieldsMessage } from "@/lib/errorUtils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -81,6 +82,19 @@ function LeadIntakePage() {
   const onSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
+    const missingFields: string[] = [];
+    if (!type || !type.trim()) missingFields.push("نوع العقار");
+    if (!fd.get("listedPrice")?.toString().trim()) {
+      missingFields.push(intent === "Rent" || intent === "LetOut" ? t("common.monthlyRent") : t("common.salePrice"));
+    }
+    if (!fd.get("fullName")?.toString().trim()) missingFields.push(t("lead.contactName"));
+    if (!fd.get("phone")?.toString().trim()) missingFields.push(t("lead.contactPhone"));
+
+    if (missingFields.length > 0) {
+      toast.error(formatMissingFieldsMessage(missingFields, t));
+      return;
+    }
+
     fd.set("intent", intent);
     fd.set("propertyType", type);
     const preferredContactAt = buildPreferredContactAt();
@@ -113,8 +127,7 @@ function LeadIntakePage() {
       setSubmitted(lead);
       toast.success(t("lead.submitted"));
     } catch (err) {
-      const msg = err instanceof ApiError ? err.message : t("common.error");
-      toast.error(msg);
+      toast.error(getFriendlyErrorMessage(err, t));
     } finally {
       setLoading(false);
     }

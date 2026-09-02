@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState, useRef, type FormEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { api, ApiError, type ResidentialSeeker } from "@/lib/api";
+import { getFriendlyErrorMessage, formatMissingFieldsMessage } from "@/lib/errorUtils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -79,13 +80,13 @@ function PropertyRequestPage() {
     const fullName = formData.get("fullName") as string;
     const mobileNumber = formData.get("mobileNumber") as string;
 
-    if (!fullName.trim() || !mobileNumber.trim()) {
-      toast.error(t("common.requiredFieldsMissing") || "Please fill in all required fields");
-      return;
-    }
+    const missingFields: string[] = [];
+    if (!fullName || !fullName.trim()) missingFields.push(t("common.fullName"));
+    if (!mobileNumber || !mobileNumber.trim()) missingFields.push(t("common.mobileNumber"));
+    if (!propertyType || !propertyType.trim()) missingFields.push(t("common.propertyType") || "نوع العقار");
 
-    if (!propertyType.trim()) {
-      toast.error(t("propertyRequest.selectPropertyType") || "يرجى اختيار نوع العقار");
+    if (missingFields.length > 0) {
+      toast.error(formatMissingFieldsMessage(missingFields, t));
       return;
     }
 
@@ -121,8 +122,7 @@ function PropertyRequestPage() {
       setSubmitted({ id: result.id, fullName: result.fullName || fullName });
       toast.success(t("common.recordCreated") || "Request submitted successfully!");
     } catch (err) {
-      const msg = err instanceof ApiError ? err.message : t("common.error");
-      toast.error(msg);
+      toast.error(getFriendlyErrorMessage(err, t));
     } finally {
       setLoading(false);
     }

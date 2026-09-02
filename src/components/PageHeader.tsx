@@ -1,4 +1,5 @@
 import { useTranslation } from "react-i18next";
+import { getFriendlyErrorMessage } from "@/lib/errorUtils";
 
 interface PageHeaderProps {
   title: string;
@@ -38,11 +39,12 @@ export function LoadingBlock() {
   );
 }
 
-export function ErrorBlock({ message }: { message?: string }) {
+export function ErrorBlock({ error, message }: { error?: unknown; message?: string }) {
   const { t } = useTranslation();
+  const displayMsg = error ? getFriendlyErrorMessage(error, t) : (message ?? t("common.error"));
   return (
-    <div className="rounded-xl border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
-      {message ?? t("common.error")}
+    <div className="rounded-xl border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive font-medium">
+      {displayMsg}
     </div>
   );
 }

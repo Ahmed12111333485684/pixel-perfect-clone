@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useState, type FormEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/lib/auth";
-import { ApiError } from "@/lib/api";
+import { getFriendlyErrorMessage } from "@/lib/errorUtils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -37,8 +37,7 @@ function LoginPage() {
       const user = await auth.login(username, password);
       navigate({ to: user.role === "Partner" ? "/partner/my-properties" : "/app" });
     } catch (err) {
-      if (err instanceof ApiError) setError(err.message || t("auth.invalid"));
-      else setError(t("auth.invalid"));
+      setError(getFriendlyErrorMessage(err, t));
     } finally {
       setLoading(false);
     }

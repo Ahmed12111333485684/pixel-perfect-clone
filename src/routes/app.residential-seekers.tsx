@@ -14,6 +14,7 @@ import {
   type Partner,
   ApiError,
 } from "@/lib/api";
+import { getFriendlyErrorMessage } from "@/lib/errorUtils";
 import { syncCreated, syncUpdated, syncRemoved } from "@/lib/queryCache";
 import { PartnerDialog } from "@/components/partners/PartnerDialog";
 import { useAuth } from "@/lib/auth";
@@ -179,6 +180,7 @@ function ResidentialSeekersPage() {
     status: "all",
     listingType: "all",
     requestCategory: "all",
+    roomCount: "all",
     city: "",
     district: "",
     page: 1,
@@ -204,7 +206,7 @@ function ResidentialSeekersPage() {
 
   const handleSort = (key: string) => {
     if (sortBy === key) {
-      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+      setSortDir(sortDir === "asc" ? "desc" : "asc");
     } else {
       setSortBy(key);
       setSortDir("asc");
@@ -296,7 +298,7 @@ function ResidentialSeekersPage() {
       autoOpenedRef.current = true;
       setSelected(match);
       navigate({
-        search: (prev: Record<string, unknown>) => ({ ...prev, selected: undefined }),
+        search: ((prev: Record<string, unknown>) => ({ ...prev, selected: undefined })) as any,
         replace: true,
       });
       requestAnimationFrame(() => {
@@ -345,13 +347,7 @@ function ResidentialSeekersPage() {
       setCreating(false);
       syncCreated(qc, "residential-seekers", saved);
     } catch (error) {
-      toast.error(
-        error instanceof ApiError && error.detail
-          ? error.detail
-          : error instanceof Error
-            ? error.message
-            : t("common.error"),
-      );
+      toast.error(getFriendlyErrorMessage(error, t));
     } finally {
       setSubmitting(false);
     }
@@ -376,13 +372,7 @@ function ResidentialSeekersPage() {
       setSelected(null);
       syncUpdated(qc, "residential-seekers", saved);
     } catch (error) {
-      toast.error(
-        error instanceof ApiError && error.detail
-          ? error.detail
-          : error instanceof Error
-            ? error.message
-            : t("common.error"),
-      );
+      toast.error(getFriendlyErrorMessage(error, t));
     } finally {
       setSubmitting(false);
     }
@@ -397,7 +387,7 @@ function ResidentialSeekersPage() {
       setDeleting(null);
       syncRemoved(qc, "residential-seekers", deleting.id);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : t("common.error"));
+      toast.error(getFriendlyErrorMessage(e, t));
     } finally {
       setDeletingRecord(false);
     }
@@ -761,7 +751,7 @@ function ResidentialSeekersPage() {
         </div>
       ) : seekers.error ? (
         <div className="rounded-xl border border-dashed border-destructive/40 p-8 text-center text-destructive">
-          {t("common.error", { defaultValue: "An error occurred." })}
+          {getFriendlyErrorMessage(seekers.error, t)}
         </div>
       ) : filteredSeekers.length === 0 ? (
         <div className="rounded-xl border border-dashed border-border p-8 text-center text-muted-foreground">
@@ -975,9 +965,9 @@ function ResidentialSeekersPage() {
           canManage
             ? handleUpdate
             : (e) => {
-                e.preventDefault();
-                setSelected(null);
-              }
+              e.preventDefault();
+              setSelected(null);
+            }
         }
         onAddPartner={() => setPartnerDialogOpen(true)}
         isAdmin={isAdmin}
@@ -1300,9 +1290,9 @@ function ResidentialSeekerDialog({
               listingType === "Rental"
                 ? [{ value: "دفعات", label: "دفعات" }]
                 : PAYMENT_TYPES.map((p) => ({
-                    value: p,
-                    label: p === "كاش" ? t("paymentTypes.cash") : t("paymentTypes.finance"),
-                  }))
+                  value: p,
+                  label: p === "كاش" ? t("paymentTypes.cash") : t("paymentTypes.finance"),
+                }))
             }
           />
           <TextField
@@ -1455,7 +1445,7 @@ function ResidentialSeekerDialog({
                         <Button asChild size="sm" variant="outline">
                           <Link
                             to="/app/listings"
-                            search={{ selected: property.id }}
+                            search={{ selected: property.id } as any}
                             onClick={(e) => e.stopPropagation()}
                           >
                             {t("common.open")}

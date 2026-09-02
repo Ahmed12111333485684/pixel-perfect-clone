@@ -3,6 +3,7 @@ import { AppLayout } from "@/components/AppLayout";
 import { useRef, useState, type FormEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { ApiError, submitPartnerLead, type Lead, type LeadIntent } from "@/lib/api";
+import { getFriendlyErrorMessage, formatMissingFieldsMessage } from "@/lib/errorUtils";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -66,11 +67,26 @@ function PartnerSubmitPropertyPage() {
     const fd = new FormData();
     const raw = new FormData(e.currentTarget);
 
-    fd.set("propertyName", String(raw.get("propertyName") ?? ""));
-    fd.set("address", String(raw.get("address") ?? ""));
+    const propertyName = String(raw.get("propertyName") ?? "").trim();
+    const address = String(raw.get("address") ?? "").trim();
+    const listedPrice = String(raw.get("listedPrice") ?? "").trim();
+
+    const missingFields: string[] = [];
+    if (!propertyName) missingFields.push(t("lead.propertyName"));
+    if (!address) missingFields.push(t("lead.propertyAddress"));
+    if (!type || !type.trim()) missingFields.push(t("lead.propertyType"));
+    if (!listedPrice) missingFields.push(intent === "Rent" || intent === "LetOut" ? t("common.monthlyRent") : t("common.salePrice"));
+
+    if (missingFields.length > 0) {
+      toast.error(formatMissingFieldsMessage(missingFields, t));
+      return;
+    }
+
+    fd.set("propertyName", propertyName);
+    fd.set("address", address);
     fd.set("type", type);
     fd.set("intent", intent);
-    fd.set("listedPrice", String(raw.get("listedPrice") ?? "0"));
+    fd.set("listedPrice", listedPrice);
     fd.set("notes", String(raw.get("notes") ?? ""));
     files.forEach((file) => fd.append("images", file));
 
@@ -80,8 +96,7 @@ function PartnerSubmitPropertyPage() {
       setSubmitted(lead);
       toast.success(t("lead.submitted"));
     } catch (err) {
-      const msg = err instanceof ApiError ? err.message : t("common.error");
-      toast.error(msg);
+      toast.error(getFriendlyErrorMessage(err, t));
     } finally {
       setLoading(false);
     }

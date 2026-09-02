@@ -52,7 +52,7 @@ export function DataTable<T>({
   const isMobile = useIsMobile();
 
   if (loading) return <LoadingBlock />;
-  if (error) return <ErrorBlock message={(error as Error)?.message} />;
+  if (error) return <ErrorBlock error={error} message={(error as Error)?.message} />;
   if (!rows || rows.length === 0) return <EmptyState />;
 
   const showActions = !!onEdit || !!onDelete;

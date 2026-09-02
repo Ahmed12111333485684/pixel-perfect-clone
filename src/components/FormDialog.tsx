@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { useTranslation } from "react-i18next";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { getFriendlyFieldLabel } from "@/lib/errorUtils";
 
 function getMissingRequiredLabels(form: HTMLFormElement, fallback: string): string[] {
   const missing: string[] = [];
@@ -28,7 +29,8 @@ function getMissingRequiredLabels(form: HTMLFormElement, fallback: string): stri
         form.querySelector<HTMLLabelElement>(`label[for="${el.name}"]`)?.textContent?.trim() ?? "";
     }
     if (!label) label = el.name || el.id || fallback;
-    if (!missing.includes(label)) missing.push(label);
+    const friendly = getFriendlyFieldLabel(label.replace(/[*:]/g, "").trim());
+    if (!missing.includes(friendly)) missing.push(friendly);
   }
   return missing;
 }

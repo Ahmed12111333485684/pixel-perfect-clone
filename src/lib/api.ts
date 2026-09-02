@@ -30,10 +30,15 @@ export function setStoredToken(token: string | null) {
 export class ApiError extends Error {
   status: number;
   detail?: string;
-  constructor(message: string, status: number, detail?: string) {
+  errorCode?: string;
+  details?: string[] | Record<string, string[]>;
+
+  constructor(message: string, status: number, detail?: string, errorCode?: string, details?: string[] | Record<string, string[]>) {
     super(message);
     this.status = status;
     this.detail = detail;
+    this.errorCode = errorCode;
+    this.details = details;
   }
 }
 
@@ -90,11 +95,17 @@ export async function api<T = unknown>(path: string, opts: ApiOptions = {}): Pro
   if (!res.ok) {
     let message = `HTTP ${res.status}`;
     let detail: string | undefined;
+    let errorCode: string | undefined;
+    let details: string[] | Record<string, string[]> | undefined;
     try {
       const data = await res.json();
       if (data && typeof data === "object") {
         if (typeof data.error === "string") message = data.error;
         if (typeof data.detail === "string") detail = data.detail;
+        if (typeof data.errorCode === "string") errorCode = data.errorCode;
+        if (Array.isArray(data.details) || (data.details && typeof data.details === "object")) {
+          details = data.details;
+        }
       }
     } catch {
       // ignore
@@ -102,7 +113,7 @@ export async function api<T = unknown>(path: string, opts: ApiOptions = {}): Pro
     if (res.status === 401) {
       setStoredToken(null);
     }
-    throw new ApiError(message, res.status, detail);
+    throw new ApiError(message, res.status, detail, errorCode, details);
   }
 
   if (opts.asBlob) {
