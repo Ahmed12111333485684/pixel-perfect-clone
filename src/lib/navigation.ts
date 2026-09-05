@@ -35,6 +35,7 @@ export interface AppNavItem {
 export const APP_NAV_ITEMS: AppNavItem[] = [
   { to: "/app", label: "nav.dashboard", icon: LayoutDashboard },
   { to: "/app/residential-seekers", label: "nav.residentialSeekers", icon: Users2 },
+  { to: "/app/clients", label: "nav.clients", icon: ContactRound, staffOnly: true },
   { to: "/app/listings", label: "nav.listings", icon: Building2 },
   { to: "/app/amenities", label: "nav.amenities", icon: Sparkles, staffOnly: true },
   { to: "/app/advertisements", label: "nav.advertisements", icon: Megaphone },
