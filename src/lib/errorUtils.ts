@@ -67,6 +67,25 @@ export function getFriendlyFieldLabel(field: string): string {
   return FIELD_LABELS_AR[formatted] || formatted;
 }
 
+const INVALID_OPERATION_AR: Record<string, string> = {
+  "Password is required": "كلمة المرور مطلوبة.",
+  "Password must be at least 8 characters long": "كلمة المرور يجب أن تتكون من 8 أحرف على الأقل.",
+  "Password must include at least one letter": "كلمة المرور يجب أن تحتوي على حرف واحد على الأقل.",
+  "Password must include at least one number": "كلمة المرور يجب أن تحتوي على رقم واحد على الأقل.",
+  "Role must be Admin or Employee": "يجب أن تكون الصلاحية (Admin) أو (Employee).",
+  "Employee users must have at least one visible screen": "يجب تحديد شاشة واحدة على الأقل للموظف.",
+  "Screen permissions can only be set for Employee users": "أذونات الشاشات متاحة فقط لمستخدمي (Employee).",
+  "Username already in use": "اسم المستخدم مستخدم بالفعل.",
+};
+
+function mapInvalidOperationMessage(message: string): string | null {
+  const normalized = message.trim();
+  for (const [key, arabic] of Object.entries(INVALID_OPERATION_AR)) {
+    if (normalized.toLowerCase() === key.toLowerCase()) return arabic;
+  }
+  return null;
+}
+
 /**
  * Returns a clear message listing specific missing required field names.
  */
@@ -133,6 +152,10 @@ export function getFriendlyErrorMessage(err: unknown, t?: TranslateFn): string {
         case "ERR_DB_UPDATE":
           return translate("error.dbUpdate", { defaultValue: "تعذر حفظ البيانات. يرجى التأكد من عدم وجود بيانات مكررة أو خاطئة." });
         case "ERR_INVALID_OPERATION":
+          if (err.message) {
+            const mapped = mapInvalidOperationMessage(err.message);
+            if (mapped) return mapped;
+          }
           return translate("error.invalidOperation", { defaultValue: "الإجراء غير مسموح به في الحالة الحالية." });
         case "ERR_BAD_REQUEST":
           return translate("error.badRequest", { defaultValue: "بيانات الطلب غير صالحة. يرجى التحقق من البيانات المدخلة." });
