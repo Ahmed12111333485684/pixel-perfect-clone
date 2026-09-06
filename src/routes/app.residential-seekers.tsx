@@ -929,6 +929,7 @@ function ResidentialSeekersPage() {
       )}
 
       <ResidentialSeekerDialog
+        key={`new-${creating}`}
         open={creating}
         onOpenChange={setCreating}
         seeker={null}
@@ -947,6 +948,7 @@ function ResidentialSeekersPage() {
       />
 
       <ResidentialSeekerDialog
+        key={`${selected?.id ?? "new"}-${!!selected}`}
         open={!!selected}
         onOpenChange={(value) => {
           if (!value) setSelected(null);
@@ -1042,7 +1044,6 @@ function ResidentialSeekerDialog({
 
   return (
     <FormDialog
-      key={`${seeker?.id ?? "new"}-${open}`}
       open={open}
       onOpenChange={onOpenChange}
       title={title}
