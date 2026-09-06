@@ -29,6 +29,11 @@ function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
+  if (auth.isAuthenticated) {
+    navigate({ to: auth.isPartner ? "/partner/my-properties" : "/app" });
+    return null;
+  }
+
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError(null);

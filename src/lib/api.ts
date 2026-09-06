@@ -1,5 +1,7 @@
 // Lightweight fetch-based API client for the Property Management API.
 
+import { notifyUnauthorized } from "./session";
+
 const TOKEN_KEY = "nourconsultancy.token";
 
 export function getApiBaseUrl(): string {
@@ -112,6 +114,7 @@ export async function api<T = unknown>(path: string, opts: ApiOptions = {}): Pro
     }
     if (res.status === 401) {
       setStoredToken(null);
+      notifyUnauthorized();
     }
     throw new ApiError(message, res.status, detail, errorCode, details);
   }

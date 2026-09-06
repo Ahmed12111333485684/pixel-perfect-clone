@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { api, getStoredToken, setStoredToken, type AuthResponse, type Role } from "./api";
+import { onUnauthorized } from "./session";
 
 interface JwtPayload {
   sub?: string;
@@ -207,6 +208,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isPartner: role === "Partner",
     };
   }, [token, user]);
+
+  useEffect(() => {
+    return onUnauthorized(() => {
+      setStoredUser(null);
+      setToken(null);
+      setUser(null);
+      if (typeof window !== "undefined" && window.location.pathname !== "/login") {
+        window.location.assign("/login");
+      }
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!user?.exp) return;
+    const interval = setInterval(() => {
+      if (user.exp! * 1000 <= Date.now()) {
+        notifyUnauthorized();
+      }
+    }, 30_000);
+    return () => clearInterval(interval);
+  }, [user?.exp]);
 
   if (!bootstrapped) {
     return (

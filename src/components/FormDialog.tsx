@@ -35,6 +35,29 @@ function getMissingRequiredLabels(form: HTMLFormElement, fallback: string): stri
   return missing;
 }
 
+function getInvalidLabels(form: HTMLFormElement, fallback: string): string[] {
+  const invalid: string[] = [];
+  const elements = Array.from(form.elements) as Array<
+    HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+  >;
+  for (const el of elements) {
+    if (el.disabled || el.validity.valid) continue;
+    let label = "";
+    if (el.id) {
+      label =
+        form.querySelector<HTMLLabelElement>(`label[for="${el.id}"]`)?.textContent?.trim() ?? "";
+    }
+    if (!label && el.name) {
+      label =
+        form.querySelector<HTMLLabelElement>(`label[for="${el.name}"]`)?.textContent?.trim() ?? "";
+    }
+    if (!label) label = el.name || el.id || fallback;
+    const friendly = getFriendlyFieldLabel(label.replace(/[*:]/g, "").trim());
+    if (!invalid.includes(friendly)) invalid.push(friendly);
+  }
+  return invalid;
+}
+
 interface FormDialogProps {
   open: boolean;
   onOpenChange: (v: boolean) => void;
@@ -87,7 +110,12 @@ export function FormDialog({
                 return;
               }
               if (!form.checkValidity()) {
-                toast.error(t("common.invalidFields"));
+                const invalid = getInvalidLabels(form, t("common.requiredField"));
+                toast.error(
+                  invalid.length > 0
+                    ? `${t("common.invalidFields")}: ${invalid.join("، ")}`
+                    : t("common.invalidFields")
+                );
                 return;
               }
             }

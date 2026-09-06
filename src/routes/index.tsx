@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { BrandLogo } from "@/components/BrandLogo";
 import { LanguageToggle } from "@/components/LanguageToggle";
 import { PublicFooter } from "@/components/PublicFooter";
+import { useAuth } from "@/lib/auth";
 import heroImg from "@/assets/hero-property.png";
 
 export const Route = createFileRoute("/")({
@@ -31,6 +32,7 @@ export const Route = createFileRoute("/")({
 
 function Landing() {
   const { t } = useTranslation();
+  const auth = useAuth();
   const cardsSectionRef = useRef<HTMLElement | null>(null);
   const footerRef = useRef<HTMLElement | null>(null);
   const [cardsVisible, setCardsVisible] = useState(false);
@@ -92,12 +94,21 @@ function Landing() {
           </div>
           <div className="absolute left-4 top-5 flex items-center gap-2 text-white motion-safe:animate-rise-in sm:left-6 md:left-8" style={{ animationDelay: "180ms" }}>
             <LanguageToggle />
-            <Link
-              to="/login"
-              className="rounded-md border border-white/20 px-4 py-2 text-sm font-medium backdrop-blur-md transition-all hover:bg-white/10 hover:scale-105"
-            >
-              {t("nav.signIn")}
-            </Link>
+            {auth.isAuthenticated ? (
+              <Link
+                to={auth.isPartner ? "/partner/my-properties" : "/app"}
+                className="rounded-md border border-white/20 px-4 py-2 text-sm font-medium backdrop-blur-md transition-all hover:bg-white/10 hover:scale-105"
+              >
+                {t("nav.dashboard")}
+              </Link>
+            ) : (
+              <Link
+                to="/login"
+                className="rounded-md border border-white/20 px-4 py-2 text-sm font-medium backdrop-blur-md transition-all hover:bg-white/10 hover:scale-105"
+              >
+                {t("nav.signIn")}
+              </Link>
+            )}
           </div>
         </div>
       </header>
