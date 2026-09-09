@@ -261,7 +261,7 @@ function ClientDetailPage() {
         </div>
       </div>
 
-      <div className="mt-4 space-y-3">
+      <div className="mt-4 space-y-3 rounded-xl border border-border bg-card p-4">
         <div className="min-w-[220px] sm:max-w-sm">
           <Label htmlFor="client-records-q" className="text-xs font-medium">
             {t("clients.searchPlaceholder")}

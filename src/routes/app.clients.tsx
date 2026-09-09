@@ -150,21 +150,36 @@ function ClientsPage() {
 
   const clients = useMemo(() => buildClients(allRecords), [allRecords]);
 
+  const qFiltered = useMemo(
+    () => clients.filter((client) => clientMatchesQuery(client, q)),
+    [clients, q],
+  );
+
+  const kindCounts = useMemo(
+    () => ({
+      all: qFiltered.length,
+      requests: qFiltered.filter((client) => client.counts.request + client.counts.seeker > 0)
+        .length,
+      listings: qFiltered.filter((client) => client.counts.listing > 0).length,
+      leads: qFiltered.filter((client) => client.counts.lead > 0).length,
+    }),
+    [qFiltered],
+  );
+
   const filtered = useMemo(() => {
-    const result = clients.filter(
+    const result = qFiltered.filter(
       (client) =>
-        clientMatchesQuery(client, q) &&
-        (kind === "all" ||
-          (kind === "requests" && client.counts.request + client.counts.seeker > 0) ||
-          (kind === "listings" && client.counts.listing > 0) ||
-          (kind === "leads" && client.counts.lead > 0)),
+        kind === "all" ||
+        (kind === "requests" && client.counts.request + client.counts.seeker > 0) ||
+        (kind === "listings" && client.counts.listing > 0) ||
+        (kind === "leads" && client.counts.lead > 0),
     );
     result.sort((a, b) => {
       if (sort === "name") return a.name.localeCompare(b.name);
       return new Date(b.lastActiveAt).getTime() - new Date(a.lastActiveAt).getTime();
     });
     return result;
-  }, [clients, q, sort, kind]);
+  }, [qFiltered, sort, kind]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const pageClients = useMemo(() => {
@@ -195,54 +210,63 @@ function ClientsPage() {
     <div>
       <PageHeader title={t("clients.pageTitle")} subtitle={t("clients.pageSubtitle")} />
 
-      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-end">
-        <div className="min-w-[220px] flex-1">
-          <Label htmlFor="q" className="text-xs font-medium">
-            {t("clients.searchPlaceholder")}
-          </Label>
-          <div className="relative mt-1">
-            <Search className="pointer-events-none absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              id="q"
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-              className="w-full ps-9"
-              placeholder={t("clients.searchPlaceholder")}
-            />
+      <div className="mb-4 rounded-xl border border-border bg-card p-4">
+        <div className="flex flex-wrap items-end gap-3">
+          <div className="min-w-[220px] flex-1">
+            <Label htmlFor="q" className="text-xs font-medium">
+              {t("clients.searchPlaceholder")}
+            </Label>
+            <div className="relative mt-1">
+              <Search className="pointer-events-none absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                id="q"
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+                className="w-full ps-9"
+                placeholder={t("clients.searchPlaceholder")}
+              />
+            </div>
+          </div>
+          <div className="w-full sm:w-56">
+            <Label className="text-xs font-medium">{t("clients.sortLabel")}</Label>
+            <Select value={sort} onValueChange={setSort}>
+              <SelectTrigger className="mt-1 w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="recent">{t("clients.sortRecent")}</SelectItem>
+                <SelectItem value="name">{t("clients.sortName")}</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </div>
-        <div className="w-full sm:w-56">
-          <Label className="text-xs font-medium">{t("clients.sortLabel")}</Label>
-          <Select value={sort} onValueChange={setSort}>
-            <SelectTrigger className="mt-1 w-full">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="recent">{t("clients.sortRecent")}</SelectItem>
-              <SelectItem value="name">{t("clients.sortName")}</SelectItem>
-            </SelectContent>
-          </Select>
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          {(
+            [
+              { value: "all", labelKey: "clients.filterAll", count: kindCounts.all },
+              {
+                value: "requests",
+                labelKey: "clients.kindRequests",
+                count: kindCounts.requests,
+              },
+              {
+                value: "listings",
+                labelKey: "clients.kindListings",
+                count: kindCounts.listings,
+              },
+              { value: "leads", labelKey: "clients.kindLeads", count: kindCounts.leads },
+            ] as { value: ClientKindFilter; labelKey: string; count: number }[]
+          ).map((option) => (
+            <Button
+              key={option.value}
+              size="sm"
+              variant={kind === option.value ? "default" : "outline"}
+              onClick={() => setKind(option.value)}
+            >
+              {t(option.labelKey)} {option.count}
+            </Button>
+          ))}
         </div>
-      </div>
-
-      <div className="mb-4 flex flex-wrap items-center gap-2">
-        {(
-          [
-            { value: "all", labelKey: "clients.filterAll" },
-            { value: "requests", labelKey: "clients.kindRequests" },
-            { value: "listings", labelKey: "clients.kindListings" },
-            { value: "leads", labelKey: "clients.kindLeads" },
-          ] as { value: ClientKindFilter; labelKey: string }[]
-        ).map((option) => (
-          <Button
-            key={option.value}
-            size="sm"
-            variant={kind === option.value ? "default" : "outline"}
-            onClick={() => setKind(option.value)}
-          >
-            {t(option.labelKey)}
-          </Button>
-        ))}
       </div>
 
       {loading ? (
