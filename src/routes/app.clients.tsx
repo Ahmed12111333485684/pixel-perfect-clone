@@ -41,6 +41,13 @@ import { Phone, Search, User } from "lucide-react";
 type ClientSort = "recent" | "name";
 type ClientKindFilter = "all" | "requests" | "listings" | "leads";
 
+interface ClientListState {
+  q: string;
+  page: number;
+  sort: ClientSort;
+  kind: ClientKindFilter;
+}
+
 interface SearchResult<T> {
   total: number;
   page: number;
@@ -282,7 +289,12 @@ function ClientsPage() {
           </div>
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
             {pageClients.map((client) => (
-              <ClientCard key={client.id} client={client} groupLabel={t} />
+              <ClientCard
+                key={client.id}
+                client={client}
+                groupLabel={t}
+                listState={{ q, page, sort, kind }}
+              />
             ))}
           </div>
           {totalPages > 1 && (
@@ -321,16 +333,18 @@ function ClientsPage() {
 function ClientCard({
   client,
   groupLabel,
+  listState,
 }: {
   client: Client;
   groupLabel: (key: string) => string;
+  listState: ClientListState;
 }) {
   const hasMultiple = client.phones.length > 1;
   return (
     <Link
       to="/app/clients/$id"
       params={{ id: client.id }}
-      search={{ q: "", page: 1, sort: "recent", kind: "all" }}
+      search={listState}
       className="group flex flex-col gap-3 rounded-xl border border-border bg-card p-4 shadow-sm transition-colors hover:border-primary/40 hover:bg-muted/30"
     >
       <div className="flex items-start gap-3">

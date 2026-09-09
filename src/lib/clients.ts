@@ -221,3 +221,16 @@ export function formatPhone(value: string): string {
   }
   return digits;
 }
+
+/** Converts a locally-stored number to E.164-style international digits. */
+export function internationalPhone(value: string): string {
+  const digits = normalizePhone(value);
+  if (!digits) return "";
+  return digits.startsWith("0") ? `966${digits.slice(1)}` : digits;
+}
+
+/** WhatsApp deep link ("https://wa.me/…") for a phone number. */
+export function waHref(value: string): string {
+  const intl = internationalPhone(value);
+  return intl ? `https://wa.me/${intl}` : "";
+}

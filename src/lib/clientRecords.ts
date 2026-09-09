@@ -35,6 +35,8 @@ export function residentialSeekerToClientRecord(item: ResidentialSeeker): Client
       { label: "requestDate", value: item.requestDate ?? "" },
       { label: "status", value: item.status ?? "" },
       { label: "listingType", value: item.listingType ?? "" },
+      { label: "requestCategory", value: item.requestCategory ?? "" },
+      { label: "propertyType", value: item.propertyType ?? "" },
       { label: "city", value: item.city ?? "" },
       { label: "maxBudget", value: item.maxBudget ?? "" },
     ].filter((field) => field.value),
@@ -54,6 +56,7 @@ export function commercialListingToClientRecord(item: CommercialListing): Client
     createdAt: item.createdAt,
     fields: [
       { label: "offerCode", value: item.offerCode ?? "" },
+      { label: "listingCategory", value: item.listingCategory ?? "" },
       { label: "propertyType", value: item.propertyType ?? "" },
       { label: "listingStatus", value: item.propertyStatus ?? "" },
       { label: "city", value: city },

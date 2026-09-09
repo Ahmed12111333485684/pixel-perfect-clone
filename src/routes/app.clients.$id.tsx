@@ -11,7 +11,7 @@ import {
   type ResidentialSeeker,
 } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
-import { buildClients, formatPhone, type ClientRecord, type ClientRecordKind } from "@/lib/clients";
+import { buildClients, waHref, type ClientRecord, type ClientRecordKind } from "@/lib/clients";
 import {
   commercialListingToClientRecord,
   leadToClientRecord,
@@ -23,7 +23,9 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, ChevronDown, Phone, Search, User } from "lucide-react";
+import { CopyNumber } from "@/components/CopyNumber";
+import { WhatsAppIcon } from "@/components/WhatsAppIcon";
+import { ArrowLeft, ChevronDown, Search, User } from "lucide-react";
 import { formatDate, leadStatusTone } from "@/lib/format";
 import { matchesQuery, useUrlSearchState } from "@/lib/search";
 
@@ -154,7 +156,7 @@ function ClientDetailPage() {
     sort: "recent" as ClientSort,
     kind: "all" as ClientKindFilter,
   });
-  const { q, kind } = urlState;
+  const { q, page, sort, kind } = urlState;
   const setQ = (value: string) => setUrlState({ q: value });
   const setKind = (value: ClientKindFilter) => setUrlState({ kind: value });
 
@@ -211,7 +213,7 @@ function ClientDetailPage() {
     <div>
       <Link
         to="/app/clients"
-        search={{ q: "", page: 1, sort: "recent", kind: "all" }}
+        search={{ q, page, sort, kind }}
         className="mb-4 inline-flex items-center gap-1 text-sm font-medium text-muted-foreground hover:text-foreground"
       >
         <ArrowLeft className="h-4 w-4" />
@@ -228,9 +230,18 @@ function ClientDetailPage() {
               <h2 className="font-display text-2xl font-semibold">{client.name}</h2>
               <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
                 {client.phones.map((phone, index) => (
-                  <span key={index} dir="ltr" className="inline-flex items-center gap-1">
-                    <Phone className="h-3.5 w-3.5" />
-                    {formatPhone(phone)}
+                  <span key={index} className="inline-flex items-center gap-1.5">
+                    <CopyNumber phone={phone} className="text-foreground" />
+                    <a
+                      href={waHref(phone)}
+                      target="_blank"
+                      rel="noreferrer"
+                      title={t("clients.whatsapp")}
+                      aria-label={t("clients.whatsapp")}
+                      className="inline-flex h-6 w-6 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-green-600"
+                    >
+                      <WhatsAppIcon className="h-3.5 w-3.5" />
+                    </a>
                   </span>
                 ))}
               </div>
@@ -264,7 +275,7 @@ function ClientDetailPage() {
       <div className="mt-4 space-y-3 rounded-xl border border-border bg-card p-4">
         <div className="min-w-[220px] sm:max-w-sm">
           <Label htmlFor="client-records-q" className="text-xs font-medium">
-            {t("clients.searchPlaceholder")}
+            {t("clients.searchSerial")}
           </Label>
           <div className="relative mt-1">
             <Search className="pointer-events-none absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -273,7 +284,7 @@ function ClientDetailPage() {
               value={q}
               onChange={(e) => setQ(e.target.value)}
               className="w-full ps-9"
-              placeholder={t("clients.searchPlaceholder")}
+              placeholder={t("clients.searchSerial")}
             />
           </div>
         </div>
