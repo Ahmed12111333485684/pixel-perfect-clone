@@ -6,6 +6,7 @@ import {
   api,
   type CommercialListing,
   type Lead,
+  type LeadStatus,
   type RequestListItem,
   type ResidentialSeeker,
 } from "@/lib/api";
@@ -17,10 +18,14 @@ import {
   requestRecordToClientRecord,
   residentialSeekerToClientRecord,
 } from "@/lib/clientRecords";
-import { PageHeader, LoadingBlock, ErrorBlock } from "@/components/PageHeader";
+import { LoadingBlock, ErrorBlock, EmptyState, StatusBadge } from "@/components/PageHeader";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Phone } from "lucide-react";
-import { formatDate } from "@/lib/format";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { ArrowLeft, ChevronDown, Phone, Search, User } from "lucide-react";
+import { formatDate, leadStatusTone } from "@/lib/format";
+import { matchesQuery, useUrlSearchState } from "@/lib/search";
 
 interface SearchResult<T> {
   total: number;
@@ -29,7 +34,18 @@ interface SearchResult<T> {
   items: T[];
 }
 
+type ClientSort = "recent" | "name";
+type ClientKindFilter = "all" | "requests" | "listings" | "leads";
+
 export const Route = createFileRoute("/app/clients/$id")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    q: typeof search.q === "string" ? search.q : "",
+    page: typeof search.page === "number" && search.page > 0 ? search.page : 1,
+    sort: search.sort === "name" ? "name" : ("recent" as ClientSort),
+    kind: ["all", "requests", "listings", "leads"].includes(search.kind as string)
+      ? (search.kind as ClientKindFilter)
+      : ("all" as ClientKindFilter),
+  }),
   component: ClientDetailPage,
 });
 
@@ -39,6 +55,37 @@ const KIND_ORDER: { key: ClientRecordKind; labelKey: string }[] = [
   { key: "lead", labelKey: "clients.kindLeads" },
   { key: "request", labelKey: "clients.kindRequests" },
 ];
+
+const STATUS_LABEL_BY_KIND: Record<ClientRecordKind, string> = {
+  request: "status",
+  seeker: "status",
+  listing: "listingStatus",
+  lead: "leadStatus",
+};
+
+function statusTone(
+  kind: ClientRecordKind,
+  value: string,
+): "success" | "warning" | "destructive" | "info" | "neutral" {
+  if (kind === "lead") return leadStatusTone(value as LeadStatus);
+  if (value === "تم") return "success";
+  if (value === "لم يتم") return "warning";
+  return "neutral";
+}
+
+function recordHeadline(record: ClientRecord): string {
+  const value = (label: string) => record.fields.find((f) => f.label === label)?.value ?? "";
+  switch (record.kind) {
+    case "seeker":
+      return value("serialNumber") || value("listingType");
+    case "listing":
+      return value("offerCode") || value("propertyType");
+    case "lead":
+      return value("propertyName") || value("intent");
+    default:
+      return value("requestType") || value("location");
+  }
+}
 
 function useClientData(enabled: boolean | undefined) {
   const fetchAllPages =
@@ -101,6 +148,16 @@ function ClientDetailPage() {
   const hasAccess = auth.hasRole("Admin") || auth.user?.screenPermissions.includes("/app/clients");
   const { clients, loading, error } = useClientData(hasAccess);
 
+  const [urlState, setUrlState] = useUrlSearchState(Route, {
+    q: "",
+    page: 1,
+    sort: "recent" as ClientSort,
+    kind: "all" as ClientKindFilter,
+  });
+  const { q, kind } = urlState;
+  const setQ = (value: string) => setUrlState({ q: value });
+  const setKind = (value: ClientKindFilter) => setUrlState({ kind: value });
+
   const client = useMemo(() => clients.find((c) => c.id === id), [clients, id]);
 
   if (!hasAccess) {
@@ -121,11 +178,34 @@ function ClientDetailPage() {
     );
   }
 
+  const visibleRecords = client.records.filter((record) => {
+    const kindMatch =
+      kind === "all" ||
+      (kind === "requests" && (record.kind === "seeker" || record.kind === "request")) ||
+      (kind === "listings" && record.kind === "listing") ||
+      (kind === "leads" && record.kind === "lead");
+    const queryMatch =
+      !q.trim() ||
+      matchesQuery([record.name, record.phones, ...record.fields.map((field) => field.value)], q);
+    return kindMatch && queryMatch;
+  });
+
   const sections = KIND_ORDER.map(({ key, labelKey }) => ({
     key,
     labelKey,
-    records: client.records.filter((record) => record.kind === key),
+    records: visibleRecords.filter((record) => record.kind === key),
   })).filter((section) => section.records.length > 0);
+
+  const filterOptions: { value: ClientKindFilter; labelKey: string; count: number }[] = [
+    { value: "all", labelKey: "clients.filterAll", count: client.count },
+    {
+      value: "requests",
+      labelKey: "clients.kindRequests",
+      count: client.counts.seeker + client.counts.request,
+    },
+    { value: "listings", labelKey: "clients.kindListings", count: client.counts.listing },
+    { value: "leads", labelKey: "clients.kindLeads", count: client.counts.lead },
+  ];
 
   return (
     <div>
@@ -181,24 +261,64 @@ function ClientDetailPage() {
         </div>
       </div>
 
+      <div className="mt-4 space-y-3">
+        <div className="min-w-[220px] sm:max-w-sm">
+          <Label htmlFor="client-records-q" className="text-xs font-medium">
+            {t("clients.searchPlaceholder")}
+          </Label>
+          <div className="relative mt-1">
+            <Search className="pointer-events-none absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              id="client-records-q"
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              className="w-full ps-9"
+              placeholder={t("clients.searchPlaceholder")}
+            />
+          </div>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          {filterOptions.map((option) => (
+            <Button
+              key={option.value}
+              size="sm"
+              variant={kind === option.value ? "default" : "outline"}
+              onClick={() => setKind(option.value)}
+            >
+              {t(option.labelKey)} {option.count}
+            </Button>
+          ))}
+        </div>
+      </div>
+
       {sections.length === 0 ? (
-        <div className="mt-4 text-sm text-muted-foreground">{t("common.empty")}</div>
+        <div className="mt-4">
+          <EmptyState message={t("clients.noRecords")} icon={<User className="h-8 w-8" />} />
+        </div>
       ) : (
-        <div className="mt-6 space-y-6">
+        <div className="mt-5 space-y-3">
+          {visibleRecords.length < client.count && (
+            <div className="text-sm text-muted-foreground">
+              {t("clients.records", { count: visibleRecords.length })}
+            </div>
+          )}
           {sections.map((section) => (
-            <section key={section.key}>
-              <h3 className="mb-2 text-sm font-semibold text-muted-foreground">
-                {t("clients.sectionTitle", {
-                  kind: t(section.labelKey),
-                  count: section.records.length,
-                })}
-              </h3>
-              <div className="space-y-2">
+            <details key={section.key} open className="group/details">
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-3 rounded-lg border border-border bg-muted/20 px-3 py-2 text-sm font-semibold text-foreground/80 [&::-webkit-details-marker]:hidden">
+                <span>
+                  {t("clients.sectionTitle", {
+                    kind: t(section.labelKey),
+                    count: section.records.length,
+                  })}
+                </span>
+                <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-open/details:rotate-180" />
+              </summary>
+              <div className="mt-2 space-y-2">
                 {section.records.map((record) => (
                   <RecordRow key={`${record.kind}-${record.id}`} record={record} />
                 ))}
               </div>
-            </section>
+            </details>
           ))}
         </div>
       )}
@@ -208,19 +328,40 @@ function ClientDetailPage() {
 
 function RecordRow({ record }: { record: ClientRecord }) {
   const { t } = useTranslation();
+  const headline = recordHeadline(record);
+  const statusLabel = STATUS_LABEL_BY_KIND[record.kind];
+  const statusField = record.fields.find((field) => field.label === statusLabel);
+  const remainingFields = statusField
+    ? record.fields.filter((field) => field !== statusField)
+    : record.fields;
+
   const content = (
-    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 rounded-lg border border-border bg-muted/20 px-3 py-2.5 text-sm">
-      <span className="font-mono font-medium text-muted-foreground">
-        {formatDate(record.createdAt)}
-      </span>
-      {record.fields.map((field) => (
-        <span key={field.label} className="text-muted-foreground">
-          <span className="font-medium text-foreground/80">
-            {t(`clients.field.${field.label}`)}:
-          </span>{" "}
-          {field.value}
-        </span>
-      ))}
+    <div className="rounded-xl border border-border bg-card p-3.5 shadow-sm transition-colors">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          {headline && <div className="truncate font-semibold">{headline}</div>}
+          <div className="mt-0.5 font-mono text-xs text-muted-foreground">
+            {formatDate(record.createdAt)}
+          </div>
+        </div>
+        {statusField?.value && (
+          <StatusBadge tone={statusTone(record.kind, statusField.value)}>
+            {statusField.value}
+          </StatusBadge>
+        )}
+      </div>
+      {remainingFields.length > 0 && (
+        <div className="mt-2.5 flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
+          {remainingFields.map((field) => (
+            <span key={field.label}>
+              <span className="font-medium text-foreground/80">
+                {t(`clients.field.${field.label}`)}:
+              </span>{" "}
+              {field.value}
+            </span>
+          ))}
+        </div>
+      )}
     </div>
   );
 
@@ -229,7 +370,7 @@ function RecordRow({ record }: { record: ClientRecord }) {
     <Link
       to={record.link.to as never}
       search={record.link.search as never}
-      className="block rounded-lg transition-colors hover:ring-1 hover:ring-ring"
+      className="block transition-colors hover:ring-1 hover:ring-ring"
     >
       {content}
     </Link>
