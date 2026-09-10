@@ -213,7 +213,7 @@ function AdvertisementsPage() {
 
   const handleSort = (key: string) => {
     if (sortBy === key) {
-      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+      setSortDir(sortDir === "asc" ? "desc" : "asc");
     } else {
       setSortBy(key);
       setSortDir("asc");
@@ -320,13 +320,13 @@ function AdvertisementsPage() {
         case "officeName":
           av = a.officeName ?? ""; bv = b.officeName ?? ""; break;
         case "boardPrice": {
-          const an = parseAmount(a.boardPrice ?? "");
-          const bn = parseAmount(b.boardPrice ?? "");
+          const an = parseAmount(a.boardPrice != null ? String(a.boardPrice) : "") ?? 0;
+          const bn = parseAmount(b.boardPrice != null ? String(b.boardPrice) : "") ?? 0;
           return (an - bn) * dir;
         }
         case "remainingAmount": {
-          const an = parseAmount(a.remainingAmount ?? "");
-          const bn = parseAmount(b.remainingAmount ?? "");
+          const an = parseAmount(a.remainingAmount != null ? String(a.remainingAmount) : "") ?? 0;
+          const bn = parseAmount(b.remainingAmount != null ? String(b.remainingAmount) : "") ?? 0;
           return (an - bn) * dir;
         }
         case "quantity": {

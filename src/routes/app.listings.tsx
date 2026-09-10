@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { memo, useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { api, fetchPartnersLookup, createPartner, type CommercialListing, type Partner, type CommercialListingImage, type UserDto, type Amenity, ApiError } from "@/lib/api";
+import { api, fetchPartnersLookup, createPartner, type CommercialListing, type Partner, type PartnerLookup, type CommercialListingImage, type UserDto, type Amenity, ApiError } from "@/lib/api";
 import { syncCreated, syncUpdated, syncRemoved } from "@/lib/queryCache";
 import { PartnerDialog } from "@/components/partners/PartnerDialog";
 import { useAuth } from "@/lib/auth";
@@ -325,6 +325,7 @@ function CommercialListingsPage() {
     status: "all",
     dealType: "all",
     listingCategory: "all",
+    roomCount: "all",
     city: "",
     district: "",
     page: 1,
@@ -368,7 +369,7 @@ function CommercialListingsPage() {
 
   const handleSort = (key: string) => {
     if (sortBy === key) {
-      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+      setSortDir(sortDir === "asc" ? "desc" : "asc");
     } else {
       setSortBy(key);
       setSortDir("asc");
@@ -477,7 +478,7 @@ function CommercialListingsPage() {
       autoOpenedRef.current = true;
       setSelected(match);
       navigate({
-        search: (prev: Record<string, unknown>) => ({ ...prev, selected: undefined }),
+        search: (prev) => ({ ...prev, selected: undefined }) as any,
         replace: true,
       });
     }
@@ -1169,7 +1170,7 @@ function CommercialListingDialog({
   open: boolean;
   onOpenChange: (value: boolean) => void;
   listing: CommercialListing | null;
-  partners: Partner[];
+  partners: PartnerLookup[];
   partnersLoading: boolean;
   users: UserDto[];
   usersLoading: boolean;
