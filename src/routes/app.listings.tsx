@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { memo, useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { api, fetchPartnersLookup, createPartner, type CommercialListing, type Partner, type CommercialListingImage, type UserDto, type Amenity, ApiError } from "@/lib/api";
 import { syncCreated, syncUpdated, syncRemoved } from "@/lib/queryCache";
@@ -332,9 +332,27 @@ function CommercialListingsPage() {
     sortDir: "desc" as "asc" | "desc",
   });
   const { q, deedQ, status, dealType: dealTypeFilter, listingCategory: listingCategoryFilter, roomCount, city, district, page, sortBy, sortDir } = urlState;
-  const [pageSize] = useState(100);
-  const setQ = (value: string) => setUrlState({ q: value, page: 1 });
-  const setDeedQ = (value: string) => setUrlState({ deedQ: value, page: 1 });
+  const [pageSize] = useState(25);
+  // --- debounced search inputs ---
+  const [inputQ, setInputQ] = useState(q);
+  const [inputDeedQ, setInputDeedQ] = useState(deedQ);
+  const debounceQRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const debounceDeedQRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => { setInputQ(q); }, [q]);
+  useEffect(() => { setInputDeedQ(deedQ); }, [deedQ]);
+  const setInputQDebounced = (value: string) => {
+    setInputQ(value);
+    if (debounceQRef.current) clearTimeout(debounceQRef.current);
+    debounceQRef.current = setTimeout(() => setUrlState({ q: value, page: 1 }), 250);
+  };
+  const setInputDeedQDebounced = (value: string) => {
+    setInputDeedQ(value);
+    if (debounceDeedQRef.current) clearTimeout(debounceDeedQRef.current);
+    debounceDeedQRef.current = setTimeout(() => setUrlState({ deedQ: value, page: 1 }), 250);
+  };
+  // --------------------------------
+  const deferredInputQ = useDeferredValue(inputQ);
+  const deferredDeedQ = useDeferredValue(inputDeedQ);
   const setStatus = (value: string) => setUrlState({ status: value, page: 1 });
   const setDealTypeFilter = (value: string) => setUrlState({ dealType: value, page: 1 });
   const setListingCategoryFilter = (value: string) => setUrlState({ listingCategory: value, page: 1 });
@@ -466,15 +484,9 @@ function CommercialListingsPage() {
   }, [selectedId, listings.data, navigate]);
 
   const handleReset = () => {
-    setQ("");
-    setDeedQ("");
-    setStatus("all");
-    setDealTypeFilter("all");
-    setListingCategoryFilter("all");
-    setRoomCount("all");
-    setCity("");
-    setDistrict("");
-    setPage(1);
+    setInputQ("");
+    setInputDeedQ("");
+    setUrlState({ q: "", deedQ: "", status: "all", dealType: "all", listingCategory: "all", roomCount: "all", city: "", district: "", page: 1 });
   };
 
   const handleCreate = async (e: React.FormEvent<HTMLFormElement>, publishing: PublishingState, contracts: BrokerageContractFormValue[]) => {
@@ -581,11 +593,13 @@ function CommercialListingsPage() {
     { key: "city", header: t("common.city"), cell: (r) => r.city || t("common.notProvided"), sortable: true },
     { key: "district", header: t("common.district"), cell: (r) => Array.isArray(r.district) ? r.district.join(" - ") : (r.district || t("common.notProvided")), sortable: true },
     { key: "location", header: t("commercialListings.location"), cell: (r) => r.location || t("common.notProvided"), sortable: true },
-    { key: "amenities", header: t("nav.amenities", { defaultValue: "Amenities" }), cell: (r) => r.amenities && r.amenities.length > 0 ? (
-      <div className="flex flex-wrap gap-1">
-        {r.amenities.map(a => <span key={a.id} className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">{a.name}</span>)}
-      </div>
-    ) : t("common.notProvided") },
+    {
+      key: "amenities", header: t("nav.amenities", { defaultValue: "Amenities" }), cell: (r) => r.amenities && r.amenities.length > 0 ? (
+        <div className="flex flex-wrap gap-1">
+          {r.amenities.map(a => <span key={a.id} className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">{a.name}</span>)}
+        </div>
+      ) : t("common.notProvided")
+    },
     { key: "employee", header: t("common.employee"), cell: (r) => r.employee || t("common.notProvided"), sortable: true },
   ];
 
@@ -607,9 +621,9 @@ function CommercialListingsPage() {
           record.ownerName, record.deedNumber, record.city, record.district, record.location, record.propertyType, record.propertyStatus, record.offerCode, record.mobile1, record.mobile2, record.listingType, record.listingCategory,
           ...(record.brokerageContracts ?? []).flatMap((c) => [c.brokerageContract, c.licenseNumber]),
         ],
-        q,
+        deferredInputQ,
       );
-      const deedMatch = matchesQuery([record.deedNumber], deedQ);
+      const deedMatch = matchesQuery([record.deedNumber], deferredDeedQ);
 
       const statusMatch = status === "all" || record.propertyStatus === status;
 
@@ -637,7 +651,7 @@ function CommercialListingsPage() {
 
       return qMatch && deedMatch && statusMatch && listingCategoryMatch && dealTypeMatch && roomCountMatch && cityMatch(record) && districtMatch(record);
     });
-  }, [listings.data, q, deedQ, status, listingCategoryFilter, dealTypeFilter, roomCount, city, district]);
+  }, [listings.data, deferredInputQ, deferredDeedQ, status, listingCategoryFilter, dealTypeFilter, roomCount, city, district]);
 
   const totalPages = Math.max(1, Math.ceil(filteredListings.length / pageSize));
 
@@ -762,8 +776,8 @@ function CommercialListingsPage() {
               <Input
                 id="q"
                 placeholder={t("common.search")}
-                value={q}
-                onChange={(e) => setQ(e.target.value)}
+                value={inputQ}
+                onChange={(e) => setInputQDebounced(e.target.value)}
                 className="mt-1 w-full"
               />
             </div>
@@ -773,8 +787,8 @@ function CommercialListingsPage() {
                 id="deedQ"
                 name="deedQ"
                 placeholder={t("commercialListings.deedNumber")}
-                value={deedQ}
-                onChange={(e) => setDeedQ(e.target.value)}
+                value={inputDeedQ}
+                onChange={(e) => setInputDeedQDebounced(e.target.value)}
                 className="mt-1 w-full"
               />
             </div>
@@ -900,7 +914,7 @@ function CommercialListingsPage() {
             >
               <div className="flex flex-col sm:flex-row gap-4">
                 {r.images && r.images.length > 0 ? (
-                  <div 
+                  <div
                     className="w-full sm:w-1/3 aspect-video sm:aspect-square overflow-hidden rounded-lg bg-muted relative group/img cursor-zoom-in flex-shrink-0"
                     onClick={(e) => {
                       e.stopPropagation();
@@ -922,7 +936,7 @@ function CommercialListingsPage() {
                     <span className="text-[10px] uppercase tracking-wider">{t("common.noImage")}</span>
                   </div>
                 )}
-                
+
                 <div className="flex-1 min-w-0 space-y-2 text-sm">
                   <div className="flex items-start justify-between gap-2 mb-3">
                     <div className="font-medium truncate" title={r.ownerName || t("common.notProvided")}>
@@ -979,9 +993,9 @@ function CommercialListingsPage() {
                 </div>
                 {canManage && (
                   <div className="flex gap-1">
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
+                    <Button
+                      variant="ghost"
+                      size="sm"
                       className="h-7 px-2"
                       onClick={(e) => {
                         e.stopPropagation();
@@ -990,9 +1004,9 @@ function CommercialListingsPage() {
                     >
                       {t("common.edit")}
                     </Button>
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
+                    <Button
+                      variant="ghost"
+                      size="sm"
                       className="h-7 px-2 text-destructive hover:text-destructive/90 hover:bg-destructive/10"
                       onClick={(e) => {
                         e.stopPropagation();
@@ -1560,20 +1574,20 @@ function CommercialListingDialog({
             {amenities
               .filter((amenity) => amenity.isSelectable || selectedAmenityIds.includes(amenity.id))
               .map((amenity) => (
-              <label key={amenity.id} className="flex items-center gap-2 text-sm">
-                <Checkbox
-                  checked={selectedAmenityIds.includes(amenity.id)}
-                  onCheckedChange={(checked) => {
-                    if (readOnly) return;
-                    setSelectedAmenityIds((prev) =>
-                      checked ? [...prev, amenity.id] : prev.filter((id) => id !== amenity.id)
-                    );
-                  }}
-                  disabled={readOnly}
-                />
-                <span>{amenity.name}</span>
-              </label>
-            ))}
+                <label key={amenity.id} className="flex items-center gap-2 text-sm">
+                  <Checkbox
+                    checked={selectedAmenityIds.includes(amenity.id)}
+                    onCheckedChange={(checked) => {
+                      if (readOnly) return;
+                      setSelectedAmenityIds((prev) =>
+                        checked ? [...prev, amenity.id] : prev.filter((id) => id !== amenity.id)
+                      );
+                    }}
+                    disabled={readOnly}
+                  />
+                  <span>{amenity.name}</span>
+                </label>
+              ))}
           </div>
         ) : (
           <div className="text-sm text-muted-foreground">{t("common.noData", { defaultValue: "No amenities available" })}</div>
@@ -1590,7 +1604,7 @@ function CommercialListingDialog({
           <CommercialListingImageManager
             listingId={listing.id}
             images={listing.images ?? []}
-            onChange={onImagesChange ?? (() => {})}
+            onChange={onImagesChange ?? (() => { })}
             readOnly={readOnly}
             onImageZoom={onImageZoom}
           />

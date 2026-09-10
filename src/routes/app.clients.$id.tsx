@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useMemo } from "react";
+import { memo, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   api,
@@ -92,17 +92,17 @@ function recordHeadline(record: ClientRecord): string {
 function useClientData(enabled: boolean | undefined) {
   const fetchAllPages =
     <T,>(path: string) =>
-    async () => {
-      const fetchPage = (pageNumber: number) =>
-        api<SearchResult<T>>(path, { query: { page: pageNumber, pageSize: 100 } });
-      const first = await fetchPage(1);
-      const totalPages = Math.max(1, Math.ceil((first.total ?? 0) / 100));
-      if (totalPages === 1) return first.items ?? [];
-      const rest = await Promise.all(
-        Array.from({ length: totalPages - 1 }, (_, index) => fetchPage(index + 2)),
-      );
-      return [...(first.items ?? []), ...rest.flatMap((result) => result.items ?? [])];
-    };
+      async () => {
+        const fetchPage = (pageNumber: number) =>
+          api<SearchResult<T>>(path, { query: { page: pageNumber, pageSize: 100 } });
+        const first = await fetchPage(1);
+        const totalPages = Math.max(1, Math.ceil((first.total ?? 0) / 100));
+        if (totalPages === 1) return first.items ?? [];
+        const rest = await Promise.all(
+          Array.from({ length: totalPages - 1 }, (_, index) => fetchPage(index + 2)),
+        );
+        return [...(first.items ?? []), ...rest.flatMap((result) => result.items ?? [])];
+      };
 
   const requests = useQuery<RequestListItem[]>({
     queryKey: ["clients", "requests"],
@@ -157,10 +157,59 @@ function ClientDetailPage() {
     kind: "all" as ClientKindFilter,
   });
   const { q, page, sort, kind } = urlState;
-  const setQ = (value: string) => setUrlState({ q: value });
+  // --- debounced search ---
+  const [inputQ, setInputQ] = useState(q);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => { setInputQ(q); }, [q]);
+  const setInputQDebounced = (value: string) => {
+    setInputQ(value);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => setUrlState({ q: value }), 250);
+  };
+  // -------------------------
+  const deferredInputQ = useDeferredValue(inputQ);
   const setKind = (value: ClientKindFilter) => setUrlState({ kind: value });
 
   const client = useMemo(() => clients.find((c) => c.id === id), [clients, id]);
+
+  // All derived computations are in useMemo BEFORE early returns so that
+  // useDeferredValue can properly schedule them as low-priority work.
+  const SECTION_PAGE_SIZE = 25;
+
+  const visibleRecords = useMemo(() => {
+    if (!client) return [];
+    return client.records.filter((record) => {
+      const kindMatch =
+        kind === "all" ||
+        (kind === "requests" && (record.kind === "seeker" || record.kind === "request")) ||
+        (kind === "listings" && record.kind === "listing") ||
+        (kind === "leads" && record.kind === "lead");
+      const queryMatch =
+        !deferredInputQ.trim() ||
+        matchesQuery([record.name, record.phones, ...record.fields.map((field) => field.value)], deferredInputQ);
+      return kindMatch && queryMatch;
+    });
+  }, [client, kind, deferredInputQ]);
+
+  const sections = useMemo(() =>
+    KIND_ORDER.map(({ key, labelKey }) => ({
+      key,
+      labelKey,
+      records: visibleRecords.filter((record) => record.kind === key),
+    })).filter((section) => section.records.length > 0),
+    [visibleRecords],
+  );
+
+  const filterOptions: { value: ClientKindFilter; labelKey: string; count: number }[] = useMemo(() => [
+    { value: "all", labelKey: "clients.filterAll", count: client?.count ?? 0 },
+    {
+      value: "requests",
+      labelKey: "clients.kindRequests",
+      count: (client?.counts.seeker ?? 0) + (client?.counts.request ?? 0),
+    },
+    { value: "listings", labelKey: "clients.kindListings", count: client?.counts.listing ?? 0 },
+    { value: "leads", labelKey: "clients.kindLeads", count: client?.counts.lead ?? 0 },
+  ], [client]);
 
   if (!hasAccess) {
     return (
@@ -179,35 +228,6 @@ function ClientDetailPage() {
       </div>
     );
   }
-
-  const visibleRecords = client.records.filter((record) => {
-    const kindMatch =
-      kind === "all" ||
-      (kind === "requests" && (record.kind === "seeker" || record.kind === "request")) ||
-      (kind === "listings" && record.kind === "listing") ||
-      (kind === "leads" && record.kind === "lead");
-    const queryMatch =
-      !q.trim() ||
-      matchesQuery([record.name, record.phones, ...record.fields.map((field) => field.value)], q);
-    return kindMatch && queryMatch;
-  });
-
-  const sections = KIND_ORDER.map(({ key, labelKey }) => ({
-    key,
-    labelKey,
-    records: visibleRecords.filter((record) => record.kind === key),
-  })).filter((section) => section.records.length > 0);
-
-  const filterOptions: { value: ClientKindFilter; labelKey: string; count: number }[] = [
-    { value: "all", labelKey: "clients.filterAll", count: client.count },
-    {
-      value: "requests",
-      labelKey: "clients.kindRequests",
-      count: client.counts.seeker + client.counts.request,
-    },
-    { value: "listings", labelKey: "clients.kindListings", count: client.counts.listing },
-    { value: "leads", labelKey: "clients.kindLeads", count: client.counts.lead },
-  ];
 
   return (
     <div>
@@ -281,8 +301,8 @@ function ClientDetailPage() {
             <Search className="pointer-events-none absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               id="client-records-q"
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
+              value={inputQ}
+              onChange={(e) => setInputQDebounced(e.target.value)}
               className="w-full ps-9"
               placeholder={t("clients.searchSerial")}
             />
@@ -314,22 +334,13 @@ function ClientDetailPage() {
             </div>
           )}
           {sections.map((section) => (
-            <details key={section.key} open className="group/details">
-              <summary className="flex cursor-pointer list-none items-center justify-between gap-3 rounded-lg border border-border bg-muted/20 px-3 py-2 text-sm font-semibold text-foreground/80 [&::-webkit-details-marker]:hidden">
-                <span>
-                  {t("clients.sectionTitle", {
-                    kind: t(section.labelKey),
-                    count: section.records.length,
-                  })}
-                </span>
-                <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-open/details:rotate-180" />
-              </summary>
-              <div className="mt-2 space-y-2">
-                {section.records.map((record) => (
-                  <RecordRow key={`${record.kind}-${record.id}`} record={record} />
-                ))}
-              </div>
-            </details>
+            <SectionGroup
+              key={section.key}
+              sectionKey={section.key}
+              labelKey={section.labelKey}
+              records={section.records}
+              pageSize={SECTION_PAGE_SIZE}
+            />
           ))}
         </div>
       )}
@@ -337,7 +348,55 @@ function ClientDetailPage() {
   );
 }
 
-function RecordRow({ record }: { record: ClientRecord }) {
+/** Renders one collapsible section with its own show-more pagination. */
+function SectionGroup({
+  sectionKey,
+  labelKey,
+  records,
+  pageSize,
+}: {
+  sectionKey: string;
+  labelKey: string;
+  records: ClientRecord[];
+  pageSize: number;
+}) {
+  const { t } = useTranslation();
+  const [shown, setShown] = useState(pageSize);
+  // Reset when records change (new search/filter applied)
+  useEffect(() => { setShown(pageSize); }, [records, pageSize]);
+  const visible = records.slice(0, shown);
+  const hasMore = shown < records.length;
+
+  return (
+    <details key={sectionKey} open className="group/details">
+      <summary className="flex cursor-pointer list-none items-center justify-between gap-3 rounded-lg border border-border bg-muted/20 px-3 py-2 text-sm font-semibold text-foreground/80 [&::-webkit-details-marker]:hidden">
+        <span>
+          {t("clients.sectionTitle", {
+            kind: t(labelKey),
+            count: records.length,
+          })}
+        </span>
+        <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-open/details:rotate-180" />
+      </summary>
+      <div className="mt-2 space-y-2">
+        {visible.map((record) => (
+          <RecordRow key={`${record.kind}-${record.id}`} record={record} />
+        ))}
+        {hasMore && (
+          <button
+            type="button"
+            onClick={() => setShown((n) => n + pageSize)}
+            className="w-full rounded-lg border border-dashed border-border py-2 text-sm text-muted-foreground hover:border-primary/40 hover:text-foreground transition-colors"
+          >
+            {t("common.showMore", { defaultValue: "Show more" })} ({records.length - shown})
+          </button>
+        )}
+      </div>
+    </details>
+  );
+}
+
+const RecordRow = memo(function RecordRow({ record }: { record: ClientRecord }) {
   const { t } = useTranslation();
   const headline = recordHeadline(record);
   const statusLabel = STATUS_LABEL_BY_KIND[record.kind];
@@ -386,6 +445,6 @@ function RecordRow({ record }: { record: ClientRecord }) {
       {content}
     </Link>
   );
-}
+});
 
 export default ClientDetailPage;

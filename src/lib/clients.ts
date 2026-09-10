@@ -137,8 +137,8 @@ function makeClient(records: PreparedRecord[]): Client {
   const nameCandidates = unique(sorted.map((r) => r.name).filter(Boolean));
   const name = nameCandidates.length
     ? nameCandidates.reduce((longest, candidate) =>
-        candidate.length > longest.length ? candidate : longest,
-      )
+      candidate.length > longest.length ? candidate : longest,
+    )
     : "Unknown";
 
   const displayPhones: string[] = [];

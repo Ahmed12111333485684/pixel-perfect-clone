@@ -1,6 +1,6 @@
 import { createFileRoute, Link, Outlet, useRouterState } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   api,
@@ -72,11 +72,11 @@ const KIND_META: {
   labelKey: string;
   variant: "default" | "secondary" | "destructive" | "outline";
 }[] = [
-  { key: "request", labelKey: "clients.kindRequests", variant: "secondary" },
-  { key: "seeker", labelKey: "clients.kindSeekers", variant: "outline" },
-  { key: "listing", labelKey: "clients.kindListings", variant: "default" },
-  { key: "lead", labelKey: "clients.kindLeads", variant: "secondary" },
-];
+    { key: "request", labelKey: "clients.kindRequests", variant: "secondary" },
+    { key: "seeker", labelKey: "clients.kindSeekers", variant: "outline" },
+    { key: "listing", labelKey: "clients.kindListings", variant: "default" },
+    { key: "lead", labelKey: "clients.kindLeads", variant: "secondary" },
+  ];
 
 function ClientsPage() {
   const { t } = useTranslation();
@@ -89,7 +89,7 @@ function ClientsPage() {
     kind: "all" as ClientKindFilter,
   });
   const { q, page, sort, kind } = urlState;
-  const [pageSize] = useState(50);
+  const [pageSize] = useState(25);
 
   const showingDetail = useRouterState({
     select: (state) =>
@@ -99,7 +99,18 @@ function ClientsPage() {
 
   const hasAccess = auth.hasRole("Admin") || auth.user?.screenPermissions.includes("/app/clients");
 
-  const setQ = (value: string) => setUrlState({ q: value, page: 1 });
+  // --- debounced search ---
+  const [inputQ, setInputQ] = useState(q);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Sync back when URL changes externally (e.g. browser back/forward)
+  useEffect(() => { setInputQ(q); }, [q]);
+  const setInputQDebounced = (value: string) => {
+    setInputQ(value);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => setUrlState({ q: value, page: 1 }), 250);
+  };
+  // -------------------------
+  const deferredInputQ = useDeferredValue(inputQ);
   const setSort = (value: ClientSort) => setUrlState({ sort: value, page: 1 });
   const setKind = (value: ClientKindFilter) => setUrlState({ kind: value, page: 1 });
   const setPage = useCallback(
@@ -112,17 +123,17 @@ function ClientsPage() {
 
   const fetchAllPages =
     <T,>(path: string) =>
-    async () => {
-      const fetchPage = (pageNumber: number) =>
-        api<SearchResult<T>>(path, { query: { page: pageNumber, pageSize: 100 } });
-      const first = await fetchPage(1);
-      const totalPages = Math.max(1, Math.ceil((first.total ?? 0) / 100));
-      if (totalPages === 1) return first.items ?? [];
-      const rest = await Promise.all(
-        Array.from({ length: totalPages - 1 }, (_, index) => fetchPage(index + 2)),
-      );
-      return [...(first.items ?? []), ...rest.flatMap((result) => result.items ?? [])];
-    };
+      async () => {
+        const fetchPage = (pageNumber: number) =>
+          api<SearchResult<T>>(path, { query: { page: pageNumber, pageSize: 100 } });
+        const first = await fetchPage(1);
+        const totalPages = Math.max(1, Math.ceil((first.total ?? 0) / 100));
+        if (totalPages === 1) return first.items ?? [];
+        const rest = await Promise.all(
+          Array.from({ length: totalPages - 1 }, (_, index) => fetchPage(index + 2)),
+        );
+        return [...(first.items ?? []), ...rest.flatMap((result) => result.items ?? [])];
+      };
 
   const requests = useQuery<RequestListItem[]>({
     queryKey: ["clients", "requests"],
@@ -158,8 +169,8 @@ function ClientsPage() {
   const clients = useMemo(() => buildClients(allRecords), [allRecords]);
 
   const qFiltered = useMemo(
-    () => clients.filter((client) => clientMatchesQuery(client, q)),
-    [clients, q],
+    () => clients.filter((client) => clientMatchesQuery(client, deferredInputQ)),
+    [clients, deferredInputQ],
   );
 
   const kindCounts = useMemo(
@@ -227,8 +238,8 @@ function ClientsPage() {
               <Search className="pointer-events-none absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 id="q"
-                value={q}
-                onChange={(e) => setQ(e.target.value)}
+                value={inputQ}
+                onChange={(e) => setInputQDebounced(e.target.value)}
                 className="w-full ps-9"
                 placeholder={t("clients.searchPlaceholder")}
               />

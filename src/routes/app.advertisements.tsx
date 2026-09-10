@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useMemo, useState } from "react";
+import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { api, type Advertisement, type PropertyDto } from "@/lib/api";
 import { syncCreated, syncUpdated, syncRemoved } from "@/lib/queryCache";
@@ -188,8 +188,18 @@ function AdvertisementsPage() {
     sortDir: "desc" as "asc" | "desc",
   });
   const { q, status, adType, installationType, propertyType, page, sortBy, sortDir } = urlState;
-  const [pageSize] = useState(100);
-  const setQ = (value: string) => setUrlState({ q: value, page: 1 });
+  const [pageSize] = useState(25);
+  // --- debounced search ---
+  const [inputQ, setInputQ] = useState(q);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => { setInputQ(q); }, [q]);
+  const setInputQDebounced = (value: string) => {
+    setInputQ(value);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => setUrlState({ q: value, page: 1 }), 250);
+  };
+  // -------------------------
+  const deferredInputQ = useDeferredValue(inputQ);
   const setStatus = (value: string) => setUrlState({ status: value, page: 1 });
   const setAdType = (value: string) => setUrlState({ adType: value, page: 1 });
   const setInstallationType = (value: string) => setUrlState({ installationType: value, page: 1 });
@@ -253,11 +263,8 @@ function AdvertisementsPage() {
   });
 
   const handleReset = () => {
-    setQ("");
-    setStatus("all");
-    setAdType("all");
-    setInstallationType("all");
-    setPropertyType("all");
+    setInputQ("");
+    setUrlState({ q: "", status: "all", adType: "all", installationType: "all", propertyType: "all", page: 1 });
   };
 
   const filteredAdvertisements = useMemo(() => {
@@ -283,7 +290,7 @@ function AdvertisementsPage() {
           advertisement.notes,
           propertyDeed,
         ],
-        q,
+        deferredInputQ,
       );
       const statusMatch = status === "all" || advertisement.status === status;
       const adTypeMatch = adType === "all"
@@ -342,7 +349,7 @@ function AdvertisementsPage() {
       if (av === bv) return 0;
       return av.localeCompare(bv, "ar") * dir;
     });
-  }, [advertisements.data, properties.data, q, status, adType, installationType, propertyType, sortBy, sortDir]);
+  }, [advertisements.data, properties.data, deferredInputQ, status, adType, installationType, propertyType, sortBy, sortDir]);
 
   const totalPages = Math.max(1, Math.ceil(filteredAdvertisements.length / pageSize));
 
@@ -541,8 +548,8 @@ function AdvertisementsPage() {
             <Input
               id="q"
               placeholder={t("common.search")}
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
+              value={inputQ}
+              onChange={(e) => setInputQDebounced(e.target.value)}
               className="mt-1 w-full"
             />
           </div>

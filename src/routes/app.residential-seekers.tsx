@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   api,
@@ -189,8 +189,18 @@ function ResidentialSeekersPage() {
   });
   const { q, status, listingType, requestCategory, roomCount, city, district, page, sortBy, sortDir } =
     urlState;
-  const [pageSize] = useState(100);
-  const setQ = (value: string) => setUrlState({ q: value, page: 1 });
+  const [pageSize] = useState(25);
+  // --- debounced search ---
+  const [inputQ, setInputQ] = useState(q);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => { setInputQ(q); }, [q]);
+  const setInputQDebounced = (value: string) => {
+    setInputQ(value);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => setUrlState({ q: value, page: 1 }), 250);
+  };
+  // -------------------------
+  const deferredInputQ = useDeferredValue(inputQ);
   const setStatus = (value: string) => setUrlState({ status: value, page: 1 });
   const setListingType = (value: string) => setUrlState({ listingType: value, page: 1 });
   const setRequestCategory = (value: string) => setUrlState({ requestCategory: value, page: 1 });
@@ -326,14 +336,8 @@ function ResidentialSeekersPage() {
   });
 
   const handleReset = () => {
-    setQ("");
-    setStatus("all");
-    setListingType("all");
-    setRequestCategory("all");
-    setRoomCount("all");
-    setCity("");
-    setDistrict("");
-    setPage(1);
+    setInputQ("");
+    setUrlState({ q: "", status: "all", listingType: "all", requestCategory: "all", roomCount: "all", city: "", district: "", page: 1 });
   };
 
   const handleCreate = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -537,7 +541,7 @@ function ResidentialSeekersPage() {
           r.listingType,
           r.propertyType,
         ],
-        q,
+        deferredInputQ,
       );
       const statusMatch = status === "all" || r.status === status;
       const listingTypeMatch =
@@ -595,7 +599,7 @@ function ResidentialSeekersPage() {
       if (av === bv) return 0;
       return av.localeCompare(bv, "ar") * dir;
     });
-  }, [seekers.data, q, status, listingType, requestCategory, roomCount, city, district, sortBy, sortDir]);
+  }, [seekers.data, deferredInputQ, status, listingType, requestCategory, roomCount, city, district, sortBy, sortDir]);
 
   const totalPages = Math.max(1, Math.ceil(filteredSeekers.length / pageSize));
 
@@ -656,8 +660,8 @@ function ResidentialSeekersPage() {
             <Input
               id="q"
               placeholder={t("residentialSeekers.searchPlaceholder")}
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
+              value={inputQ}
+              onChange={(e) => setInputQDebounced(e.target.value)}
               className="mt-1 w-full"
             />
           </div>
