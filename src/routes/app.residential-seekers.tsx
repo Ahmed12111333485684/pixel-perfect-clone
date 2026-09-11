@@ -25,7 +25,7 @@ import {
   localizePropertyType,
 } from "@/lib/property-types";
 import { NATIONALITIES } from "@/lib/nationalities";
-import { PAYMENT_TYPES } from "@/lib/payment-types";
+import { PAYMENT_TYPES, RENTAL_PAYMENT_TYPES } from "@/lib/payment-types";
 import { PageHeader, StatusBadge } from "@/components/PageHeader";
 import { DataTable, type Column } from "@/components/DataTable";
 import { FormDialog, ConfirmDialog } from "@/components/FormDialog";
@@ -1037,6 +1037,8 @@ function ResidentialSeekerDialog({
   const [requestCategory, setRequestCategory] = useState(seeker?.requestCategory ?? "سكني");
   const [propertyType, setPropertyType] = useState(seeker?.propertyType ?? "");
   const [selectedCity, setSelectedCity] = useState(seeker?.city ?? "");
+  const [paymentTypeValue, setPaymentTypeValue] = useState(seeker?.paymentType ?? "");
+  const [paymentTypeOther, setPaymentTypeOther] = useState("");
   const maxBudgetLabel =
     listingType === "Rental"
       ? t("residentialSeekers.maxRentalBudget")
@@ -1287,9 +1289,14 @@ function ResidentialSeekerDialog({
             label={t("residentialSeekers.paymentType")}
             defaultValue={seeker?.paymentType ?? ""}
             readOnly={readOnly}
+            value={paymentTypeValue}
+            onValueChange={setPaymentTypeValue}
+            showOther
+            otherValue={paymentTypeOther}
+            onOtherValueChange={setPaymentTypeOther}
             options={
               listingType === "Rental"
-                ? [{ value: "دفعات", label: "دفعات" }]
+                ? RENTAL_PAYMENT_TYPES.map((p) => ({ value: p, label: p }))
                 : PAYMENT_TYPES.map((p) => ({
                   value: p,
                   label: p === "كاش" ? t("paymentTypes.cash") : t("paymentTypes.finance"),
@@ -1569,6 +1576,10 @@ function SelectField({
   readOnly,
   options,
   onValueChange,
+  value,
+  showOther,
+  otherValue,
+  onOtherValueChange,
 }: {
   id: string;
   label: string;
@@ -1576,16 +1587,29 @@ function SelectField({
   readOnly: boolean;
   options: Array<{ value: string; label: string }>;
   onValueChange?: (value: string) => void;
+  value?: string;
+  showOther?: boolean;
+  otherValue?: string;
+  onOtherValueChange?: (value: string) => void;
 }) {
+  const isOther = value === "__other__";
   return (
     <div className="space-y-2">
       <Label htmlFor={id} className="text-xs font-medium">
         {label}
       </Label>
+      {showOther && (
+        <input
+          type="hidden"
+          name={id}
+          value={value === "__other__" ? (otherValue || "__other__") : (value ?? defaultValue)}
+        />
+      )}
       <Select
-        name={id}
+        name={showOther ? undefined : id}
         defaultValue={defaultValue}
         disabled={readOnly}
+        value={value}
         onValueChange={onValueChange}
       >
         <SelectTrigger id={id} className="mt-1">
@@ -1597,8 +1621,18 @@ function SelectField({
               {option.label}
             </SelectItem>
           ))}
+          {showOther && <SelectItem value="__other__">اخري</SelectItem>}
         </SelectContent>
       </Select>
+      {showOther && isOther && (
+        <Input
+          value={otherValue ?? ""}
+          onChange={(e) => onOtherValueChange?.(e.target.value)}
+          placeholder="اكتب نوع السداد"
+          disabled={readOnly}
+          className="mt-1"
+        />
+      )}
     </div>
   );
 }

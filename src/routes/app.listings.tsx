@@ -24,6 +24,7 @@ import { ComboboxField } from "@/components/form/ComboboxField";
 import { MultiComboboxField } from "@/components/form/MultiComboboxField";
 import { CITIES, getDistricts } from "@/lib/locations";
 import { getPropertyTypesByCategory } from "@/lib/property-types";
+import { SALE_PAYMENT_TYPES, RENTAL_PAYMENT_TYPES } from "@/lib/payment-types";
 import { CommercialListingImageManager } from "@/components/CommercialListingImageManager";
 import { resolveApiAssetUrl } from "@/lib/api";
 import { MediaLightbox } from "@/components/MediaLightbox";
@@ -158,9 +159,6 @@ function normalizeListingType(value: string | null | undefined): ListingTypeValu
   if (normalized === "sale" || normalized === "بيع") return "Sale";
   return "Rental";
 }
-
-const SALE_PAYMENT_TYPES = ["تمويل", "كاش"];
-const RENTAL_PAYMENT_TYPES = ["شهري", "دفعتين", "ثلاث دفعات", "خمس دفعات"];
 
 type PropertyTypeKey =
   | "Apartment"
@@ -1180,6 +1178,7 @@ function CommercialListingDialog({
   const [propertyStatus, setPropertyStatus] = useState<string>(listing?.propertyStatus ?? STATUS_AVAILABLE);
   const [listingType, setListingType] = useState<ListingTypeValue>(normalizeListingType(listing?.listingType));
   const [paymentType, setPaymentType] = useState<string>(listing?.paymentType ?? "");
+  const [paymentTypeOther, setPaymentTypeOther] = useState<string>("");
   const [propertyType, setPropertyType] = useState<string>(listing?.propertyType ?? "");
   const [dealThrough, setDealThrough] = useState<string>(listing?.dealThrough ?? DEAL_THROUGH_OWNER);
   const [hasKey, setHasKey] = useState<boolean>(Boolean(listing?.hasKey));
@@ -1229,6 +1228,7 @@ function CommercialListingDialog({
       setPropertyStatus(listing?.propertyStatus ?? STATUS_AVAILABLE);
       setListingType(normalizeListingType(listing?.listingType));
       setPaymentType(listing?.paymentType ?? "");
+      setPaymentTypeOther("");
       setPropertyType(listing?.propertyType ?? "");
       setDealThrough(listing?.dealThrough ?? DEAL_THROUGH_OWNER);
       setHasKey(Boolean(listing?.hasKey));
@@ -1436,7 +1436,8 @@ function CommercialListingDialog({
           <TextField id="rentAmount" label={listingType === "Sale" ? t("commercialListings.salePrice") : t("commercialListings.rentAmount")} defaultValue={listing?.rentAmount} readOnly={readOnly} type="number" min={0} />
           <div className="space-y-2">
             <Label htmlFor="paymentType" className="text-xs font-medium">{t("commercialListings.paymentType")}</Label>
-            <Select name="paymentType" value={paymentType} onValueChange={setPaymentType} defaultValue={listing?.paymentType ?? ""} disabled={readOnly}>
+            <input type="hidden" name="paymentType" value={paymentType === "__other__" ? (paymentTypeOther || "__other__") : paymentType} />
+            <Select value={paymentType} onValueChange={setPaymentType} defaultValue={listing?.paymentType ?? ""} disabled={readOnly}>
               <SelectTrigger id="paymentType" className="mt-1">
                 <SelectValue placeholder={t("commercialListings.paymentType")} />
               </SelectTrigger>
@@ -1444,8 +1445,18 @@ function CommercialListingDialog({
                 {(listingType === "Sale" ? SALE_PAYMENT_TYPES : RENTAL_PAYMENT_TYPES).map((p) => (
                   <SelectItem key={p} value={p}>{p}</SelectItem>
                 ))}
+                <SelectItem value="__other__">اخري</SelectItem>
               </SelectContent>
             </Select>
+            {paymentType === "__other__" && (
+              <Input
+                value={paymentTypeOther}
+                onChange={(e) => setPaymentTypeOther(e.target.value)}
+                placeholder="اكتب نوع السداد"
+                disabled={readOnly}
+                className="mt-2"
+              />
+            )}
           </div>
           <div className="space-y-2">
             <ComboboxField
