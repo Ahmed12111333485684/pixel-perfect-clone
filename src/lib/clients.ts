@@ -1,4 +1,5 @@
 import { normalizeForSearch } from "./search";
+import { COUNTRY_CODE_DIGITS } from "./countryCodes";
 
 /**
  * Client aggregation logic. Clients are derived (not stored): records from the
@@ -59,24 +60,52 @@ export function normalizeName(value: string | null | undefined): string {
 /**
  * Canonicalizes a phone number: digits only, then normalizes international /
  * local Saudi formats so "+966 50 123 4567", "00966501234567", "050 123 4567"
- * and "501234567" all resolve to "0501234567". Landlines are kept as-is.
+ * and "501234567" all resolve to "0501234567". Landlines canonicalize the same
+ * way, so "0112345678", "+966112345678" and "00966112345678" all resolve to
+ * "0112345678".
+ *
+ * Numbers that declare a non-Saudi country code (via "+" or "00") are kept
+ * verbatim with their country code — they are never shaped as Saudi — and their
+ * national trunk "0" is dropped, so "+971 0501234567" matches "+971501234567".
+ * Unprefixed numbers are assumed Saudi, but only 9-10 digit cores are shaped;
+ * anything else passes through untouched.
  */
 export function normalizePhone(value: string | null | undefined): string {
-  const digits = (value ?? "").replace(/\D+/g, "");
+  const raw = (value ?? "").replace(/\s+/g, "");
+  const digits = raw.replace(/\D+/g, "");
   if (!digits) return "";
+
+  const declaredInternational = raw.startsWith("+") || digits.startsWith("00");
+  const saudi = digits.startsWith("00966") || digits.startsWith("966");
 
   let core = digits;
   if (core.startsWith("00966")) core = core.slice(5);
   else if (core.startsWith("966")) core = core.slice(3);
   else if (core.startsWith("00")) core = core.slice(2);
 
+  if (declaredInternational && !saudi) {
+    const code = COUNTRY_CODE_DIGITS.find((c) => core.startsWith(c));
+    if (code) {
+      const national = core.slice(code.length);
+      if (national.startsWith("0")) return `${core.slice(0, code.length)}${national.slice(1)}`;
+    }
+    return core;
+  }
+
+  if (core.length !== 9 && core.length !== 10) return core;
+
   if (core.startsWith("5") && core.length === 9) return `0${core}`;
+  core = core.replace(/^0+/, "");
+  if (core.length === 9) return `0${core}`;
   return core;
 }
 
 function unique(values: string[]): string[] {
   return [...new Set(values)];
 }
+
+/** Canonical phone tokens shorter than this are treated as junk, not identifiers. */
+const MIN_PHONE_DIGITS = 7;
 
 function stableHash(text: string): string {
   let h1 = 0xdeadbeef;
@@ -137,8 +166,8 @@ function makeClient(records: PreparedRecord[]): Client {
   const nameCandidates = unique(sorted.map((r) => r.name).filter(Boolean));
   const name = nameCandidates.length
     ? nameCandidates.reduce((longest, candidate) =>
-      candidate.length > longest.length ? candidate : longest,
-    )
+        candidate.length > longest.length ? candidate : longest,
+      )
     : "Unknown";
 
   const displayPhones: string[] = [];
@@ -173,14 +202,16 @@ function makeClient(records: PreparedRecord[]): Client {
 
 /**
  * Groups raw records into clients. Records without a usable name or with no
- * phone numbers are skipped — they cannot be identified as a client.
+ * usable phone numbers are skipped — they cannot be identified as a client.
  */
 export function buildClients(inputs: ClientRecord[]): Client[] {
   const prepared = inputs
     .map((record) => ({
       ...record,
       normalizedName: normalizeName(record.name),
-      normalizedPhones: unique(record.phones.map(normalizePhone).filter(Boolean)),
+      normalizedPhones: unique(
+        record.phones.map(normalizePhone).filter((phone) => phone.length >= MIN_PHONE_DIGITS),
+      ),
     }))
     .filter((record) => record.normalizedName && record.normalizedPhones.length > 0);
 
@@ -204,21 +235,26 @@ export function buildClients(inputs: ClientRecord[]): Client[] {
 export function clientMatchesQuery(
   client: Client,
   query: string,
-  normalize: (value: string | null | undefined) => string = normalizeForSearch,
+  normalize: (value: string | null | undefined) => string = normalizeName,
 ): boolean {
   const normalized = normalize(query);
   if (!normalized) return true;
   if (normalizeName(client.name).includes(normalized)) return true;
-  return client.phoneNumbers.some((phone) => phone.includes(normalized));
+  if (client.phoneNumbers.some((phone) => phone.includes(normalized))) return true;
+  const normalizedPhone = normalizePhone(query);
+  return !!normalizedPhone && client.phoneNumbers.some((phone) => phone.includes(normalizedPhone));
 }
 
-/** Renders a phone number with country code ("+966 50 123 4567"). */
+/** Renders a phone number for display, keeping the "+" for foreign numbers. */
 export function formatPhone(value: string): string {
   const digits = normalizePhone(value);
   if (!digits) return value;
   if (digits.length === 10 && digits.startsWith("0")) {
     return `+966 ${digits.slice(1, 3)} ${digits.slice(3, 6)} ${digits.slice(6)}`;
   }
+  const trimmed = value.trim();
+  if (trimmed.startsWith("+")) return trimmed;
+  if (!digits.startsWith("0") && digits.length > 10) return `+${digits}`;
   return digits;
 }
 

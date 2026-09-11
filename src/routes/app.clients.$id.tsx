@@ -75,18 +75,22 @@ function statusTone(
   return "neutral";
 }
 
-function recordHeadline(record: ClientRecord): string {
+function recordHeadline(record: ClientRecord): { label: string; value: string } {
   const value = (label: string) => record.fields.find((f) => f.label === label)?.value ?? "";
-  switch (record.kind) {
-    case "seeker":
-      return value("serialNumber") || value("listingType");
-    case "listing":
-      return value("offerCode") || value("propertyType");
-    case "lead":
-      return value("propertyName") || value("intent");
-    default:
-      return value("requestType") || value("location");
-  }
+  const primary: Record<ClientRecordKind, string> = {
+    seeker: "serialNumber",
+    listing: "offerCode",
+    lead: "propertyName",
+    request: "requestType",
+  };
+  const fallback: Record<ClientRecordKind, string> = {
+    seeker: "listingType",
+    listing: "propertyType",
+    lead: "intent",
+    request: "location",
+  };
+  const chosen = value(primary[record.kind]) ? primary[record.kind] : fallback[record.kind];
+  return { label: chosen, value: value(chosen) };
 }
 
 function useClientData(enabled: boolean | undefined) {
@@ -396,6 +400,72 @@ function SectionGroup({
   );
 }
 
+/** Maps stored enum values to their i18n key, so English literals render in the active language. */
+const ENUM_FIELD_MAP: Record<string, { namespace: string; map: Record<string, string> }> = {
+  listingCategory: {
+    namespace: "listingCategory",
+    map: { commercial: "Commercial", residential: "Residential" },
+  },
+  listingStatus: {
+    namespace: "commercialListingStatus",
+    map: { available: "Available", occupied: "Occupied", unavailable: "Unavailable" },
+  },
+  listingType: {
+    namespace: "listingType",
+    map: { rental: "Rental", sale: "Sale" },
+  },
+  status: {
+    namespace: "requestStatus",
+    map: {
+      new: "New",
+      "in progress": "In Progress",
+      completed: "Completed",
+      cancelled: "Cancelled",
+    },
+  },
+  requestType: {
+    namespace: "requestType",
+    map: { rental: "Rental", purchase: "Purchase", sell: "Sell" },
+  },
+  propertyType: {
+    namespace: "propertyType",
+    map: {
+      apartment: "Apartment",
+      villa: "Villa",
+      office: "Office",
+      land: "Land",
+      shop: "Shop",
+      warehouse: "Warehouse",
+      showroom: "Showroom",
+      building: "Building",
+      resthouse: "RestHouse",
+      other: "Other",
+    },
+  },
+  intent: {
+    namespace: "intent",
+    map: { buy: "Buy", rent: "Rent", sell: "Sell", letout: "LetOut" },
+  },
+  leadStatus: {
+    namespace: "leadStatus",
+    map: {
+      new: "New",
+      contacted: "Contacted",
+      qualified: "Qualified",
+      closedlost: "ClosedLost",
+      closedwon: "ClosedWon",
+    },
+  },
+};
+
+function fieldValueLabel(t: (key: string) => string, label: string, value: string): string {
+  const field = ENUM_FIELD_MAP[label];
+  if (!field) return value;
+  const key = field.map[value.toLowerCase()];
+  if (!key) return value;
+  return t(`${field.namespace}.${key}`);
+}
+
 const RecordRow = memo(function RecordRow({ record }: { record: ClientRecord }) {
   const { t } = useTranslation();
   const headline = recordHeadline(record);
@@ -409,14 +479,18 @@ const RecordRow = memo(function RecordRow({ record }: { record: ClientRecord }) 
     <div className="rounded-xl border border-border bg-card p-3.5 shadow-sm transition-colors">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          {headline && <div className="truncate font-semibold">{headline}</div>}
+          {headline.value && (
+            <div className="truncate font-semibold">
+              {fieldValueLabel(t, headline.label, headline.value)}
+            </div>
+          )}
           <div className="mt-0.5 font-mono text-xs text-muted-foreground">
             {formatDate(record.createdAt)}
           </div>
         </div>
         {statusField?.value && (
           <StatusBadge tone={statusTone(record.kind, statusField.value)}>
-            {statusField.value}
+            {fieldValueLabel(t, statusField.label, statusField.value)}
           </StatusBadge>
         )}
       </div>
@@ -427,7 +501,7 @@ const RecordRow = memo(function RecordRow({ record }: { record: ClientRecord }) 
               <span className="font-medium text-foreground/80">
                 {t(`clients.field.${field.label}`)}:
               </span>{" "}
-              {field.value}
+              {fieldValueLabel(t, field.label, field.value)}
             </span>
           ))}
         </div>
