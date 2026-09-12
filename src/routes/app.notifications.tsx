@@ -26,6 +26,7 @@ import {
 import { ChevronLeft, ChevronRight, X, CheckCheck } from "lucide-react";
 import { toast } from "sonner";
 import { SyncedScrollArea } from "@/components/SyncedScrollArea";
+import { notificationTypeLabelKey } from "@/lib/api";
 
 export const Route = createFileRoute("/app/notifications")({
   component: NotificationsPage,
@@ -134,7 +135,7 @@ function NotificationsPage() {
                   >
                     <td className="px-4 py-3">
                       <StatusBadge tone={item.type === "seeker" ? "info" : "success"}>
-                        {item.type === "seeker" ? t("notifications.newSeeker") : t("notifications.newLead")}
+                        {t(notificationTypeLabelKey(item))}
                       </StatusBadge>
                     </td>
                     <td className="px-4 py-3 text-sm">

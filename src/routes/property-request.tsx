@@ -96,7 +96,7 @@ function PropertyRequestPage() {
         method: "POST",
         body: {
           sourceChannel: ["الموقع الإلكتروني"],
-          listingType: requestType,
+          listingType: requestType === "Purchase" ? "Sale" : requestType,
           requestCategory,
           propertyType,
           fullName,
@@ -111,7 +111,6 @@ function PropertyRequestPage() {
           requestDescription: formData.get("notes") || undefined,
           maxBudget: formData.get("maxBudget") ? String(formData.get("maxBudget")) : undefined,
           paymentType: formData.get("paymentType") || undefined,
-          preferredLocation: formData.get("location") || undefined,
           city: formData.get("city") || undefined,
           district: (() => { const v = formData.get("district"); if (!v) return undefined; try { return JSON.parse(String(v)); } catch { return undefined; } })(),
           notes: formData.get("notes") || undefined,

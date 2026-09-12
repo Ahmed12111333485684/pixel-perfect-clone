@@ -383,6 +383,7 @@ export interface Lead {
   propertyName: string;
   propertyAddress: string;
   propertyType: string;
+  propertyCategory?: string | null;
   ownerNationalId: string;
   deedNumber?: string | null;
   fullName: string;
@@ -710,8 +711,18 @@ export interface NotificationItem {
   summary: string;
   summaryEn: string;
   link: string;
+  category?: string;
   createdAt: string;
   read: boolean;
+}
+
+/** i18n key for a notification's type badge, category-aware for seekers. */
+export function notificationTypeLabelKey(item: NotificationItem): string {
+  if (item.type !== "seeker") return "notifications.newLead";
+  const category = (item.category ?? "").trim().toLocaleLowerCase();
+  if (category === "تجاري" || category === "commercial") return "notifications.newSeekerCommercial";
+  if (category === "سكني" || category === "residential") return "notifications.newSeekerResidential";
+  return "notifications.newSeeker";
 }
 
 export interface NotificationsResponse {

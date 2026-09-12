@@ -97,6 +97,7 @@ function LeadIntakePage() {
 
     fd.set("intent", intent);
     fd.set("propertyType", type);
+    fd.set("propertyCategory", category ?? "");
     const preferredContactAt = buildPreferredContactAt();
     if (preferredContactAt === null) {
       toast.error(t("lead.invalidPreferredContactAt"));
@@ -114,6 +115,7 @@ function LeadIntakePage() {
       ? `${locationParts.join(" - ")}${rawAddress ? " - " : ""}${rawAddress}`
       : rawAddress;
     fd.set("propertyAddress", fullAddress);
+    fd.set("district", districtArr.join(" - "));
     // Append images under "images" key
     fd.delete("images");
     files.forEach((f) => fd.append("images", f));

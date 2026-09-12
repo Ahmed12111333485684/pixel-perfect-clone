@@ -2,11 +2,13 @@ import { createContext, useContext, useRef, useEffect, useMemo, useState, type R
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useNavigate } from "@tanstack/react-router";
+import { useTranslation } from "react-i18next";
 import {
   fetchNotifications,
   markNotificationRead,
   markAllNotificationsRead,
   deleteNotification,
+  notificationTypeLabelKey,
   type NotificationItem,
   type NotificationsResponse,
 } from "./api";
@@ -26,6 +28,7 @@ const NotificationsCtx = createContext<NotificationsContextValue | null>(null);
 export function NotificationsProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const lastTimestampRef = useRef<string | undefined>(undefined);
   const initialLoadRef = useRef(true);
   const prevUnreadRef = useRef(0);
@@ -58,7 +61,7 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
       if (notifications.length > 0) {
         toast.info(notifications[0].title, {
           action: {
-            label: notifications[0].type === "seeker" ? "طلب سكني جديد" : "عميل جديد",
+            label: t(notificationTypeLabelKey(notifications[0])),
             onClick: () => navigate({ to: notifications[0].link }),
           },
         } as any);
@@ -67,7 +70,7 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
 
     initialLoadRef.current = false;
     prevUnreadRef.current = unreadCount;
-  }, [data, navigate]);
+  }, [data, navigate, t]);
 
   const [unreadCount, setUnreadCount] = useState(0);
 

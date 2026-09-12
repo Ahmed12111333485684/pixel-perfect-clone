@@ -288,6 +288,7 @@ function LeadsPage() {
       const searchMatch = [
         lead.propertyName,
         lead.propertyAddress,
+        lead.propertyCategory,
         lead.fullName,
         lead.phone,
         lead.email,
@@ -476,6 +477,14 @@ function LeadsPage() {
                     <span>{localizePropertyType(t, selected.propertyType)}</span>
                   </div>
                 </div>
+                {selected.propertyCategory && (
+                  <div>
+                    <span className="text-xs font-medium text-muted-foreground">
+                      {t("lead.propertyCategory")}:
+                    </span>
+                    <div>{selected.propertyCategory}</div>
+                  </div>
+                )}
                 <div>
                   <span className="text-xs font-medium text-muted-foreground">
                     {t("common.intent")}:
@@ -519,7 +528,14 @@ function LeadsPage() {
                     <span className="text-xs font-medium text-muted-foreground">
                       {t("common.district")}:
                     </span>
-                    <div>{Array.isArray(selected.district) ? selected.district.join(", ") : selected.district}</div>
+                    <div>{Array.isArray(selected.district) ? selected.district.join(", ") : (() => {
+                      try {
+                        const parsed = JSON.parse(selected.district);
+                        return Array.isArray(parsed) ? parsed.join(", ") : selected.district;
+                      } catch {
+                        return selected.district;
+                      }
+                    })()}</div>
                   </div>
                 )}
                 {selected.commercialListingId && (

@@ -121,6 +121,12 @@ function normalizeValue(value: string | string[] | null | undefined) {
   return (value ?? "").trim();
 }
 
+function toSourceChannelArray(value: string | string[] | null | undefined): string[] | null {
+  if (Array.isArray(value)) return value.length ? value : null;
+  if (typeof value === "string" && value.trim()) return [value];
+  return null;
+}
+
 function readFieldValue(fd: FormData, key: string) {
   return String(fd.get(key) ?? "").trim();
 }
@@ -1116,7 +1122,7 @@ function ResidentialSeekerDialog({
             <TextField
               id="sourceChannel"
               label={t("residentialSeekers.sourceChannel")}
-              defaultValue={seeker?.sourceChannel?.join("، ") ?? ""}
+              defaultValue={(toSourceChannelArray(seeker?.sourceChannel) ?? []).join("، ")}
               readOnly={readOnly}
             />
           ) : (
@@ -1125,7 +1131,7 @@ function ResidentialSeekerDialog({
                 <div className="flex-1">
                   <SourceChannelField
                     label={t("residentialSeekers.sourceChannel")}
-                    defaultValue={seeker?.sourceChannel ?? null}
+                    defaultValue={toSourceChannelArray(seeker?.sourceChannel)}
                   />
                 </div>
                 {isAdmin && (
