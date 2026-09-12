@@ -1109,14 +1109,14 @@ function ResidentialSeekerDialog({
             label={t("common.employee")}
             defaultValue={seeker?.employee ?? ""}
             readOnly={readOnly || usersLoading}
-            options={users.map((u) => ({ value: u.username, label: u.username }))}
+            options={users.map((u) => ({ value: u.username, label: u.fullName || u.username }))}
           />
           <SelectField
             id="receiver"
             label={t("residentialSeekers.receiver")}
             defaultValue={seeker?.receiver ?? ""}
             readOnly={readOnly || usersLoading}
-            options={users.map((u) => ({ value: u.username, label: u.username }))}
+            options={users.map((u) => ({ value: u.username, label: u.fullName || u.username }))}
           />
           {readOnly ? (
             <TextField

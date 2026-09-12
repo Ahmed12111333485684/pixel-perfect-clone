@@ -442,7 +442,7 @@ function ExpenseDialog({
             <SelectContent>
               {users.map((user) => (
                 <SelectItem key={user.id} value={String(user.id)}>
-                  {user.username}
+                  {user.fullName || user.username}
                 </SelectItem>
               ))}
             </SelectContent>

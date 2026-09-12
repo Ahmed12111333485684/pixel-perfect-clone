@@ -1336,7 +1336,7 @@ function CommercialListingDialog({
                 <SelectItem value="none">{t("common.notProvided")}</SelectItem>
                 {users.map((user) => (
                   <SelectItem key={user.id} value={user.username}>
-                    {user.username}
+                    {user.fullName || user.username}
                   </SelectItem>
                 ))}
                 {employee && !hasCurrentEmployeeInUsers && <SelectItem value={employee}>{employee}</SelectItem>}
