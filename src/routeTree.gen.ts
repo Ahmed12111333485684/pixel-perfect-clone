@@ -15,9 +15,11 @@ import { Route as ListPropertyRouteImport } from './routes/list-property'
 import { Route as AvailablePropertiesRouteImport } from './routes/available-properties'
 import { Route as AppRouteImport } from './routes/app'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AvailablePropertiesIndexRouteImport } from './routes/available-properties.index'
 import { Route as AppIndexRouteImport } from './routes/app.index'
 import { Route as PartnerSubmitPropertyRouteImport } from './routes/partner.submit-property'
 import { Route as PartnerMyPropertiesRouteImport } from './routes/partner.my-properties'
+import { Route as AvailablePropertiesIdRouteImport } from './routes/available-properties.$id'
 import { Route as AppUsersRouteImport } from './routes/app.users'
 import { Route as AppTenantsRouteImport } from './routes/app.tenants'
 import { Route as AppSalesRouteImport } from './routes/app.sales'
@@ -70,6 +72,12 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AvailablePropertiesIndexRoute =
+  AvailablePropertiesIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AvailablePropertiesRoute,
+  } as any)
 const AppIndexRoute = AppIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -84,6 +92,11 @@ const PartnerMyPropertiesRoute = PartnerMyPropertiesRouteImport.update({
   id: '/partner/my-properties',
   path: '/partner/my-properties',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AvailablePropertiesIdRoute = AvailablePropertiesIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => AvailablePropertiesRoute,
 } as any)
 const AppUsersRoute = AppUsersRouteImport.update({
   id: '/users',
@@ -194,7 +207,7 @@ const AppLeadsIdRoute = AppLeadsIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/app': typeof AppRouteWithChildren
-  '/available-properties': typeof AvailablePropertiesRoute
+  '/available-properties': typeof AvailablePropertiesRouteWithChildren
   '/list-property': typeof ListPropertyRoute
   '/login': typeof LoginRoute
   '/property-request': typeof PropertyRequestRoute
@@ -216,16 +229,17 @@ export interface FileRoutesByFullPath {
   '/app/sales': typeof AppSalesRoute
   '/app/tenants': typeof AppTenantsRoute
   '/app/users': typeof AppUsersRoute
+  '/available-properties/$id': typeof AvailablePropertiesIdRoute
   '/partner/my-properties': typeof PartnerMyPropertiesRoute
   '/partner/submit-property': typeof PartnerSubmitPropertyRoute
   '/app/': typeof AppIndexRoute
+  '/available-properties/': typeof AvailablePropertiesIndexRoute
   '/app/leads/$id': typeof AppLeadsIdRoute
   '/app/properties/$id': typeof AppPropertiesIdRoute
   '/app/residential-seekers/$id': typeof AppResidentialSeekersIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/available-properties': typeof AvailablePropertiesRoute
   '/list-property': typeof ListPropertyRoute
   '/login': typeof LoginRoute
   '/property-request': typeof PropertyRequestRoute
@@ -247,9 +261,11 @@ export interface FileRoutesByTo {
   '/app/sales': typeof AppSalesRoute
   '/app/tenants': typeof AppTenantsRoute
   '/app/users': typeof AppUsersRoute
+  '/available-properties/$id': typeof AvailablePropertiesIdRoute
   '/partner/my-properties': typeof PartnerMyPropertiesRoute
   '/partner/submit-property': typeof PartnerSubmitPropertyRoute
   '/app': typeof AppIndexRoute
+  '/available-properties': typeof AvailablePropertiesIndexRoute
   '/app/leads/$id': typeof AppLeadsIdRoute
   '/app/properties/$id': typeof AppPropertiesIdRoute
   '/app/residential-seekers/$id': typeof AppResidentialSeekersIdRoute
@@ -258,7 +274,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/app': typeof AppRouteWithChildren
-  '/available-properties': typeof AvailablePropertiesRoute
+  '/available-properties': typeof AvailablePropertiesRouteWithChildren
   '/list-property': typeof ListPropertyRoute
   '/login': typeof LoginRoute
   '/property-request': typeof PropertyRequestRoute
@@ -280,9 +296,11 @@ export interface FileRoutesById {
   '/app/sales': typeof AppSalesRoute
   '/app/tenants': typeof AppTenantsRoute
   '/app/users': typeof AppUsersRoute
+  '/available-properties/$id': typeof AvailablePropertiesIdRoute
   '/partner/my-properties': typeof PartnerMyPropertiesRoute
   '/partner/submit-property': typeof PartnerSubmitPropertyRoute
   '/app/': typeof AppIndexRoute
+  '/available-properties/': typeof AvailablePropertiesIndexRoute
   '/app/leads/$id': typeof AppLeadsIdRoute
   '/app/properties/$id': typeof AppPropertiesIdRoute
   '/app/residential-seekers/$id': typeof AppResidentialSeekersIdRoute
@@ -314,16 +332,17 @@ export interface FileRouteTypes {
     | '/app/sales'
     | '/app/tenants'
     | '/app/users'
+    | '/available-properties/$id'
     | '/partner/my-properties'
     | '/partner/submit-property'
     | '/app/'
+    | '/available-properties/'
     | '/app/leads/$id'
     | '/app/properties/$id'
     | '/app/residential-seekers/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/available-properties'
     | '/list-property'
     | '/login'
     | '/property-request'
@@ -345,9 +364,11 @@ export interface FileRouteTypes {
     | '/app/sales'
     | '/app/tenants'
     | '/app/users'
+    | '/available-properties/$id'
     | '/partner/my-properties'
     | '/partner/submit-property'
     | '/app'
+    | '/available-properties'
     | '/app/leads/$id'
     | '/app/properties/$id'
     | '/app/residential-seekers/$id'
@@ -377,9 +398,11 @@ export interface FileRouteTypes {
     | '/app/sales'
     | '/app/tenants'
     | '/app/users'
+    | '/available-properties/$id'
     | '/partner/my-properties'
     | '/partner/submit-property'
     | '/app/'
+    | '/available-properties/'
     | '/app/leads/$id'
     | '/app/properties/$id'
     | '/app/residential-seekers/$id'
@@ -388,7 +411,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AppRoute: typeof AppRouteWithChildren
-  AvailablePropertiesRoute: typeof AvailablePropertiesRoute
+  AvailablePropertiesRoute: typeof AvailablePropertiesRouteWithChildren
   ListPropertyRoute: typeof ListPropertyRoute
   LoginRoute: typeof LoginRoute
   PropertyRequestRoute: typeof PropertyRequestRoute
@@ -440,6 +463,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/available-properties/': {
+      id: '/available-properties/'
+      path: '/'
+      fullPath: '/available-properties/'
+      preLoaderRoute: typeof AvailablePropertiesIndexRouteImport
+      parentRoute: typeof AvailablePropertiesRoute
+    }
     '/app/': {
       id: '/app/'
       path: '/'
@@ -460,6 +490,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/partner/my-properties'
       preLoaderRoute: typeof PartnerMyPropertiesRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/available-properties/$id': {
+      id: '/available-properties/$id'
+      path: '/$id'
+      fullPath: '/available-properties/$id'
+      preLoaderRoute: typeof AvailablePropertiesIdRouteImport
+      parentRoute: typeof AvailablePropertiesRoute
     }
     '/app/users': {
       id: '/app/users'
@@ -694,10 +731,23 @@ const AppRouteChildren: AppRouteChildren = {
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
 
+interface AvailablePropertiesRouteChildren {
+  AvailablePropertiesIdRoute: typeof AvailablePropertiesIdRoute
+  AvailablePropertiesIndexRoute: typeof AvailablePropertiesIndexRoute
+}
+
+const AvailablePropertiesRouteChildren: AvailablePropertiesRouteChildren = {
+  AvailablePropertiesIdRoute: AvailablePropertiesIdRoute,
+  AvailablePropertiesIndexRoute: AvailablePropertiesIndexRoute,
+}
+
+const AvailablePropertiesRouteWithChildren =
+  AvailablePropertiesRoute._addFileChildren(AvailablePropertiesRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AppRoute: AppRouteWithChildren,
-  AvailablePropertiesRoute: AvailablePropertiesRoute,
+  AvailablePropertiesRoute: AvailablePropertiesRouteWithChildren,
   ListPropertyRoute: ListPropertyRoute,
   LoginRoute: LoginRoute,
   PropertyRequestRoute: PropertyRequestRoute,

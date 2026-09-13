@@ -868,3 +868,16 @@ export function uploadAmenityPhoto(amenityId: number, file: File) {
 export function deleteAmenityPhoto(amenityId: number, url: string) {
   return api(`/api/amenities/${amenityId}/photos`, { method: "DELETE", query: { url } });
 }
+
+export async function fetchPublicListing(id: number): Promise<PublicListing> {
+  try {
+    return await api<PublicListing>(`/public/listings/${id}`, { anonymous: true });
+  } catch (err) {
+    // Fallback: fetch all public listings and locate by ID if direct route returns error
+    const listings = await api<PublicListing[]>("/public/listings", { anonymous: true });
+    const found = listings.find((l) => l.id === id);
+    if (!found) throw err;
+    return found;
+  }
+}
+

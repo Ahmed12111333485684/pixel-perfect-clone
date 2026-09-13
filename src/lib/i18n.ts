@@ -362,6 +362,11 @@ const en = {
     moreAmenities: "+{{count}} more",
     empty: "No available properties found.",
     zoomImage: "Zoom image",
+    shareProperty: "Share property link",
+    linkCopied: "Link copied to clipboard!",
+    backToProperties: "Back to available properties",
+    contactWhatsApp: "Contact via WhatsApp",
+    inquireProperty: "Inquire about this property",
   },
   partner: {
     submitPropertySubtitle: "Submit a property through your partner portal",
@@ -1075,6 +1080,11 @@ const ar = {
     moreAmenities: "+{{count}} أخرى",
     empty: "لا توجد عقارات متاحة حالياً.",
     zoomImage: "تكبير الصورة",
+    shareProperty: "مشاركة رابط العقار",
+    linkCopied: "تم نسخ الرابط إلى الحافظة!",
+    backToProperties: "العودة إلى العقارات المتاحة",
+    contactWhatsApp: "التواصل عبر الواتساب",
+    inquireProperty: "طلب استفسار عن العقار",
   },
   partner: {
     submitPropertySubtitle: "إرسال عقار عبر بوابة الشريك",
