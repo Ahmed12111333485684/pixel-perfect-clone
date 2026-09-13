@@ -1309,6 +1309,11 @@ function ResidentialSeekerDialog({
                 }))
             }
           />
+        </div>
+      </div>
+
+      <div className="space-y-4 rounded-lg border border-border bg-muted/30 p-4">
+        <div className="grid gap-4 sm:grid-cols-2">
           <TextField
             id="preferredLocation"
             label={t("residentialSeekers.preferredLocation")}

@@ -1383,29 +1383,7 @@ function CommercialListingDialog({
       </div>
 
       <div className="space-y-4 rounded-lg border border-border bg-muted/30 p-4">
-        <div className="flex items-center justify-between gap-3">
-          <Label className="text-sm font-medium">{t("commercialListings.brokerageContracts")}</Label>
-          {!readOnly && (
-            <Button type="button" variant="outline" size="sm" onClick={addContract}>
-              <Plus className="me-1 h-4 w-4" />
-              {t("commercialListings.addBrokerageContract")}
-            </Button>
-          )}
-        </div>
-        <div className="space-y-4">
-          {contracts.map((contract, index) => (
-            <BrokerageContractRow key={contract.id} contract={contract} index={index} readOnly={readOnly} onChange={updateContract} onRemove={removeContract} t={t} />
-          ))}
-        </div>
-      </div>
-
-      <div className="space-y-4 rounded-lg border border-border bg-muted/30 p-4">
         <div className="grid gap-4 sm:grid-cols-2">
-          <TextField id="ownerName" label={t("commercialListings.ownerName")} defaultValue={listing?.ownerName} readOnly={readOnly} />
-          <PhoneField id="mobile1" label={t("commercialListings.mobile1")} defaultValue={listing?.mobile1} readOnly={readOnly} />
-          <PhoneField id="mobile2" label={t("commercialListings.mobile2")} defaultValue={listing?.mobile2} readOnly={readOnly} />
-          <TextField id="availableUnits" label={t("commercialListings.availableUnits")} defaultValue={listing?.availableUnits} readOnly={readOnly} type="number" min={0} />
-          <TextField id="deedNumber" label={t("commercialListings.deedNumber")} defaultValue={listing?.deedNumber} readOnly={readOnly} />
           <div className="space-y-2">
             <Label htmlFor="propertyType" className="text-xs font-medium">{t("commercialListings.propertyType")}</Label>
             <Select value={propertyType} onValueChange={setPropertyType} disabled={readOnly}>
@@ -1426,38 +1404,21 @@ function CommercialListingDialog({
           <TextField id="roomsCount" label={t("commercialListings.roomsCount")} defaultValue={listing?.roomsCount} readOnly={readOnly} type="number" min={0} />
           <TextField id="buildingAge" label={t("commercialListings.buildingAge")} defaultValue={listing?.buildingAge} readOnly={readOnly} type="number" min={0} />
           <TextField id="hasElevator" label={t("commercialListings.hasElevator")} defaultValue={listing?.hasElevator} readOnly={readOnly} />
+          <TextField id="availableUnits" label={t("commercialListings.availableUnits")} defaultValue={listing?.availableUnits} readOnly={readOnly} type="number" min={0} />
+          <TextField id="deedNumber" label={t("commercialListings.deedNumber")} defaultValue={listing?.deedNumber} readOnly={readOnly} />
         </div>
       </div>
 
       <div className="space-y-4 rounded-lg border border-border bg-muted/30 p-4">
         <div className="grid gap-4 sm:grid-cols-2">
-          <TextareaField id="adText1" label={t("commercialListings.adText1")} defaultValue={listing?.adText1} readOnly={readOnly} className="sm:col-span-2" />
-          <TextareaField id="adText2" label={t("commercialListings.adText2")} defaultValue={listing?.adText2} readOnly={readOnly} className="sm:col-span-2" />
-          <TextField id="rentAmount" label={listingType === "Sale" ? t("commercialListings.salePrice") : t("commercialListings.rentAmount")} defaultValue={listing?.rentAmount} readOnly={readOnly} type="number" min={0} />
-          <div className="space-y-2">
-            <Label htmlFor="paymentType" className="text-xs font-medium">{t("commercialListings.paymentType")}</Label>
-            <input type="hidden" name="paymentType" value={paymentType === "__other__" ? (paymentTypeOther || "__other__") : paymentType} />
-            <Select value={paymentType} onValueChange={setPaymentType} defaultValue={listing?.paymentType ?? ""} disabled={readOnly}>
-              <SelectTrigger id="paymentType" className="mt-1">
-                <SelectValue placeholder={t("commercialListings.paymentType")} />
-              </SelectTrigger>
-              <SelectContent>
-                {(listingType === "Sale" ? SALE_PAYMENT_TYPES : RENTAL_PAYMENT_TYPES).map((p) => (
-                  <SelectItem key={p} value={p}>{p}</SelectItem>
-                ))}
-                <SelectItem value="__other__">اخري</SelectItem>
-              </SelectContent>
-            </Select>
-            {paymentType === "__other__" && (
-              <Input
-                value={paymentTypeOther}
-                onChange={(e) => setPaymentTypeOther(e.target.value)}
-                placeholder="اكتب نوع السداد"
-                disabled={readOnly}
-                className="mt-2"
-              />
-            )}
-          </div>
+          <TextField id="ownerName" label={t("commercialListings.ownerName")} defaultValue={listing?.ownerName} readOnly={readOnly} />
+          <PhoneField id="mobile1" label={t("commercialListings.mobile1")} defaultValue={listing?.mobile1} readOnly={readOnly} />
+          <PhoneField id="mobile2" label={t("commercialListings.mobile2")} defaultValue={listing?.mobile2} readOnly={readOnly} />
+        </div>
+      </div>
+
+      <div className="space-y-4 rounded-lg border border-border bg-muted/30 p-4">
+        <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-2">
             <ComboboxField
               id="city"
@@ -1515,6 +1476,43 @@ function CommercialListingDialog({
               </Button>
             )}
           </div>
+        </div>
+      </div>
+
+      <div className="space-y-4 rounded-lg border border-border bg-muted/30 p-4">
+        <div className="grid gap-4 sm:grid-cols-2">
+          <TextareaField id="adText1" label={t("commercialListings.adText1")} defaultValue={listing?.adText1} readOnly={readOnly} className="sm:col-span-2" />
+          <TextareaField id="adText2" label={t("commercialListings.adText2")} defaultValue={listing?.adText2} readOnly={readOnly} className="sm:col-span-2" />
+          <TextField id="rentAmount" label={listingType === "Sale" ? t("commercialListings.salePrice") : t("commercialListings.rentAmount")} defaultValue={listing?.rentAmount} readOnly={readOnly} type="number" min={0} />
+          <div className="space-y-2">
+            <Label htmlFor="paymentType" className="text-xs font-medium">{t("commercialListings.paymentType")}</Label>
+            <input type="hidden" name="paymentType" value={paymentType === "__other__" ? (paymentTypeOther || "__other__") : paymentType} />
+            <Select value={paymentType} onValueChange={setPaymentType} defaultValue={listing?.paymentType ?? ""} disabled={readOnly}>
+              <SelectTrigger id="paymentType" className="mt-1">
+                <SelectValue placeholder={t("commercialListings.paymentType")} />
+              </SelectTrigger>
+              <SelectContent>
+                {(listingType === "Sale" ? SALE_PAYMENT_TYPES : RENTAL_PAYMENT_TYPES).map((p) => (
+                  <SelectItem key={p} value={p}>{p}</SelectItem>
+                ))}
+                <SelectItem value="__other__">اخري</SelectItem>
+              </SelectContent>
+            </Select>
+            {paymentType === "__other__" && (
+              <Input
+                value={paymentTypeOther}
+                onChange={(e) => setPaymentTypeOther(e.target.value)}
+                placeholder="اكتب نوع السداد"
+                disabled={readOnly}
+                className="mt-2"
+              />
+            )}
+          </div>
+        </div>
+      </div>
+
+      <div className="space-y-4 rounded-lg border border-border bg-muted/30 p-4">
+        <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-3 rounded-lg border border-border bg-background px-3 py-3">
             <div className="flex items-center gap-3">
               <Checkbox id="hasKey" checked={hasKey} onCheckedChange={(checked) => {
@@ -1549,6 +1547,23 @@ function CommercialListingDialog({
               </div>
             )}
           </div>
+        </div>
+      </div>
+
+      <div className="space-y-4 rounded-lg border border-border bg-muted/30 p-4">
+        <div className="flex items-center justify-between gap-3">
+          <Label className="text-sm font-medium">{t("commercialListings.brokerageContracts")}</Label>
+          {!readOnly && (
+            <Button type="button" variant="outline" size="sm" onClick={addContract}>
+              <Plus className="me-1 h-4 w-4" />
+              {t("commercialListings.addBrokerageContract")}
+            </Button>
+          )}
+        </div>
+        <div className="space-y-4">
+          {contracts.map((contract, index) => (
+            <BrokerageContractRow key={contract.id} contract={contract} index={index} readOnly={readOnly} onChange={updateContract} onRemove={removeContract} t={t} />
+          ))}
         </div>
       </div>
 
