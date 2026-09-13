@@ -1177,8 +1177,16 @@ function CommercialListingDialog({
   const [listingCategory, setListingCategory] = useState<ListingCategoryValue>(normalizeListingCategory(listing?.listingCategory));
   const [propertyStatus, setPropertyStatus] = useState<string>(listing?.propertyStatus ?? STATUS_AVAILABLE);
   const [listingType, setListingType] = useState<ListingTypeValue>(normalizeListingType(listing?.listingType));
-  const [paymentType, setPaymentType] = useState<string>(listing?.paymentType ?? "");
-  const [paymentTypeOther, setPaymentTypeOther] = useState<string>("");
+  const [paymentType, setPaymentType] = useState<string>(() => {
+    const saved = listing?.paymentType ?? "";
+    const options = normalizeListingType(listing?.listingType) === "Sale" ? SALE_PAYMENT_TYPES : RENTAL_PAYMENT_TYPES;
+    return saved && saved !== "__other__" && !options.includes(saved) ? "__other__" : saved;
+  });
+  const [paymentTypeOther, setPaymentTypeOther] = useState<string>(() => {
+    const saved = listing?.paymentType ?? "";
+    const options = normalizeListingType(listing?.listingType) === "Sale" ? SALE_PAYMENT_TYPES : RENTAL_PAYMENT_TYPES;
+    return saved && saved !== "__other__" && !options.includes(saved) ? saved : "";
+  });
   const [propertyType, setPropertyType] = useState<string>(listing?.propertyType ?? "");
   const [dealThrough, setDealThrough] = useState<string>(listing?.dealThrough ?? DEAL_THROUGH_OWNER);
   const [hasKey, setHasKey] = useState<boolean>(Boolean(listing?.hasKey));
@@ -1227,8 +1235,11 @@ function CommercialListingDialog({
       setListingCategory(normalizeListingCategory(listing?.listingCategory));
       setPropertyStatus(listing?.propertyStatus ?? STATUS_AVAILABLE);
       setListingType(normalizeListingType(listing?.listingType));
-      setPaymentType(listing?.paymentType ?? "");
-      setPaymentTypeOther("");
+      const savedPayment = listing?.paymentType ?? "";
+      const optionsForType = normalizeListingType(listing?.listingType) === "Sale" ? SALE_PAYMENT_TYPES : RENTAL_PAYMENT_TYPES;
+      const paymentIsCustom = savedPayment && savedPayment !== "__other__" && !optionsForType.includes(savedPayment);
+      setPaymentType(paymentIsCustom ? "__other__" : savedPayment);
+      setPaymentTypeOther(paymentIsCustom ? savedPayment : "");
       setPropertyType(listing?.propertyType ?? "");
       setDealThrough(listing?.dealThrough ?? DEAL_THROUGH_OWNER);
       setHasKey(Boolean(listing?.hasKey));
@@ -1270,9 +1281,12 @@ function CommercialListingDialog({
             {isAdmin ? (
               <Input id="offerCode" name="offerCode" defaultValue={listing?.offerCode ?? ""} readOnly={readOnly} className="mt-1" />
             ) : (
-              <div className="mt-1 rounded-md border-2 border-gold/30 bg-gold/5 px-3 py-2 text-sm font-bold tracking-wide text-foreground">
-                {listing?.offerCode || "—"}
-              </div>
+              <>
+                <input type="hidden" name="offerCode" value={listing?.offerCode ?? ""} />
+                <div className="mt-1 rounded-md border-2 border-gold/30 bg-gold/5 px-3 py-2 text-sm font-bold tracking-wide text-foreground">
+                  {listing?.offerCode || "—"}
+                </div>
+              </>
             )}
           </div>
           <div className="space-y-2">
@@ -1295,7 +1309,7 @@ function CommercialListingDialog({
               const next = v as ListingTypeValue;
               setListingType(next);
               const validForType = next === "Sale" ? SALE_PAYMENT_TYPES : RENTAL_PAYMENT_TYPES;
-              setPaymentType((current) => (current && validForType.includes(current) ? current : ""));
+              setPaymentType((current) => (current && (current === "__other__" || validForType.includes(current)) ? current : ""));
             }} disabled={readOnly}>
               <SelectTrigger id="listingType" className="mt-1">
                 <SelectValue placeholder={t("commercialListings.listingType")} />
@@ -1411,6 +1425,20 @@ function CommercialListingDialog({
 
       <div className="space-y-4 rounded-lg border border-border bg-muted/30 p-4">
         <div className="grid gap-4 sm:grid-cols-2">
+          <div className="space-y-2">
+            <Label htmlFor="dealThrough" className="text-xs font-medium">{t("commercialListings.dealThrough")}</Label>
+            <Select value={dealThrough} onValueChange={setDealThrough} disabled={readOnly}>
+              <SelectTrigger id="dealThrough" className="mt-1">
+                <SelectValue placeholder={t("commercialListings.dealThrough")} />
+              </SelectTrigger>
+              <SelectContent>
+                {DEAL_THROUGH_OPTIONS.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>{t(option.labelKey)}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <input type="hidden" name="dealThrough" value={dealThrough} />
+          </div>
           <TextField id="ownerName" label={t("commercialListings.ownerName")} defaultValue={listing?.ownerName} readOnly={readOnly} />
           <PhoneField id="mobile1" label={t("commercialListings.mobile1")} defaultValue={listing?.mobile1} readOnly={readOnly} />
           <PhoneField id="mobile2" label={t("commercialListings.mobile2")} defaultValue={listing?.mobile2} readOnly={readOnly} />

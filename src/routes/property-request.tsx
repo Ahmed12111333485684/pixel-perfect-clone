@@ -260,7 +260,7 @@ function PropertyRequestPage() {
                     id="familyCount"
                     name="familyCount"
                     type="number"
-                    min="0"
+                    min="1"
                     placeholder={t("residentialSeekers.familyCount")}
                     className="mt-1"
                   />
@@ -286,7 +286,7 @@ function PropertyRequestPage() {
                   <Label htmlFor="paymentType" className="text-xs font-medium">
                     {t("common.paymentType")}
                   </Label>
-                  <input type="hidden" name="paymentType" value={paymentType === "__other__" ? paymentTypeOther : paymentType} />
+                  <input type="hidden" name="paymentType" value={paymentType === "__other__" ? (paymentTypeOther || "__other__") : paymentType} />
                   <Select value={paymentType} onValueChange={setPaymentType}>
                     <SelectTrigger id="paymentType" className="mt-1">
                       <SelectValue placeholder={t("common.paymentType")} />

@@ -145,7 +145,7 @@ function buildResidentialPayload(fd: FormData, original?: ResidentialSeeker | nu
         : value === normalizeValue(originalValue as string | string[] | null | undefined));
     if (original && unchanged) return;
     if (key === "serialNumber" && value === "") return;
-    if (numericFields.includes(key) && value === "") value = null;
+    if (numericFields.includes(key) && value === "") value = original ? "" : null;
     payload[key] = value;
   });
 
@@ -1043,8 +1043,19 @@ function ResidentialSeekerDialog({
   const [requestCategory, setRequestCategory] = useState(seeker?.requestCategory ?? "سكني");
   const [propertyType, setPropertyType] = useState(seeker?.propertyType ?? "");
   const [selectedCity, setSelectedCity] = useState(seeker?.city ?? "");
-  const [paymentTypeValue, setPaymentTypeValue] = useState(seeker?.paymentType ?? "");
-  const [paymentTypeOther, setPaymentTypeOther] = useState("");
+  const initialListingType = seeker?.listingType ?? "Rental";
+  const initialPaymentOptions =
+    initialListingType === "Rental" ? RENTAL_PAYMENT_TYPES : PAYMENT_TYPES;
+  const initialPaymentIsCustom =
+    !!seeker?.paymentType &&
+    seeker.paymentType !== "__other__" &&
+    !initialPaymentOptions.includes(seeker.paymentType);
+  const [paymentTypeValue, setPaymentTypeValue] = useState(
+    initialPaymentIsCustom ? "__other__" : (seeker?.paymentType ?? ""),
+  );
+  const [paymentTypeOther, setPaymentTypeOther] = useState(
+    initialPaymentIsCustom ? (seeker?.paymentType ?? "") : "",
+  );
   const maxBudgetLabel =
     listingType === "Rental"
       ? t("residentialSeekers.maxRentalBudget")
@@ -1267,7 +1278,7 @@ function ResidentialSeekerDialog({
                 defaultValue={seeker?.roomCount}
                 readOnly={readOnly}
                 type="number"
-                min={0}
+                min={1}
               />
             </>
           )}
