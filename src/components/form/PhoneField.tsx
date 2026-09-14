@@ -2,18 +2,7 @@ import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-
-// A small list of common country codes (expand this as needed)
-const COUNTRY_CODES = [
-    { code: "+966", flag: "🇸🇦", country: "SA" },
-    { code: "+965", flag: "🇰🇼", country: "KW" },
-    { code: "+971", flag: "🇦🇪", country: "AE" },
-    { code: "+974", flag: "🇶🇦", country: "QA" },
-    { code: "+973", flag: "🇧🇭", country: "BH" },
-    { code: "+968", flag: "🇴🇲", country: "OM" },
-    { code: "+20", flag: "🇪🇬", country: "EG" },
-    { code: "+1", flag: "🇺🇸", country: "US" },
-];
+import { COUNTRY_CODES } from "@/lib/countryCodes";
 
 interface PhoneFieldProps {
     id: string; // e.g., "mobile"
