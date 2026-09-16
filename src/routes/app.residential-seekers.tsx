@@ -1167,6 +1167,66 @@ function ResidentialSeekerDialog({
         </div>
       </div>
 
+      {/* --> Personal Info */}
+      <div className="space-y-4 rounded-lg border border-border bg-muted/30 p-4">
+        <div className="grid gap-4 sm:grid-cols-2">
+          <TextField
+            id="fullName"
+            label={t("residentialSeekers.fullName")}
+            defaultValue={seeker?.fullName}
+            readOnly={readOnly}
+          />
+          <PhoneField
+            id="mobile"
+            label={t("common.mobileNumber")}
+            defaultValue={seeker?.mobile}
+            readOnly={readOnly}
+          />
+          <PhoneField
+            id="mobile2"
+            label={t("common.secondMobileNumber")}
+            defaultValue={seeker?.mobile2}
+            readOnly={readOnly}
+          />
+          <ComboboxField
+            id="nationality"
+            label={t("residentialSeekers.nationality")}
+            defaultValue={seeker?.nationality ?? "سعودي"}
+            readOnly={readOnly}
+            options={NATIONALITIES.map((n) => ({
+              value: n,
+              label: n,
+            }))}
+          />
+          {listingType === "Rental" && requestCategory === "سكني" && (
+            <>
+              <TextField
+                id="profession"
+                label={t("residentialSeekers.profession")}
+                defaultValue={seeker?.profession}
+                readOnly={readOnly}
+              />
+              <TextField
+                id="familyCount"
+                label={t("residentialSeekers.familyCount")}
+                defaultValue={seeker?.familyCount}
+                readOnly={readOnly}
+                type="number"
+                min={1}
+              />
+              <TextField
+                id="roomCount"
+                label={t("residentialSeekers.roomCount")}
+                defaultValue={seeker?.roomCount}
+                readOnly={readOnly}
+                type="number"
+                min={1}
+              />
+            </>
+          )}
+        </div>
+      </div>
+
       {/* --> Listing Info */}
       <div className="space-y-4 rounded-lg border border-border bg-muted/30 p-4">
         <div className="grid gap-4 sm:grid-cols-2">
@@ -1223,66 +1283,6 @@ function ResidentialSeekerDialog({
                 readOnly={readOnly}
                 type="number"
                 min={0}
-              />
-            </>
-          )}
-        </div>
-      </div>
-
-      {/* --> Personal Info */}
-      <div className="space-y-4 rounded-lg border border-border bg-muted/30 p-4">
-        <div className="grid gap-4 sm:grid-cols-2">
-          <TextField
-            id="fullName"
-            label={t("residentialSeekers.fullName")}
-            defaultValue={seeker?.fullName}
-            readOnly={readOnly}
-          />
-          <PhoneField
-            id="mobile"
-            label={t("common.mobileNumber")}
-            defaultValue={seeker?.mobile}
-            readOnly={readOnly}
-          />
-          <PhoneField
-            id="mobile2"
-            label={t("common.secondMobileNumber")}
-            defaultValue={seeker?.mobile2}
-            readOnly={readOnly}
-          />
-          <ComboboxField
-            id="nationality"
-            label={t("residentialSeekers.nationality")}
-            defaultValue={seeker?.nationality ?? "سعودي"}
-            readOnly={readOnly}
-            options={NATIONALITIES.map((n) => ({
-              value: n,
-              label: n,
-            }))}
-          />
-          {listingType === "Rental" && requestCategory === "سكني" && (
-            <>
-              <TextField
-                id="profession"
-                label={t("residentialSeekers.profession")}
-                defaultValue={seeker?.profession}
-                readOnly={readOnly}
-              />
-              <TextField
-                id="familyCount"
-                label={t("residentialSeekers.familyCount")}
-                defaultValue={seeker?.familyCount}
-                readOnly={readOnly}
-                type="number"
-                min={1}
-              />
-              <TextField
-                id="roomCount"
-                label={t("residentialSeekers.roomCount")}
-                defaultValue={seeker?.roomCount}
-                readOnly={readOnly}
-                type="number"
-                min={1}
               />
             </>
           )}

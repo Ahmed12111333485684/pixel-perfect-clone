@@ -1414,6 +1414,28 @@ function CommercialListingDialog({
       <div className="space-y-4 rounded-lg border border-border bg-muted/30 p-4">
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-2">
+            <Label htmlFor="dealThrough" className="text-xs font-medium">{t("commercialListings.dealThrough")}</Label>
+            <Select value={dealThrough} onValueChange={setDealThrough} disabled={readOnly}>
+              <SelectTrigger id="dealThrough" className="mt-1">
+                <SelectValue placeholder={t("commercialListings.dealThrough")} />
+              </SelectTrigger>
+              <SelectContent>
+                {DEAL_THROUGH_OPTIONS.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>{t(option.labelKey)}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <input type="hidden" name="dealThrough" value={dealThrough} />
+          </div>
+          <TextField id="ownerName" label={t("commercialListings.ownerName")} defaultValue={listing?.ownerName} readOnly={readOnly} />
+          <PhoneField id="mobile1" label={t("commercialListings.mobile1")} defaultValue={listing?.mobile1} readOnly={readOnly} />
+          <PhoneField id="mobile2" label={t("commercialListings.mobile2")} defaultValue={listing?.mobile2} readOnly={readOnly} />
+        </div>
+      </div>
+
+      <div className="space-y-4 rounded-lg border border-border bg-muted/30 p-4">
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="space-y-2">
             <Label htmlFor="propertyType" className="text-xs font-medium">{t("commercialListings.propertyType")}</Label>
             <Select value={propertyType} onValueChange={setPropertyType} disabled={readOnly}>
               <SelectTrigger id="propertyType" className="mt-1">
@@ -1435,28 +1457,6 @@ function CommercialListingDialog({
           <TextField id="hasElevator" label={t("commercialListings.hasElevator")} defaultValue={listing?.hasElevator} readOnly={readOnly} />
           <TextField id="availableUnits" label={t("commercialListings.availableUnits")} defaultValue={listing?.availableUnits} readOnly={readOnly} type="number" min={0} />
           <TextField id="deedNumber" label={t("commercialListings.deedNumber")} defaultValue={listing?.deedNumber} readOnly={readOnly} />
-        </div>
-      </div>
-
-      <div className="space-y-4 rounded-lg border border-border bg-muted/30 p-4">
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div className="space-y-2">
-            <Label htmlFor="dealThrough" className="text-xs font-medium">{t("commercialListings.dealThrough")}</Label>
-            <Select value={dealThrough} onValueChange={setDealThrough} disabled={readOnly}>
-              <SelectTrigger id="dealThrough" className="mt-1">
-                <SelectValue placeholder={t("commercialListings.dealThrough")} />
-              </SelectTrigger>
-              <SelectContent>
-                {DEAL_THROUGH_OPTIONS.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>{t(option.labelKey)}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <input type="hidden" name="dealThrough" value={dealThrough} />
-          </div>
-          <TextField id="ownerName" label={t("commercialListings.ownerName")} defaultValue={listing?.ownerName} readOnly={readOnly} />
-          <PhoneField id="mobile1" label={t("commercialListings.mobile1")} defaultValue={listing?.mobile1} readOnly={readOnly} />
-          <PhoneField id="mobile2" label={t("commercialListings.mobile2")} defaultValue={listing?.mobile2} readOnly={readOnly} />
         </div>
       </div>
 
