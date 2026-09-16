@@ -265,6 +265,7 @@ export const COUNTRY_CODES: CountryCode[] = [
 
   // Zone 7.
   { code: "+7", flag: E("RU"), country: "RU", name: "Russia", nameAr: "روسيا" },
+  { code: "+7", flag: E("KZ"), country: "KZ", name: "Kazakhstan", nameAr: "كازاخستان" },
 
   // Zone 8 — East Asia.
   { code: "+81", flag: E("JP"), country: "JP", name: "Japan", nameAr: "اليابان" },
