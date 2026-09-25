@@ -1,8 +1,8 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { Link, createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { memo, useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { api, fetchPartnersLookup, createPartner, type CommercialListing, type Partner, type PartnerLookup, type CommercialListingImage, type UserDto, type Amenity, ApiError } from "@/lib/api";
+import { api, fetchPartnersLookup, createPartner, type CommercialListing, type Partner, type PartnerLookup, type CommercialListingImage, type UserDto, type Amenity, type SeekerSuggestion, ApiError } from "@/lib/api";
 import { syncCreated, syncUpdated, syncRemoved } from "@/lib/queryCache";
 import { PartnerDialog } from "@/components/partners/PartnerDialog";
 import { useAuth } from "@/lib/auth";
@@ -12,6 +12,7 @@ import { PageSizeSelect } from "@/components/PageSizeSelect";
 import { PageHeader, StatusBadge } from "@/components/PageHeader";
 import { DataTable, type Column } from "@/components/DataTable";
 import { FormDialog, ConfirmDialog } from "@/components/FormDialog";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -19,7 +20,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ListingLocationMap } from "@/components/ListingLocationMap";
-import { Plus, X, LayoutGrid, List, FileImage, MapPin } from "lucide-react";
+import { Plus, X, LayoutGrid, List, FileImage, MapPin, Sparkles, User } from "lucide-react";
 import { toast } from "sonner";
 import { PhoneField } from "@/components/form/PhoneField";
 import { ComboboxField } from "@/components/form/ComboboxField";
@@ -1677,6 +1678,10 @@ function CommercialListingDialog({
         </div>
       )}
 
+      {listing?.id && (
+        <ListingSeekerSuggestions listingId={listing.id} />
+      )}
+
       {normalizePropertyType(listing?.propertyType) === "Building" && !isUnit && (
         <div className="space-y-4 rounded-lg border border-border bg-muted/30 p-4">
           <div className="flex items-center justify-between gap-3">
@@ -1854,3 +1859,94 @@ const BrokerageContractRow = memo(function BrokerageContractRow({ contract, inde
     </div>
   );
 });
+
+function ListingSeekerSuggestions({ listingId }: { listingId: number }) {
+  const { t } = useTranslation();
+  const suggestionsQuery = useQuery({
+    queryKey: ["listing-seeker-suggestions", listingId],
+    queryFn: () => api<SeekerSuggestion[]>(`/api/commercial-listings/${listingId}/seeker-suggestions`),
+    enabled: !!listingId,
+  });
+
+  const suggestions = suggestionsQuery.data ?? [];
+
+  return (
+    <div className="space-y-4 rounded-lg border border-border bg-muted/30 p-4">
+      <div className="mb-3 flex items-center justify-between gap-2">
+        <div>
+          <p className="text-sm font-semibold">
+            {t("common.matchingSeekers", { defaultValue: "الطلبات المطابقة" })}
+          </p>
+          <p className="text-xs text-muted-foreground">{t("common.autoMatched", { defaultValue: "Auto matched" })}</p>
+        </div>
+        <Badge variant="outline" className="gap-1">
+          <Sparkles className="h-3.5 w-3.5" />
+          {suggestions.length}
+        </Badge>
+      </div>
+
+      {suggestionsQuery.isLoading ? (
+        <div className="rounded-lg border border-dashed border-border px-4 py-6 text-center text-sm text-muted-foreground">
+          {t("common.loading")}
+        </div>
+      ) : suggestionsQuery.error ? (
+        <div className="rounded-lg border border-dashed border-destructive/40 px-4 py-6 text-center text-sm text-destructive">
+          {t("common.error")}
+        </div>
+      ) : suggestions.length === 0 ? (
+        <div className="rounded-lg border border-dashed border-border px-4 py-6 text-center text-sm text-muted-foreground">
+          {t("common.noData", { defaultValue: "لا توجد طلبات مقترحة" })}
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {suggestions.map((seeker) => (
+            <div
+              key={seeker.id}
+              className="overflow-hidden rounded-xl border border-border bg-card p-3 shadow-sm"
+            >
+              <div className="flex items-start justify-between gap-2">
+                <div className="space-y-1 min-w-0">
+                  <div className="flex items-center gap-2 text-xs">
+                    <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-muted-foreground font-medium">
+                      <Sparkles className="h-3 w-3" />
+                      {t("common.match")} {seeker.score}%
+                    </span>
+                    {seeker.serialNumber && (
+                      <span className="font-mono text-muted-foreground">#{seeker.serialNumber}</span>
+                    )}
+                  </div>
+                  <div className="font-medium text-sm truncate flex items-center gap-1.5 mt-1">
+                    <User className="h-4 w-4 text-gold shrink-0" />
+                    <span>{seeker.fullName || seeker.mobile || t("common.notProvided")}</span>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                    {(seeker.city || seeker.preferredLocation) && (
+                      <span className="inline-flex items-center gap-1">
+                        <MapPin className="h-3 w-3" />
+                        {[seeker.city, seeker.preferredLocation, Array.isArray(seeker.district) ? seeker.district.join(", ") : ""].filter(Boolean).join(" - ")}
+                      </span>
+                    )}
+                    {seeker.maxBudget && (
+                      <span>&bull; {t("common.maxBudget")}: {seeker.maxBudget}</span>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex flex-col items-end gap-2 shrink-0">
+                  <Badge variant="outline">
+                    {seeker.listingType ? t(`listingType.${seeker.listingType}`, { defaultValue: seeker.listingType }) : "-"}
+                  </Badge>
+                  <Button asChild size="sm" variant="ghost" className="h-7 text-xs">
+                    <Link to="/app/residential-seekers" search={(prev: any) => ({ ...prev, selected: seeker.id })}>
+                      {t("common.view")}
+                    </Link>
+                  </Button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}

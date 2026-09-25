@@ -468,6 +468,22 @@ export interface RequestPropertySuggestion extends PropertyDto {
   primaryImageUrl?: string | null;
 }
 
+export interface SeekerSuggestion {
+  id: number;
+  serialNumber?: string | null;
+  fullName?: string | null;
+  mobile?: string | null;
+  listingType?: string | null;
+  requestCategory?: string | null;
+  propertyType?: string | null;
+  maxBudget?: string | null;
+  city?: string | null;
+  district?: string[] | null;
+  preferredLocation?: string | null;
+  score: number;
+  reasons: { key: string; args?: Record<string, string> }[];
+}
+
 export interface CommercialListing {
   id: number;
   rowFlag?: string | null;
