@@ -7,6 +7,8 @@ import { syncCreated, syncUpdated, syncRemoved } from "@/lib/queryCache";
 import { PartnerDialog } from "@/components/partners/PartnerDialog";
 import { useAuth } from "@/lib/auth";
 import { todayLocal } from "@/lib/format";
+import { usePageSize } from "@/hooks/use-page-size";
+import { PageSizeSelect } from "@/components/PageSizeSelect";
 import { PageHeader, StatusBadge } from "@/components/PageHeader";
 import { DataTable, type Column } from "@/components/DataTable";
 import { FormDialog, ConfirmDialog } from "@/components/FormDialog";
@@ -331,7 +333,7 @@ function CommercialListingsPage() {
     sortDir: "desc" as "asc" | "desc",
   });
   const { q, deedQ, status, dealType: dealTypeFilter, listingCategory: listingCategoryFilter, roomCount, city, district, page, sortBy, sortDir } = urlState;
-  const [pageSize] = useState(25);
+  const [pageSize, setPageSize] = usePageSize();
   // --- debounced search inputs ---
   const [inputQ, setInputQ] = useState(q);
   const [inputDeedQ, setInputDeedQ] = useState(deedQ);
@@ -1024,10 +1026,19 @@ function CommercialListingsPage() {
 
       {filteredListings.length > 0 && (
         <div className="mt-4 flex items-center justify-between">
-          <div className="text-sm text-muted-foreground">
-            {t("common.skip", { defaultValue: "Showing" })} {(page - 1) * pageSize + 1}
-            {" - "}
-            {Math.min(page * pageSize, filteredListings.length)} {t("common.of", { defaultValue: "of" })} {filteredListings.length}
+          <div className="flex items-center gap-4">
+            <PageSizeSelect
+              value={pageSize}
+              onChange={(v) => {
+                setPageSize(v);
+                setPage(1);
+              }}
+            />
+            <div className="text-sm text-muted-foreground">
+              {t("common.skip", { defaultValue: "Showing" })} {(page - 1) * pageSize + 1}
+              {" - "}
+              {Math.min(page * pageSize, filteredListings.length)} {t("common.of", { defaultValue: "of" })} {filteredListings.length}
+            </div>
           </div>
           <div className="flex gap-2">
             <Button size="sm" variant="outline" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1}>

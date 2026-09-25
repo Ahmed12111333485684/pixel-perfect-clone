@@ -10,6 +10,8 @@ import {
   type ResidentialSeeker,
 } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
+import { usePageSize } from "@/hooks/use-page-size";
+import { PageSizeSelect } from "@/components/PageSizeSelect";
 import {
   buildClients,
   clientMatchesQuery,
@@ -89,7 +91,7 @@ function ClientsPage() {
     kind: "all" as ClientKindFilter,
   });
   const { q, page, sort, kind } = urlState;
-  const [pageSize] = useState(25);
+  const [pageSize, setPageSize] = usePageSize();
 
   const showingDetail = useRouterState({
     select: (state) =>
@@ -308,11 +310,20 @@ function ClientsPage() {
               />
             ))}
           </div>
-          {totalPages > 1 && (
+          {filtered.length > 0 && (
             <div className="mt-4 flex items-center justify-between">
-              <div className="text-sm text-muted-foreground">
-                {(page - 1) * pageSize + 1} - {Math.min(page * pageSize, filtered.length)}{" "}
-                {t("clients.count", { count: filtered.length })}
+              <div className="flex items-center gap-4">
+                <PageSizeSelect
+                  value={pageSize}
+                  onChange={(v) => {
+                    setPageSize(v);
+                    setPage(1);
+                  }}
+                />
+                <div className="text-sm text-muted-foreground">
+                  {(page - 1) * pageSize + 1} - {Math.min(page * pageSize, filtered.length)}{" "}
+                  {t("clients.count", { count: filtered.length })}
+                </div>
               </div>
               <div className="flex gap-2">
                 <Button

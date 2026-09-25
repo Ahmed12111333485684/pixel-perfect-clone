@@ -2,6 +2,8 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { usePageSize } from "@/hooks/use-page-size";
+import { PageSizeSelect } from "@/components/PageSizeSelect";
 import {
   fetchAllNotifications,
   markNotificationRead,
@@ -55,12 +57,12 @@ function NotificationsPage() {
   const isAr = i18n.language === "ar";
   const [page, setPage] = useState(1);
   const [readFilter, setReadFilter] = useState<string>("all");
-  const pageSize = 100;
+  const [pageSize, setPageSize] = usePageSize(100);
 
   const readParam = readFilter === "all" ? undefined : readFilter === "read";
 
   const list = useQuery({
-    queryKey: ["notifications-all", page, readFilter],
+    queryKey: ["notifications-all", page, readFilter, pageSize],
     queryFn: () => fetchAllNotifications(page, pageSize, readParam),
   });
 
@@ -194,8 +196,16 @@ function NotificationsPage() {
         </div>
       )}
 
-      {totalPages > 1 && (
-        <div className="mt-4 flex items-center justify-center gap-2">
+      {totalPages > 0 && (
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+        <PageSizeSelect
+          value={pageSize}
+          onChange={(v) => {
+            setPageSize(v);
+            setPage(1);
+          }}
+        />
+        <div className="flex items-center justify-center gap-2">
           <Button
             variant="outline"
             size="sm"
@@ -216,6 +226,7 @@ function NotificationsPage() {
             <ChevronRight className="h-4 w-4" />
           </Button>
         </div>
+      </div>
       )}
     </div>
   );

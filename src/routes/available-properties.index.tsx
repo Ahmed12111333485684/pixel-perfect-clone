@@ -83,7 +83,14 @@ function AvailablePropertiesPage() {
       }
       if (filters.location) {
         const q = normalizeForSearch(filters.location);
-        result = result.filter(l => normalizeForSearch(l.location ?? "").includes(q));
+        result = result.filter(l => {
+          const cityMatch = normalizeForSearch(l.city ?? "").includes(q);
+          const districtMatch = Array.isArray(l.district)
+            ? l.district.some(d => normalizeForSearch(d).includes(q))
+            : normalizeForSearch(String(l.district ?? "")).includes(q);
+          const locationMatch = normalizeForSearch(l.location ?? "").includes(q);
+          return cityMatch || districtMatch || locationMatch;
+        });
       }
       if (filters.maxBudget) {
         const budget = parseAmount(filters.maxBudget);

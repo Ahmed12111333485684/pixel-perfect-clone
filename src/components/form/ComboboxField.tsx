@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Check, ChevronsUpDown } from "lucide-react";
+import { Check, ChevronsUpDown, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from "@/components/ui/command";
@@ -65,7 +65,31 @@ export function ComboboxField({
                             ? options.find((o) => o.value === value)?.label
                             : "اختر..."}
 
-                        <ChevronsUpDown className="ml-2 h-4 w-4 opacity-50" />
+                        <div className="flex items-center gap-1">
+                            {value && !readOnly && !disabled && (
+                                <span
+                                    role="button"
+                                    tabIndex={0}
+                                    className="p-0.5 rounded-full hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setValue("");
+                                        onValueChange?.("");
+                                    }}
+                                    onKeyDown={(e) => {
+                                        if (e.key === "Enter" || e.key === " ") {
+                                            e.stopPropagation();
+                                            setValue("");
+                                            onValueChange?.("");
+                                        }
+                                    }}
+                                    title="مسح"
+                                >
+                                    <X className="h-3.5 w-3.5" />
+                                </span>
+                            )}
+                            <ChevronsUpDown className="h-4 w-4 opacity-50 shrink-0" />
+                        </div>
                     </Button>
                 </PopoverTrigger>
 
@@ -81,9 +105,10 @@ export function ComboboxField({
                                     key={option.value}
                                     value={normalizeSearch(option.label)}
                                     onSelect={() => {
-                                        setValue(option.value);
+                                        const nextValue = value === option.value ? "" : option.value;
+                                        setValue(nextValue);
                                         setOpen(false);
-                                        onValueChange?.(option.value);
+                                        onValueChange?.(nextValue);
                                     }}
                                 >
                                     <Check

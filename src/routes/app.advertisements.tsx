@@ -5,6 +5,8 @@ import { useTranslation } from "react-i18next";
 import { api, type Advertisement, type PropertyDto } from "@/lib/api";
 import { syncCreated, syncUpdated, syncRemoved } from "@/lib/queryCache";
 import { useAuth } from "@/lib/auth";
+import { usePageSize } from "@/hooks/use-page-size";
+import { PageSizeSelect } from "@/components/PageSizeSelect";
 import { PageHeader, StatusBadge } from "@/components/PageHeader";
 import { DataTable, type Column } from "@/components/DataTable";
 import { FormDialog, ConfirmDialog } from "@/components/FormDialog";
@@ -188,7 +190,7 @@ function AdvertisementsPage() {
     sortDir: "desc" as "asc" | "desc",
   });
   const { q, status, adType, installationType, propertyType, page, sortBy, sortDir } = urlState;
-  const [pageSize] = useState(25);
+  const [pageSize, setPageSize] = usePageSize();
   // --- debounced search ---
   const [inputQ, setInputQ] = useState(q);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -610,11 +612,20 @@ function AdvertisementsPage() {
 
       {filteredAdvertisements.length > 0 && (
         <div className="mt-4 flex items-center justify-between">
-          <div className="text-sm text-muted-foreground">
-            {t("common.skip", { defaultValue: "Showing" })} {(page - 1) * pageSize + 1}
-            {" - "}
-            {Math.min(page * pageSize, filteredAdvertisements.length)}{" "}
-            {t("common.of", { defaultValue: "of" })} {filteredAdvertisements.length}
+          <div className="flex items-center gap-4">
+            <PageSizeSelect
+              value={pageSize}
+              onChange={(v) => {
+                setPageSize(v);
+                setPage(1);
+              }}
+            />
+            <div className="text-sm text-muted-foreground">
+              {t("common.skip", { defaultValue: "Showing" })} {(page - 1) * pageSize + 1}
+              {" - "}
+              {Math.min(page * pageSize, filteredAdvertisements.length)}{" "}
+              {t("common.of", { defaultValue: "of" })} {filteredAdvertisements.length}
+            </div>
           </div>
           <div className="flex gap-2">
             <Button

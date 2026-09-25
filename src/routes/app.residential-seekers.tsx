@@ -19,6 +19,8 @@ import { syncCreated, syncUpdated, syncRemoved } from "@/lib/queryCache";
 import { PartnerDialog } from "@/components/partners/PartnerDialog";
 import { useAuth } from "@/lib/auth";
 import { todayLocal } from "@/lib/format";
+import { usePageSize } from "@/hooks/use-page-size";
+import { PageSizeSelect } from "@/components/PageSizeSelect";
 import {
   PROPERTY_CATEGORIES,
   getPropertyTypesByCategory,
@@ -231,7 +233,7 @@ function ResidentialSeekersPage() {
   });
   const { q, status, listingType, requestCategory, roomCount, city, district, attention, page, sortBy, sortDir } =
     urlState;
-  const [pageSize] = useState(25);
+  const [pageSize, setPageSize] = usePageSize();
   // --- debounced search ---
   const [inputQ, setInputQ] = useState(q);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -584,15 +586,34 @@ function ResidentialSeekersPage() {
 
   const filteredSeekers = useMemo(() => {
     const items = seekers.data ?? [];
-    const cityMatch = (r: ResidentialSeeker) =>
-      !city || normalizeForSearch(r.city) === normalizeForSearch(city);
-    const districtMatch = (r: ResidentialSeeker) => {
-      if (!district) return true;
-      const normalizedDistrict = normalizeForSearch(district);
-      return (
-        Array.isArray(r.district) &&
-        r.district.some((d) => normalizeForSearch(d) === normalizedDistrict)
-      );
+    const locationMatch = (r: ResidentialSeeker) => {
+      const normalizedCity = city ? normalizeForSearch(city) : "";
+      const normalizedDistrict = district ? normalizeForSearch(district) : "";
+
+      const rCity = normalizeForSearch(r.city);
+      const rDistricts = Array.isArray(r.district)
+        ? r.district.map((d) => normalizeForSearch(d))
+        : [];
+      const rPrefLoc = normalizeForSearch(r.preferredLocation);
+
+      // Check primary City & District fields
+      const cityMatches = !normalizedCity || rCity === normalizedCity;
+      const districtMatches =
+        !normalizedDistrict || rDistricts.some((d) => d === normalizedDistrict);
+
+      if (cityMatches && districtMatches) {
+        return true;
+      }
+
+      // Fallback chain: check if preferredLocation matches the location criteria
+      if (rPrefLoc) {
+        const prefLocMatchesCity = !normalizedCity || rPrefLoc.includes(normalizedCity);
+        const prefLocMatchesDistrict =
+          !normalizedDistrict || rPrefLoc.includes(normalizedDistrict);
+        return prefLocMatchesCity && prefLocMatchesDistrict;
+      }
+
+      return false;
     };
 
     const filtered = items.filter((r) => {
@@ -632,8 +653,7 @@ function ResidentialSeekersPage() {
         listingTypeMatch &&
         requestCategoryMatch &&
         roomCountMatch &&
-        cityMatch(r) &&
-        districtMatch(r)
+        locationMatch(r)
       );
     });
 
@@ -1002,11 +1022,20 @@ function ResidentialSeekersPage() {
 
       {filteredSeekers.length > 0 && (
         <div className="mt-4 flex items-center justify-between">
-          <div className="text-sm text-muted-foreground">
+          <div className="flex items-center gap-4">
+            <PageSizeSelect
+              value={pageSize}
+              onChange={(v) => {
+                setPageSize(v);
+                setPage(1);
+              }}
+            />
+            <div className="text-sm text-muted-foreground">
             {t("common.of", { defaultValue: "Showing" })} {(page - 1) * pageSize + 1}
             {" - "}
             {Math.min(page * pageSize, filteredSeekers.length)}{" "}
             {t("common.of", { defaultValue: "of" })} {filteredSeekers.length}
+          </div>
           </div>
           <div className="flex gap-2">
             <Button
@@ -1492,7 +1521,7 @@ function ResidentialSeekerDialog({
             </div>
           ) : suggestions.length === 0 ? (
             <div className="rounded-lg border border-dashed border-border px-4 py-6 text-center text-sm text-muted-foreground">
-              {t("common.noData", { defaultValue: "No property suggestions found." })}
+              {t("common.noData", { defaultValue: "لا يوجد ترشيحات لهذا الطلب" })}
             </div>
           ) : (
             <div className="space-y-3">
@@ -1522,7 +1551,7 @@ function ResidentialSeekerDialog({
                           <div className="flex items-center gap-2 text-xs text-muted-foreground">
                             <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5">
                               <Sparkles className="h-3 w-3" />
-                              {t("common.match")} {property.score}
+                              {t("common.match")} {property.score}%
                             </span>
                           </div>
                           <div className="mt-1 truncate font-medium">{property.name}</div>
