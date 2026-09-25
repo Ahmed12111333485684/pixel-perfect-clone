@@ -591,6 +591,7 @@ export interface ResidentialSeeker {
   serialNumber?: string | null;
   requestDate?: string | null;
   reviewDate?: string | null;
+  inspectionDate?: string | null;
   status?: string | null;
   employee?: string | null;
   receiver?: string | null;
@@ -705,7 +706,7 @@ export interface RevenueEntryCreate {
 // ============ Notification helpers ============
 export interface NotificationItem {
   id: number;
-  type: "seeker" | "lead";
+  type: "seeker" | "lead" | "inspection";
   title: string;
   titleEn: string;
   summary: string;
@@ -718,6 +719,7 @@ export interface NotificationItem {
 
 /** i18n key for a notification's type badge, category-aware for seekers. */
 export function notificationTypeLabelKey(item: NotificationItem): string {
+  if (item.type === "inspection") return "notifications.inspectionDue";
   if (item.type !== "seeker") return "notifications.newLead";
   const category = (item.category ?? "").trim().toLocaleLowerCase();
   if (category === "تجاري" || category === "commercial") return "notifications.newSeekerCommercial";

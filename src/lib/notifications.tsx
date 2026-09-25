@@ -8,7 +8,6 @@ import {
   markNotificationRead,
   markAllNotificationsRead,
   deleteNotification,
-  notificationTypeLabelKey,
   type NotificationItem,
   type NotificationsResponse,
 } from "./api";
@@ -61,7 +60,7 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
       if (notifications.length > 0) {
         toast.info(notifications[0].title, {
           action: {
-            label: t(notificationTypeLabelKey(notifications[0])),
+            label: t("notifications.view"),
             onClick: () => navigate({ to: notifications[0].link }),
           },
         } as any);

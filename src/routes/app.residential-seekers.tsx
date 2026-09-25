@@ -68,6 +68,8 @@ export const Route = createFileRoute("/app/residential-seekers")({
         : "all",
     city: typeof search.city === "string" ? search.city : "",
     district: typeof search.district === "string" ? search.district : "",
+    attention:
+      typeof search.attention === "string" && search.attention === "urgent" ? "urgent" : "all",
     page: typeof search.page === "number" && search.page > 0 ? search.page : 1,
     sortBy: typeof search.sortBy === "string" ? search.sortBy : "createdAt",
     sortDir: search.sortDir === "asc" ? "asc" : "desc",
@@ -85,10 +87,43 @@ interface ResidentialSeekersSearchResult {
 const STATUS_DONE = "تم";
 const STATUS_NOT_DONE = "لم يتم";
 
+type InspectionAttention = "overdue" | "today" | null;
+
+function inspectionAttentionLevel(r: ResidentialSeeker): InspectionAttention {
+  if (normalizeValue(r.status) === STATUS_DONE) return null;
+  const date = normalizeValue(r.inspectionDate);
+  if (!date) return null;
+  const today = todayLocal();
+  if (date < today) return "overdue";
+  if (date === today) return "today";
+  return null;
+}
+
+function daysLate(date: string): number {
+  const [fy, fm, fd] = date.split("-").map(Number);
+  const [ty, tm, td] = todayLocal().split("-").map(Number);
+  const a = Date.UTC(fy, fm - 1, fd);
+  const b = Date.UTC(ty, tm - 1, td);
+  return Math.max(1, Math.round((a - b) / 86400000));
+}
+
+function attentionCardClass(level: InspectionAttention): string {
+  if (level === "overdue") return "border-destructive/50 bg-destructive/5";
+  if (level === "today") return "border-warning/60 bg-warning/5";
+  return "";
+}
+
+function attentionRowClass(level: InspectionAttention): string {
+  if (level === "overdue") return "bg-destructive/5";
+  if (level === "today") return "bg-warning/5";
+  return "";
+}
+
 const RESIDENTIAL_FIELDS = [
   "serialNumber",
   "requestDate",
   "reviewDate",
+  "inspectionDate",
   "status",
   "employee",
   "receiver",
@@ -189,11 +224,12 @@ function ResidentialSeekersPage() {
     roomCount: "all",
     city: "",
     district: "",
+    attention: "all",
     page: 1,
     sortBy: "createdAt",
     sortDir: "desc" as "asc" | "desc",
   });
-  const { q, status, listingType, requestCategory, roomCount, city, district, page, sortBy, sortDir } =
+  const { q, status, listingType, requestCategory, roomCount, city, district, attention, page, sortBy, sortDir } =
     urlState;
   const [pageSize] = useState(25);
   // --- debounced search ---
@@ -213,6 +249,7 @@ function ResidentialSeekersPage() {
   const setRoomCount = (value: string) => setUrlState({ roomCount: value, page: 1 });
   const setCity = (value: string) => setUrlState({ city: value, district: "", page: 1 });
   const setDistrict = (value: string) => setUrlState({ district: value, page: 1 });
+  const setAttention = (value: string) => setUrlState({ attention: value, page: 1 });
   const setSortBy = (value: string) => setUrlState({ sortBy: value, page: 1 });
   const setSortDir = (value: "asc" | "desc") => setUrlState({ sortDir: value, page: 1 });
   const setPage = (value: number | ((current: number) => number)) =>
@@ -343,7 +380,7 @@ function ResidentialSeekersPage() {
 
   const handleReset = () => {
     setInputQ("");
-    setUrlState({ q: "", status: "all", listingType: "all", requestCategory: "all", roomCount: "all", city: "", district: "", page: 1 });
+    setUrlState({ q: "", status: "all", listingType: "all", requestCategory: "all", roomCount: "all", city: "", district: "", attention: "all", page: 1 });
   };
 
   const handleCreate = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -423,6 +460,21 @@ function ResidentialSeekersPage() {
       ? t("residentialSeekers.maxRentalBudget")
       : t("residentialSeekers.maxBudget");
 
+  const inspectionBadge = (r: ResidentialSeeker) => {
+    const level = inspectionAttentionLevel(r);
+    if (level === "overdue") {
+      return (
+        <StatusBadge tone="destructive">
+          {t("residentialSeekers.reviewOverdueDays", { count: daysLate(r.inspectionDate!) })}
+        </StatusBadge>
+      );
+    }
+    if (level === "today") {
+      return <StatusBadge tone="warning">{t("residentialSeekers.reviewToday")}</StatusBadge>;
+    }
+    return null;
+  };
+
   const columns: Column<ResidentialSeeker>[] = [
     {
       key: "serialNumber",
@@ -441,6 +493,17 @@ function ResidentialSeekersPage() {
       key: "reviewDate",
       header: t("residentialSeekers.reviewDate"),
       cell: (r) => r.reviewDate || t("common.notProvided"),
+      sortable: true,
+    },
+    {
+      key: "inspectionDate",
+      header: t("residentialSeekers.inspectionDate"),
+      cell: (r) => (
+        <span className="inline-flex items-center gap-1.5">
+          {r.inspectionDate || t("common.notProvided")}
+          {inspectionBadge(r)}
+        </span>
+      ),
       sortable: true,
     },
     {
@@ -550,6 +613,7 @@ function ResidentialSeekersPage() {
         deferredInputQ,
       );
       const statusMatch = status === "all" || r.status === status;
+      const attentionMatch = attention === "all" || inspectionAttentionLevel(r) !== null;
       const listingTypeMatch =
         listingType === "all" ||
         normalizeForSearch(r.listingType) === normalizeForSearch(listingType);
@@ -564,6 +628,7 @@ function ResidentialSeekersPage() {
       return (
         qMatch &&
         statusMatch &&
+        attentionMatch &&
         listingTypeMatch &&
         requestCategoryMatch &&
         roomCountMatch &&
@@ -573,7 +638,7 @@ function ResidentialSeekersPage() {
     });
 
     const dir = sortDir === "asc" ? 1 : -1;
-    return [...filtered].sort((a, b) => {
+    const sorted = [...filtered].sort((a, b) => {
       let av: string;
       let bv: string;
       switch (sortBy) {
@@ -584,6 +649,10 @@ function ResidentialSeekersPage() {
         case "reviewDate":
           av = a.reviewDate ?? "";
           bv = b.reviewDate ?? "";
+          break;
+        case "inspectionDate":
+          av = a.inspectionDate ?? "";
+          bv = b.inspectionDate ?? "";
           break;
         case "fullName":
           av = a.fullName ?? "";
@@ -605,7 +674,17 @@ function ResidentialSeekersPage() {
       if (av === bv) return 0;
       return av.localeCompare(bv, "ar") * dir;
     });
-  }, [seekers.data, deferredInputQ, status, listingType, requestCategory, roomCount, city, district, sortBy, sortDir]);
+
+    // Urgent requests always float to the top; sort() is stable so the
+    // primary ordering is preserved within each urgency bucket.
+    const urgencyOf = (r: ResidentialSeeker) =>
+      inspectionAttentionLevel(r) === "overdue"
+        ? 0
+        : inspectionAttentionLevel(r) === "today"
+          ? 1
+          : 2;
+    return [...sorted].sort((a, b) => urgencyOf(a) - urgencyOf(b));
+  }, [seekers.data, deferredInputQ, status, listingType, requestCategory, roomCount, city, district, attention, sortBy, sortDir]);
 
   const totalPages = Math.max(1, Math.ceil(filteredSeekers.length / pageSize));
 
@@ -656,6 +735,7 @@ function ResidentialSeekersPage() {
             roomCount !== "all" ? roomCount : "",
             city,
             district,
+            attention !== "all" ? attention : "",
           ].filter(Boolean).length
         }
         search={
@@ -681,6 +761,12 @@ function ResidentialSeekersPage() {
               { value: STATUS_NOT_DONE, label: t("residentialSeekers.statusNotDone") },
               { value: STATUS_DONE, label: t("residentialSeekers.statusDone") },
             ],
+          },
+          {
+            label: t("residentialSeekers.needsAttention"),
+            value: attention,
+            onValueChange: setAttention,
+            options: [{ value: "urgent", label: t("residentialSeekers.needsAttention") }],
           },
           {
             label: t("residentialSeekers.listingType"),
@@ -780,6 +866,7 @@ function ResidentialSeekersPage() {
           sortKey={sortBy}
           sortDir={sortDir}
           onSort={handleSort}
+          getRowClassName={(r) => attentionRowClass(inspectionAttentionLevel(r))}
         />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
@@ -787,7 +874,7 @@ function ResidentialSeekersPage() {
             <div
               key={r.id}
               data-seeker-id={r.id}
-              className="group cursor-pointer flex flex-col justify-between rounded-xl border border-border bg-card p-4 transition-all hover:border-primary/50 hover:shadow-md"
+              className={`group cursor-pointer flex flex-col justify-between rounded-xl border border-border bg-card p-4 transition-all hover:border-primary/50 hover:shadow-md ${attentionCardClass(inspectionAttentionLevel(r))}`}
               onClick={() => setSelected(r)}
             >
               <div>
@@ -899,6 +986,13 @@ function ResidentialSeekersPage() {
                 </div>
                 <div>
                   {t("residentialSeekers.reviewDate")}: {r.reviewDate || t("common.notProvided")}
+                </div>
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <span>
+                    {t("residentialSeekers.inspectionDate")}:{" "}
+                    {r.inspectionDate || t("common.notProvided")}
+                  </span>
+                  {inspectionBadge(r)}
                 </div>
               </div>
             </div>
@@ -1105,6 +1199,13 @@ function ResidentialSeekerDialog({
             id="reviewDate"
             label={t("residentialSeekers.reviewDate")}
             defaultValue={seeker?.reviewDate}
+            readOnly={readOnly}
+            className="mt-1 w-full [color-scheme:light] [&::-webkit-calendar-picker-indicator]:ml-auto"
+          />
+          <DateField
+            id="inspectionDate"
+            label={t("residentialSeekers.inspectionDate")}
+            defaultValue={seeker?.inspectionDate}
             readOnly={readOnly}
             className="mt-1 w-full [color-scheme:light] [&::-webkit-calendar-picker-indicator]:ml-auto"
           />
@@ -1555,7 +1656,7 @@ function DateField({
         id={id}
         name={id}
         type="date"
-        defaultValue={defaultValue ?? todayLocal()}
+        defaultValue={defaultValue ?? ""}
         readOnly={readOnly}
         disabled={readOnly}
         className={className ?? "mt-1 w-full [&::-webkit-calendar-picker-indicator]:ml-auto"}

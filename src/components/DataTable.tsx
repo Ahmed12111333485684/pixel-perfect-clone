@@ -33,6 +33,7 @@ interface DataTableProps<T> {
   sortKey?: string;
   sortDir?: "asc" | "desc";
   onSort?: (key: string) => void;
+  getRowClassName?: (row: T) => string | undefined;
 }
 
 export function DataTable<T>({
@@ -47,6 +48,7 @@ export function DataTable<T>({
   sortKey,
   sortDir,
   onSort,
+  getRowClassName,
 }: DataTableProps<T>) {
   const { t } = useTranslation();
   const isMobile = useIsMobile();
@@ -63,7 +65,7 @@ export function DataTable<T>({
         {rows.map((row) => (
           <div
             key={rowKey(row)}
-            className={`rounded-xl border border-border bg-card p-4 shadow-sm ${onRowClick ? "cursor-pointer" : ""}`}
+            className={`rounded-xl border border-border bg-card p-4 shadow-sm ${onRowClick ? "cursor-pointer" : ""} ${getRowClassName?.(row) ?? ""}`}
             onClick={onRowClick ? () => onRowClick(row) : undefined}
           >
             <div className="space-y-2">
@@ -137,7 +139,7 @@ export function DataTable<T>({
           {rows.map((row) => (
             <TableRow
               key={rowKey(row)}
-              className={onRowClick ? "cursor-pointer" : ""}
+              className={`${onRowClick ? "cursor-pointer" : ""} ${getRowClassName?.(row) ?? ""}`}
               onClick={onRowClick ? () => onRowClick(row) : undefined}
             >
               {columns.map((c) => (
