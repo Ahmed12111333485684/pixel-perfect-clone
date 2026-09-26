@@ -106,7 +106,7 @@ function daysLate(date: string): number {
   const [ty, tm, td] = todayLocal().split("-").map(Number);
   const a = Date.UTC(fy, fm - 1, fd);
   const b = Date.UTC(ty, tm - 1, td);
-  return Math.max(1, Math.round((a - b) / 86400000));
+  return Math.max(1, Math.round((b - a) / 86400000));
 }
 
 function attentionCardClass(level: InspectionAttention): string {
