@@ -2,7 +2,7 @@ import { Link, createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { memo, useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { api, fetchPartnersLookup, createPartner, type CommercialListing, type Partner, type PartnerLookup, type CommercialListingImage, type UserDto, type Amenity, type SeekerSuggestion, ApiError } from "@/lib/api";
+import { api, fetchPartnersLookup, createPartner, fetchListingSeriesOptions, type CommercialListing, type ListingSeriesOption, type Partner, type PartnerLookup, type CommercialListingImage, type UserDto, type Amenity, type SeekerSuggestion, ApiError } from "@/lib/api";
 import { syncCreated, syncUpdated, syncRemoved } from "@/lib/queryCache";
 import { PartnerDialog } from "@/components/partners/PartnerDialog";
 import { useAuth } from "@/lib/auth";
@@ -78,7 +78,7 @@ const COMMERCIAL_FIELDS = [
   "availableUnits",
   "deedNumber",
   "propertyType",
-  "offerCode",
+  "prefix",
   "roomsCount",
   "buildingAge",
   "hasElevator",
@@ -1219,6 +1219,8 @@ function CommercialListingDialog({
   const [hasKey, setHasKey] = useState<boolean>(Boolean(listing?.hasKey));
   const [keyHolder, setKeyHolder] = useState<string>(listing?.keyHolder ?? "");
   const [isOfficeListing, setIsOfficeListing] = useState<boolean>(Boolean(listing?.isOfficeListing));
+  const [prefix, setPrefix] = useState<string>(listing?.prefix ?? "");
+  const [brokerValues, setBrokerValues] = useState<string[]>(() => listing?.broker ?? []);
   const [publicVisible, setPublicVisible] = useState<boolean>(Boolean(listing?.publicVisible));
   const [selectedCity, setSelectedCity] = useState(listing?.city ?? "");
   const [parentId, setParentId] = useState<number | null>(listing?.parentId ?? null);
@@ -1272,6 +1274,8 @@ function CommercialListingDialog({
       setHasKey(Boolean(listing?.hasKey));
       setKeyHolder(listing?.keyHolder ?? "");
       setIsOfficeListing(Boolean(listing?.isOfficeListing));
+      setPrefix(listing?.prefix ?? "");
+      setBrokerValues(listing?.broker ?? []);
       setPublicVisible(Boolean(listing?.publicVisible));
       setSelectedCity(listing?.city ?? "");
       setParentId(listing?.parentId ?? null);
@@ -1302,20 +1306,50 @@ function CommercialListingDialog({
       <div className="space-y-4 rounded-lg border border-border bg-muted/30 p-4">
         <div className="grid gap-4 sm:grid-cols-2">
           {parentId && <input type="hidden" name="parentId" value={parentId} />}
+
+          {!parentId && (
+            <ListingSeriesField
+              listingType={listingType}
+              propertyType={propertyType}
+              listingCategory={listingCategory}
+              hasBroker={brokerValues.length > 0}
+              currentPrefix={prefix}
+              readOnly={readOnly}
+              onSelect={(nextPrefix, nextIsOffice) => {
+                setPrefix(nextPrefix);
+                setIsOfficeListing(nextIsOffice);
+              }}
+            />
+          )}
+          <input type="hidden" name="prefix" value={prefix} />
+          <input type="hidden" name="isOfficeListing" value={String(isOfficeListing)} />
+
+          <div className="space-y-2">
+            <Label className="text-xs font-medium">{t("commercialListings.offerCode")}</Label>
+            <div className="mt-1 flex items-center justify-between gap-2 rounded-md border-2 border-gold/30 bg-gold/5 px-3 py-2">
+              <span className="text-sm font-bold tracking-wide text-foreground">
+                {listing?.offerCode || "—"}
+              </span>
+              <span className="text-xs text-muted-foreground">{t("commercialListings.seriesGeneratedCode")}</span>
+            </div>
+          </div>
+
           <DateField id="contactDate" label={t("commercialListings.contactDate")} defaultValue={listing?.contactDate || todayLocal()} readOnly={readOnly} />
           <div className="space-y-2">
-            <Label htmlFor="offerCode" className="text-xs font-medium">{t("commercialListings.offerCode")}</Label>
-            {isAdmin ? (
-              <Input id="offerCode" name="offerCode" defaultValue={listing?.offerCode ?? ""} readOnly={readOnly} className="mt-1" />
-            ) : (
-              <>
-                <input type="hidden" name="offerCode" value={listing?.offerCode ?? ""} />
-                <div className="mt-1 rounded-md border-2 border-gold/30 bg-gold/5 px-3 py-2 text-sm font-bold tracking-wide text-foreground">
-                  {listing?.offerCode || "—"}
-                </div>
-              </>
-            )}
+            <Label htmlFor="propertyStatus" className="text-xs font-medium">{t("commercialListings.propertyStatus")}</Label>
+            <Select value={propertyStatus} onValueChange={setPropertyStatus} disabled={readOnly}>
+              <SelectTrigger id="propertyStatus" className="mt-1">
+                <SelectValue placeholder={t("commercialListings.propertyStatus")} />
+              </SelectTrigger>
+              <SelectContent>
+                {PROPERTY_STATUS_OPTIONS.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>{t(`commercialListingStatus.${statusKeyFromValue(option.value)}`)}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <input type="hidden" name="propertyStatus" value={propertyStatus} />
           </div>
+
           <div className="space-y-2">
             <Label htmlFor="listingCategory" className="text-xs font-medium">{t("commercialListings.listingCategory")}</Label>
             <Select value={listingCategory} onValueChange={(v) => { setListingCategory(v as ListingCategoryValue); setPropertyType(""); }} disabled={readOnly}>
@@ -1347,20 +1381,6 @@ function CommercialListingDialog({
               </SelectContent>
             </Select>
             <input type="hidden" name="listingType" value={listingType} />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="propertyStatus" className="text-xs font-medium">{t("commercialListings.propertyStatus")}</Label>
-            <Select value={propertyStatus} onValueChange={setPropertyStatus} disabled={readOnly}>
-              <SelectTrigger id="propertyStatus" className="mt-1">
-                <SelectValue placeholder={t("commercialListings.propertyStatus")} />
-              </SelectTrigger>
-              <SelectContent>
-                {PROPERTY_STATUS_OPTIONS.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>{t(`commercialListingStatus.${statusKeyFromValue(option.value)}`)}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <input type="hidden" name="propertyStatus" value={propertyStatus} />
           </div>
 
           <div className="space-y-2">
@@ -1394,6 +1414,7 @@ function CommercialListingDialog({
                   defaultValue={listing?.broker ?? null}
                   readOnly={readOnly}
                   options={partnerOptions.map((partner) => ({ value: partner.fullName, label: partner.fullName }))}
+                  onValueChange={setBrokerValues}
                 />
               </div>
               {isAdmin && (
@@ -1410,11 +1431,6 @@ function CommercialListingDialog({
                 </Button>
               )}
             </div>
-          </div>
-          <div className="flex items-center gap-3">
-            {/* Office Listing checkbox - only visible to admin/staff */}
-            <OfficeListingCheckbox isOfficeListing={isOfficeListing} setIsOfficeListing={setIsOfficeListing} readOnly={readOnly} />
-            <input type="hidden" name="isOfficeListing" value={String(isOfficeListing)} />
           </div>
           <div className="flex items-center gap-3">
             <PublicVisibleCheckbox publicVisible={publicVisible} setPublicVisible={setPublicVisible} readOnly={readOnly} />
@@ -1813,19 +1829,107 @@ function PublicVisibleCheckbox({ publicVisible, setPublicVisible, readOnly }: { 
   );
 }
 
-function OfficeListingCheckbox({ isOfficeListing, setIsOfficeListing, readOnly }: { isOfficeListing: boolean; setIsOfficeListing: (v: boolean) => void; readOnly: boolean; }) {
-  const auth = useAuth();
+function ListingSeriesField({
+  listingType,
+  propertyType,
+  listingCategory,
+  hasBroker,
+  currentPrefix,
+  readOnly,
+  onSelect,
+}: {
+  listingType: string;
+  propertyType: string;
+  listingCategory: string;
+  hasBroker: boolean;
+  currentPrefix: string;
+  readOnly: boolean;
+  onSelect: (prefix: string, isOfficeListing: boolean) => void;
+}) {
   const { t } = useTranslation();
-  // Show only for Admin or Staff
-  const show = auth.isStaff;
-  if (!show) return <></>;
+  const [options, setOptions] = useState<ListingSeriesOption[]>([]);
+  const [currentPrefixKnown, setCurrentPrefixKnown] = useState(true);
+  const [loaded, setLoaded] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoaded(false);
+    fetchListingSeriesOptions({
+      listingType,
+      propertyType,
+      listingCategory,
+      hasBroker,
+      currentPrefix: currentPrefix || undefined,
+    })
+      .then((res) => {
+        if (cancelled) return;
+        setOptions(res.options);
+        setCurrentPrefixKnown(res.currentPrefixKnown);
+        setLoaded(true);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setOptions([]);
+        setLoaded(true);
+      });
+    return () => { cancelled = true; };
+  }, [listingType, propertyType, listingCategory, hasBroker, currentPrefix]);
+
+  // Adopt the server's suggestion when nothing is chosen yet, or when the
+  // stored series no longer applies to the current listing type. A prefix the
+  // server does not recognise (e.g. "L" on lead-created listings) is left alone
+  // until the user explicitly picks another series.
+  useEffect(() => {
+    if (!loaded || options.length === 0) return;
+    if (currentPrefix && !currentPrefixKnown) return;
+
+    const stillValid = options.some((o) => o.prefix === currentPrefix);
+    if (stillValid) return;
+
+    const target = options.find((o) => o.isDefault) ?? options[0];
+    if (target) onSelect(target.prefix, target.isOfficeListing);
+  }, [loaded, options, currentPrefix, currentPrefixKnown, onSelect]);
+
+  // A prefix the server does not recognise is offered as-is so its current
+  // value stays visible, while still allowing a switch to any real series.
+  const displayOptions = useMemo<ListingSeriesOption[]>(() => {
+    if (!currentPrefix || currentPrefixKnown) return options;
+    if (options.some((o) => o.prefix === currentPrefix)) return options;
+    return [
+      {
+        prefix: currentPrefix,
+        listingType: "",
+        isOfficeListing: false,
+        labelKey: "commercialListings.seriesOwnerSubmitted",
+        isDefault: false,
+      },
+      ...options,
+    ];
+  }, [options, currentPrefix, currentPrefixKnown]);
 
   return (
-    <div className="flex items-center gap-3 rounded-lg border border-border bg-background px-3 py-3">
-      <Checkbox id="isOfficeListing" checked={isOfficeListing} onCheckedChange={(checked) => setIsOfficeListing(checked === true)} disabled={readOnly} />
-      <div className="space-y-1">
-        <Label htmlFor="isOfficeListing" className="text-sm font-medium">{t("commercialListings.officeListing")}</Label>
-      </div>
+    <div className="space-y-2">
+      <Label htmlFor="prefix" className="text-xs font-medium">{t("commercialListings.seriesLabel")}</Label>
+      <Select
+        value={currentPrefix || undefined}
+        onValueChange={(v) => {
+          const picked = displayOptions.find((o) => o.prefix === v);
+          if (picked) onSelect(picked.prefix, picked.isOfficeListing);
+        }}
+        disabled={readOnly || !loaded}
+      >
+        <SelectTrigger id="prefix" className="mt-1">
+          <SelectValue placeholder={t("commercialListings.seriesLabel")} />
+        </SelectTrigger>
+        <SelectContent>
+          {displayOptions.map((option) => (
+            <SelectItem key={option.prefix} value={option.prefix}>
+              {option.prefix} — {t(option.labelKey)}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      <p className="text-xs text-muted-foreground">{t("commercialListings.seriesHint")}</p>
     </div>
   );
 }

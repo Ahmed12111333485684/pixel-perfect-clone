@@ -777,11 +777,37 @@ export function fetchAllNotifications(page: number, pageSize: number, read?: boo
   });
 }
 
+// ============ Listing series helpers ============
+export interface ListingSeriesOption {
+  prefix: string;
+  listingType: string;
+  isOfficeListing: boolean;
+  labelKey: string;
+  isDefault: boolean;
+}
+
+export interface ListingSeriesOptions {
+  listingType: string;
+  defaultPrefix: string | null;
+  options: ListingSeriesOption[];
+  currentPrefixKnown: boolean;
+}
+
+export function fetchListingSeriesOptions(params: {
+  listingType: string;
+  propertyType?: string;
+  listingCategory?: string;
+  isOfficeListing?: boolean;
+  hasBroker?: boolean;
+  currentPrefix?: string;
+}) {
+  return api<ListingSeriesOptions>("/api/listings/lookup", { query: params });
+}
+
 // ============ Partner helpers ============
 export function fetchPartners() {
   return api<Partner[]>("/api/partners");
 }
-
 export function fetchPartnersLookup() {
   return api<PartnerLookup[]>("/api/partners/lookup");
 }
