@@ -1,4 +1,4 @@
-import { Link, createFileRoute } from "@tanstack/react-router";
+﻿import { Link, createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { memo, useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -6,7 +6,7 @@ import { api, fetchPartnersLookup, createPartner, fetchListingSeriesOptions, typ
 import { syncCreated, syncUpdated, syncRemoved } from "@/lib/queryCache";
 import { PartnerDialog } from "@/components/partners/PartnerDialog";
 import { useAuth } from "@/lib/auth";
-import { todayLocal } from "@/lib/format";
+import { todayLocal, formatDateTime12h, formatDate } from "@/lib/format";
 import { usePageSize } from "@/hooks/use-page-size";
 import { PageSizeSelect } from "@/components/PageSizeSelect";
 import { PageHeader, StatusBadge } from "@/components/PageHeader";
@@ -58,12 +58,12 @@ interface CommercialListingSearchResult {
   items: CommercialListing[];
 }
 
-const PUBLISHED_VALUE = "تم";
-const STATUS_AVAILABLE = "متاح";
-const STATUS_OCCUPIED = "مشغول";
-const STATUS_UNAVAILABLE = "غير متاح";
-const DEAL_THROUGH_OWNER = "المالك";
-const DEAL_THROUGH_OFFICE = "المكتب";
+const PUBLISHED_VALUE = "ØªÙ…";
+const STATUS_AVAILABLE = "Ù…ØªØ§Ø­";
+const STATUS_OCCUPIED = "Ù…Ø´ØºÙˆÙ„";
+const STATUS_UNAVAILABLE = "ØºÙŠØ± Ù…ØªØ§Ø­";
+const DEAL_THROUGH_OWNER = "Ø§Ù„Ù…Ø§Ù„Ùƒ";
+const DEAL_THROUGH_OFFICE = "Ø§Ù„Ù…ÙƒØªØ¨";
 
 const COMMERCIAL_FIELDS = [
   "contactDate",
@@ -153,13 +153,13 @@ const LISTING_CATEGORY_OPTIONS = [
 
 function normalizeListingCategory(value: string | null | undefined): ListingCategoryValue {
   const normalized = normalizeValue(value).toLowerCase();
-  if (normalized === "residential" || normalized === "سكني") return LISTING_CATEGORY_RESIDENTIAL;
+  if (normalized === "residential" || normalized === "Ø³ÙƒÙ†ÙŠ") return LISTING_CATEGORY_RESIDENTIAL;
   return LISTING_CATEGORY_COMMERCIAL;
 }
 
 function normalizeListingType(value: string | null | undefined): ListingTypeValue {
   const normalized = normalizeValue(value).toLowerCase();
-  if (normalized === "sale" || normalized === "بيع") return "Sale";
+  if (normalized === "sale" || normalized === "Ø¨ÙŠØ¹") return "Sale";
   return "Rental";
 }
 
@@ -176,21 +176,21 @@ type PropertyTypeKey =
   | "Other";
 
 function listingCategoryToArabic(cat: string): string {
-  return cat === LISTING_CATEGORY_RESIDENTIAL ? "سكني" : "تجاري";
+  return cat === LISTING_CATEGORY_RESIDENTIAL ? "Ø³ÙƒÙ†ÙŠ" : "ØªØ¬Ø§Ø±ÙŠ";
 }
 
 function normalizePropertyType(value: string | null | undefined): PropertyTypeKey | "" {
   const v = normalizeValue(value).toLowerCase();
-  if (v === "شقة" || v === "apartment") return "Apartment";
-  if (v === "محل" || v === "shop") return "Shop";
-  if (v === "مكتب" || v === "office") return "Office";
-  if (v === "معرض" || v === "showroom" || v === "gallery") return "Showroom";
-  if (v === "عمارة" || v === "عمارة سكنية" || v === "عمارة تجارية" || v === "building") return "Building";
-  if (v === "ارض" || v === "land") return "Land";
-  if (v === "استراحة" || v === "resthouse" || v === "rest house") return "RestHouse";
-  if (v === "فيلا" || v === "villa") return "Villa";
-  if (v === "مستودع" || v === "warehouse") return "Warehouse";
-  if (v === "اخري" || v === "أخرى" || v === "اخري" || v === "other") return "Other";
+  if (v === "Ø´Ù‚Ø©" || v === "apartment") return "Apartment";
+  if (v === "Ù…Ø­Ù„" || v === "shop") return "Shop";
+  if (v === "Ù…ÙƒØªØ¨" || v === "office") return "Office";
+  if (v === "Ù…Ø¹Ø±Ø¶" || v === "showroom" || v === "gallery") return "Showroom";
+  if (v === "Ø¹Ù…Ø§Ø±Ø©" || v === "Ø¹Ù…Ø§Ø±Ø© Ø³ÙƒÙ†ÙŠØ©" || v === "Ø¹Ù…Ø§Ø±Ø© ØªØ¬Ø§Ø±ÙŠØ©" || v === "building") return "Building";
+  if (v === "Ø§Ø±Ø¶" || v === "land") return "Land";
+  if (v === "Ø§Ø³ØªØ±Ø§Ø­Ø©" || v === "resthouse" || v === "rest house") return "RestHouse";
+  if (v === "ÙÙŠÙ„Ø§" || v === "villa") return "Villa";
+  if (v === "Ù…Ø³ØªÙˆØ¯Ø¹" || v === "warehouse") return "Warehouse";
+  if (v === "Ø§Ø®Ø±ÙŠ" || v === "Ø£Ø®Ø±Ù‰" || v === "Ø§Ø®Ø±ÙŠ" || v === "other") return "Other";
   // If value already matches a key (case-insensitive), return it normalized
   const mapping: Record<string, PropertyTypeKey> = {
     apartment: "Apartment",
@@ -605,7 +605,7 @@ function CommercialListingsPage() {
     { key: "employee", header: t("common.employee"), cell: (r) => r.employee || t("common.notProvided"), sortable: true },
   ];
 
-  // Client-side filtering so `رقم الصك` (deedNumber) and every facet is searchable
+  // Client-side filtering so `Ø±Ù‚Ù… Ø§Ù„ØµÙƒ` (deedNumber) and every facet is searchable
   const filteredListings = useMemo(() => {
     const items = listings.data ?? [];
     const cityMatch = (record: CommercialListing) =>
@@ -636,12 +636,12 @@ function CommercialListingsPage() {
       if (dealTypeFilter !== "all") {
         const lt = (record.listingType ?? "").toLowerCase();
         if (dealTypeFilter === "sale") {
-          dealTypeMatch = lt === "sale" || lt === "بيع";
+          dealTypeMatch = lt === "sale" || lt === "Ø¨ÙŠØ¹";
         } else if (dealTypeFilter === "rental") {
-          dealTypeMatch = lt === "rental" || lt === "ايجار" || lt === "إيجار";
+          dealTypeMatch = lt === "rental" || lt === "Ø§ÙŠØ¬Ø§Ø±" || lt === "Ø¥ÙŠØ¬Ø§Ø±";
         } else if (dealTypeFilter === "rental_commercial") {
           const rc = (record.listingCategory ?? "").toLowerCase();
-          dealTypeMatch = (lt === "rental" || lt === "ايجار" || lt === "إيجار") && (rc === "تجاري" || rc === "commercial");
+          dealTypeMatch = (lt === "rental" || lt === "Ø§ÙŠØ¬Ø§Ø±" || lt === "Ø¥ÙŠØ¬Ø§Ø±") && (rc === "ØªØ¬Ø§Ø±ÙŠ" || rc === "commercial");
         }
       }
 
@@ -1328,13 +1328,32 @@ function CommercialListingDialog({
             <Label className="text-xs font-medium">{t("commercialListings.offerCode")}</Label>
             <div className="mt-1 flex items-center justify-between gap-2 rounded-md border-2 border-gold/30 bg-gold/5 px-3 py-2">
               <span className="text-sm font-bold tracking-wide text-foreground">
-                {listing?.offerCode || "—"}
+                {listing?.offerCode || "â€”"}
               </span>
               <span className="text-xs text-muted-foreground">{t("commercialListings.seriesGeneratedCode")}</span>
             </div>
           </div>
 
           <DateField id="contactDate" label={t("commercialListings.contactDate")} defaultValue={listing?.contactDate || todayLocal()} readOnly={readOnly} />
+          <div className="space-y-2">
+            <Label className="text-xs font-medium">{t("common.createdAt")}</Label>
+            <div className="mt-1 rounded-md border border-border bg-muted/50 px-3 py-2 text-sm">
+              {listing?.createdAt ? (
+                <>
+                  {new Date(listing.createdAt).toLocaleDateString("en-CA", {
+                    year: "numeric",
+                    month: "2-digit",
+                    day: "2-digit",
+                  })}{" "}
+                  {new Date(listing.createdAt).toLocaleTimeString(undefined, {
+                    hour: "numeric",
+                    minute: "2-digit",
+                    hour12: true,
+                  })}
+                </>
+              ) : "—"}
+            </div>
+          </div>
           <div className="space-y-2">
             <Label htmlFor="propertyStatus" className="text-xs font-medium">{t("commercialListings.propertyStatus")}</Label>
             <Select value={propertyStatus} onValueChange={setPropertyStatus} disabled={readOnly}>
@@ -1566,14 +1585,14 @@ function CommercialListingDialog({
                 {(listingType === "Sale" ? SALE_PAYMENT_TYPES : RENTAL_PAYMENT_TYPES).map((p) => (
                   <SelectItem key={p} value={p}>{p}</SelectItem>
                 ))}
-                <SelectItem value="__other__">اخري</SelectItem>
+                <SelectItem value="__other__">Ø§Ø®Ø±ÙŠ</SelectItem>
               </SelectContent>
             </Select>
             {paymentType === "__other__" && (
               <Input
                 value={paymentTypeOther}
                 onChange={(e) => setPaymentTypeOther(e.target.value)}
-                placeholder="اكتب نوع السداد"
+                placeholder="Ø§ÙƒØªØ¨ Ù†ÙˆØ¹ Ø§Ù„Ø³Ø¯Ø§Ø¯"
                 disabled={readOnly}
                 className="mt-2"
               />
@@ -1605,14 +1624,14 @@ function CommercialListingDialog({
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="none">{t("common.notProvided")}</SelectItem>
-                      <SelectItem value="مع المكتب">{t("commercialListings.keyWithOffice")}</SelectItem>
-                      <SelectItem value="مع المالك">{t("commercialListings.keyWithOwner")}</SelectItem>
-                      <SelectItem value="مع الحارس">{t("commercialListings.keyWithGuard")}</SelectItem>
+                      <SelectItem value="Ù…Ø¹ Ø§Ù„Ù…ÙƒØªØ¨">{t("commercialListings.keyWithOffice")}</SelectItem>
+                      <SelectItem value="Ù…Ø¹ Ø§Ù„Ù…Ø§Ù„Ùƒ">{t("commercialListings.keyWithOwner")}</SelectItem>
+                      <SelectItem value="Ù…Ø¹ Ø§Ù„Ø­Ø§Ø±Ø³">{t("commercialListings.keyWithGuard")}</SelectItem>
                     </SelectContent>
                   </Select>
                   <input type="hidden" name="keyHolder" value={keyHolder} />
                 </div>
-                {keyHolder === "مع الحارس" && (
+                {keyHolder === "Ù…Ø¹ Ø§Ù„Ø­Ø§Ø±Ø³" && (
                   <PhoneField id="guardPhone" label={t("commercialListings.guardPhone")} defaultValue={listing?.guardPhone} readOnly={readOnly} />
                 )}
               </div>
@@ -1924,7 +1943,7 @@ function ListingSeriesField({
         <SelectContent>
           {displayOptions.map((option) => (
             <SelectItem key={option.prefix} value={option.prefix}>
-              {option.prefix} — {t(option.labelKey)}
+              {option.prefix} â€” {t(option.labelKey)}
             </SelectItem>
           ))}
         </SelectContent>
@@ -1979,7 +1998,7 @@ function ListingSeekerSuggestions({ listingId }: { listingId: number }) {
       <div className="mb-3 flex items-center justify-between gap-2">
         <div>
           <p className="text-sm font-semibold">
-            {t("common.matchingSeekers", { defaultValue: "الطلبات المطابقة" })}
+            {t("common.matchingSeekers", { defaultValue: "Ø§Ù„Ø·Ù„Ø¨Ø§Øª Ø§Ù„Ù…Ø·Ø§Ø¨Ù‚Ø©" })}
           </p>
           <p className="text-xs text-muted-foreground">{t("common.autoMatched", { defaultValue: "Auto matched" })}</p>
         </div>
@@ -1999,7 +2018,7 @@ function ListingSeekerSuggestions({ listingId }: { listingId: number }) {
         </div>
       ) : suggestions.length === 0 ? (
         <div className="rounded-lg border border-dashed border-border px-4 py-6 text-center text-sm text-muted-foreground">
-          {t("common.noData", { defaultValue: "لا توجد طلبات مقترحة" })}
+          {t("common.noData", { defaultValue: "Ù„Ø§ ØªÙˆØ¬Ø¯ Ø·Ù„Ø¨Ø§Øª Ù…Ù‚ØªØ±Ø­Ø©" })}
         </div>
       ) : (
         <div className="space-y-3">

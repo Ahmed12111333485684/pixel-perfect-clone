@@ -47,6 +47,21 @@ export function formatDateTime(d?: string | null) {
     return d;
   }
 }
+export function formatDateTime12h(d?: string | null) {
+  if (!d) return "—";
+  try {
+    return new Date(d).toLocaleString(undefined, {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+    });
+  } catch {
+    return d;
+  }
+}
 export function formatMoney(n: number | undefined | null) {
   if (n === undefined || n === null) return "—";
   return new Intl.NumberFormat(undefined, {
