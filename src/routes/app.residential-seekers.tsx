@@ -20,6 +20,7 @@ import { PartnerDialog } from "@/components/partners/PartnerDialog";
 import { useAuth } from "@/lib/auth";
 import { todayLocal } from "@/lib/format";
 import { usePageSize } from "@/hooks/use-page-size";
+import { useSuggestionShuffle } from "@/hooks/use-suggestion-shuffle";
 import { PageSizeSelect } from "@/components/PageSizeSelect";
 import {
   PROPERTY_CATEGORIES,
@@ -48,6 +49,7 @@ import { RiyalIcon } from "@/components/icons/RiyalIcon";
 import { toast } from "sonner";
 import { ComboboxField } from "@/components/form/ComboboxField";
 import { MultiComboboxField } from "@/components/form/MultiComboboxField";
+import { cn } from "@/lib/utils";
 import { PhoneField } from "@/components/form/PhoneField";
 import { CITIES, getDistricts } from "@/lib/locations";
 import { FilterBar } from "@/components/search/FilterBar";
@@ -1066,7 +1068,7 @@ function ResidentialSeekersPage() {
         open={creating}
         onOpenChange={setCreating}
         seeker={null}
-        suggestions={[]}
+        suggestions={undefined}
         suggestionsLoading={false}
         suggestionsError={null}
         users={users.data ?? []}
@@ -1087,7 +1089,7 @@ function ResidentialSeekersPage() {
           if (!value) setSelected(null);
         }}
         seeker={selected}
-        suggestions={suggestionsQuery.data ?? []}
+        suggestions={suggestionsQuery.data}
         suggestionsLoading={suggestionsQuery.isLoading}
         suggestionsError={suggestionsQuery.error}
         users={users.data ?? []}
@@ -1136,7 +1138,7 @@ function ResidentialSeekerDialog({
   open,
   onOpenChange,
   seeker,
-  suggestions = [],
+  suggestions,
   suggestionsLoading = false,
   suggestionsError = null,
   users,
@@ -1152,7 +1154,7 @@ function ResidentialSeekerDialog({
   open: boolean;
   onOpenChange: (value: boolean) => void;
   seeker: ResidentialSeeker | null;
-  suggestions: RequestPropertySuggestion[];
+  suggestions: RequestPropertySuggestion[] | undefined;
   suggestionsLoading: boolean;
   suggestionsError: unknown;
   users: UserDto[];
@@ -1188,31 +1190,12 @@ function ResidentialSeekerDialog({
       ? t("residentialSeekers.maxRentalBudget")
       : t("residentialSeekers.maxBudget");
 
-  const [visibleSuggestions, setVisibleSuggestions] = useState<RequestPropertySuggestion[]>(() =>
-    suggestions.slice(0, 5),
-  );
-  const [reserveSuggestions, setReserveSuggestions] = useState<RequestPropertySuggestion[]>(() =>
-    suggestions.slice(5),
-  );
-
-  useEffect(() => {
-    setVisibleSuggestions(suggestions.slice(0, 5));
-    setReserveSuggestions(suggestions.slice(5));
-  }, [suggestions]);
-
-  const shuffleSuggestion = (index: number) => {
-    if (reserveSuggestions.length === 0) return;
-    const pickIndex = Math.floor(Math.random() * reserveSuggestions.length);
-    const replacement = reserveSuggestions[pickIndex];
-    const removed = visibleSuggestions[index];
-    const nextVisible = [...visibleSuggestions];
-    nextVisible[index] = replacement;
-    setVisibleSuggestions(nextVisible);
-    setReserveSuggestions([
-      ...reserveSuggestions.filter((_, i) => i !== pickIndex),
-      removed,
-    ]);
-  };
+  const {
+    visible: visibleSuggestions,
+    reserve: reserveSuggestions,
+    shuffle: shuffleSuggestion,
+    switchedIndex,
+  } = useSuggestionShuffle<RequestPropertySuggestion>(suggestions);
 
   return (
     <FormDialog
@@ -1533,7 +1516,7 @@ function ResidentialSeekerDialog({
             </div>
             <Badge variant="outline" className="gap-1">
               <Sparkles className="h-3.5 w-3.5" />
-              {suggestions.length}
+              {suggestions?.length ?? 0}
             </Badge>
           </div>
 
@@ -1554,7 +1537,10 @@ function ResidentialSeekerDialog({
               {visibleSuggestions.map((property, index) => (
                 <div
                   key={property.id}
-                  className="overflow-hidden rounded-xl border border-border bg-card shadow-sm"
+                  className={cn(
+                    "overflow-hidden rounded-xl border border-border bg-card shadow-sm",
+                    switchedIndex === index && "animate-suggestion-switch",
+                  )}
                 >
                   <div className="flex gap-3 p-3">
                     <div className="h-20 w-28 shrink-0 overflow-hidden rounded-lg border border-border bg-muted">
@@ -1579,6 +1565,12 @@ function ResidentialSeekerDialog({
                               <Sparkles className="h-3 w-3" />
                               {t("common.match")} {property.score}%
                             </span>
+                            {switchedIndex === index && (
+                              <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 font-medium text-primary animate-fade-in">
+                                <Shuffle className="h-3 w-3" />
+                                {t("common.switchedSuggestion")}
+                              </span>
+                            )}
                           </div>
                           <div className="mt-1 truncate font-medium">{property.name}</div>
                           <div className="mt-1 flex items-start gap-1 text-xs text-muted-foreground">
@@ -1646,7 +1638,10 @@ function ResidentialSeekerDialog({
                             type="button"
                             size="sm"
                             variant="ghost"
-                            className="h-7 w-7 p-0"
+                            className={cn(
+                              "h-7 w-7 p-0",
+                              switchedIndex === index && "animate-suggestion-sweep",
+                            )}
                             title={t("common.shuffleSuggestion")}
                             aria-label={t("common.shuffleSuggestion")}
                             onClick={() => shuffleSuggestion(index)}

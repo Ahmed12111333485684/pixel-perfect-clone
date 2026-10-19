@@ -8,6 +8,7 @@ import { PartnerDialog } from "@/components/partners/PartnerDialog";
 import { useAuth } from "@/lib/auth";
 import { todayLocal, formatDateTime12h, formatDate } from "@/lib/format";
 import { usePageSize } from "@/hooks/use-page-size";
+import { useSuggestionShuffle } from "@/hooks/use-suggestion-shuffle";
 import { PageSizeSelect } from "@/components/PageSizeSelect";
 import { PageHeader, StatusBadge } from "@/components/PageHeader";
 import { DataTable, type Column } from "@/components/DataTable";
@@ -29,6 +30,7 @@ import { CITIES, getDistricts } from "@/lib/locations";
 import { getPropertyTypesByCategory } from "@/lib/property-types";
 import { SALE_PAYMENT_TYPES, RENTAL_PAYMENT_TYPES } from "@/lib/payment-types";
 import { CommercialListingImageManager } from "@/components/CommercialListingImageManager";
+import { cn } from "@/lib/utils";
 import { resolveApiAssetUrl } from "@/lib/api";
 import { MediaLightbox } from "@/components/MediaLightbox";
 import { FilterBar } from "@/components/search/FilterBar";
@@ -1991,34 +1993,14 @@ function ListingSeekerSuggestions({ listingId }: { listingId: number }) {
     enabled: !!listingId,
   });
 
-  const suggestions = suggestionsQuery.data ?? [];
+  const suggestions = suggestionsQuery.data;
 
-  const [visibleSuggestions, setVisibleSuggestions] = useState<SeekerSuggestion[]>(() =>
-    suggestions.slice(0, 5),
-  );
-  const [reserveSuggestions, setReserveSuggestions] = useState<SeekerSuggestion[]>(() =>
-    suggestions.slice(5),
-  );
-
-  useEffect(() => {
-    const data = suggestionsQuery.data ?? [];
-    setVisibleSuggestions(data.slice(0, 5));
-    setReserveSuggestions(data.slice(5));
-  }, [suggestionsQuery.data]);
-
-  const shuffleSuggestion = (index: number) => {
-    if (reserveSuggestions.length === 0) return;
-    const pickIndex = Math.floor(Math.random() * reserveSuggestions.length);
-    const replacement = reserveSuggestions[pickIndex];
-    const removed = visibleSuggestions[index];
-    const nextVisible = [...visibleSuggestions];
-    nextVisible[index] = replacement;
-    setVisibleSuggestions(nextVisible);
-    setReserveSuggestions([
-      ...reserveSuggestions.filter((_, i) => i !== pickIndex),
-      removed,
-    ]);
-  };
+  const {
+    visible: visibleSuggestions,
+    reserve: reserveSuggestions,
+    shuffle: shuffleSuggestion,
+    switchedIndex,
+  } = useSuggestionShuffle<SeekerSuggestion>(suggestions);
 
   return (
     <div className="space-y-4 rounded-lg border border-border bg-muted/30 p-4">
@@ -2031,7 +2013,7 @@ function ListingSeekerSuggestions({ listingId }: { listingId: number }) {
         </div>
         <Badge variant="outline" className="gap-1">
           <Sparkles className="h-3.5 w-3.5" />
-          {suggestions.length}
+          {suggestions?.length ?? 0}
         </Badge>
       </div>
 
@@ -2052,7 +2034,10 @@ function ListingSeekerSuggestions({ listingId }: { listingId: number }) {
           {visibleSuggestions.map((seeker, index) => (
             <div
               key={seeker.id}
-              className="overflow-hidden rounded-xl border border-border bg-card p-3 shadow-sm"
+              className={cn(
+                "overflow-hidden rounded-xl border border-border bg-card p-3 shadow-sm",
+                switchedIndex === index && "animate-suggestion-switch",
+              )}
             >
               <div className="flex items-start justify-between gap-2">
                 <div className="space-y-1 min-w-0">
@@ -2063,6 +2048,12 @@ function ListingSeekerSuggestions({ listingId }: { listingId: number }) {
                     </span>
                     {seeker.serialNumber && (
                       <span className="font-mono text-muted-foreground">#{seeker.serialNumber}</span>
+                    )}
+                    {switchedIndex === index && (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 font-medium text-primary animate-fade-in">
+                        <Shuffle className="h-3 w-3" />
+                        {t("common.switchedSuggestion")}
+                      </span>
                     )}
                   </div>
                   <div className="font-medium text-sm truncate flex items-center gap-1.5 mt-1">
@@ -2078,6 +2069,9 @@ function ListingSeekerSuggestions({ listingId }: { listingId: number }) {
                     )}
                     {seeker.maxBudget && (
                       <span>&bull; {t("common.maxBudget")}: {seeker.maxBudget}</span>
+                    )}
+                    {seeker.roomCount != null && (
+                      <span>&bull; {t("residentialSeekers.roomCount")}: {seeker.roomCount}</span>
                     )}
                   </div>
                 </div>
@@ -2096,7 +2090,10 @@ function ListingSeekerSuggestions({ listingId }: { listingId: number }) {
                       type="button"
                       size="sm"
                       variant="ghost"
-                      className="h-7 w-7 p-0"
+                      className={cn(
+                        "h-7 w-7 p-0",
+                        switchedIndex === index && "animate-suggestion-sweep",
+                      )}
                       title={t("common.shuffleSuggestion")}
                       aria-label={t("common.shuffleSuggestion")}
                       onClick={() => shuffleSuggestion(index)}

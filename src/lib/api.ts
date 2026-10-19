@@ -477,6 +477,7 @@ export interface SeekerSuggestion {
   requestCategory?: string | null;
   propertyType?: string | null;
   maxBudget?: string | null;
+  roomCount?: number | null;
   city?: string | null;
   district?: string[] | null;
   preferredLocation?: string | null;
