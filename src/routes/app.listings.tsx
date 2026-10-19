@@ -20,7 +20,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ListingLocationMap } from "@/components/ListingLocationMap";
-import { Plus, X, LayoutGrid, List, FileImage, MapPin, Sparkles, User } from "lucide-react";
+import { Plus, X, LayoutGrid, List, FileImage, MapPin, Sparkles, User, Shuffle } from "lucide-react";
 import { toast } from "sonner";
 import { PhoneField } from "@/components/form/PhoneField";
 import { ComboboxField } from "@/components/form/ComboboxField";
@@ -1987,11 +1987,38 @@ function ListingSeekerSuggestions({ listingId }: { listingId: number }) {
   const { t } = useTranslation();
   const suggestionsQuery = useQuery({
     queryKey: ["listing-seeker-suggestions", listingId],
-    queryFn: () => api<SeekerSuggestion[]>(`/api/commercial-listings/${listingId}/seeker-suggestions`),
+    queryFn: () => api<SeekerSuggestion[]>(`/api/commercial-listings/${listingId}/seeker-suggestions?limit=30`),
     enabled: !!listingId,
   });
 
   const suggestions = suggestionsQuery.data ?? [];
+
+  const [visibleSuggestions, setVisibleSuggestions] = useState<SeekerSuggestion[]>(() =>
+    suggestions.slice(0, 5),
+  );
+  const [reserveSuggestions, setReserveSuggestions] = useState<SeekerSuggestion[]>(() =>
+    suggestions.slice(5),
+  );
+
+  useEffect(() => {
+    const data = suggestionsQuery.data ?? [];
+    setVisibleSuggestions(data.slice(0, 5));
+    setReserveSuggestions(data.slice(5));
+  }, [suggestionsQuery.data]);
+
+  const shuffleSuggestion = (index: number) => {
+    if (reserveSuggestions.length === 0) return;
+    const pickIndex = Math.floor(Math.random() * reserveSuggestions.length);
+    const replacement = reserveSuggestions[pickIndex];
+    const removed = visibleSuggestions[index];
+    const nextVisible = [...visibleSuggestions];
+    nextVisible[index] = replacement;
+    setVisibleSuggestions(nextVisible);
+    setReserveSuggestions([
+      ...reserveSuggestions.filter((_, i) => i !== pickIndex),
+      removed,
+    ]);
+  };
 
   return (
     <div className="space-y-4 rounded-lg border border-border bg-muted/30 p-4">
@@ -2016,13 +2043,13 @@ function ListingSeekerSuggestions({ listingId }: { listingId: number }) {
         <div className="rounded-lg border border-dashed border-destructive/40 px-4 py-6 text-center text-sm text-destructive">
           {t("common.error")}
         </div>
-      ) : suggestions.length === 0 ? (
+      ) : visibleSuggestions.length === 0 ? (
         <div className="rounded-lg border border-dashed border-border px-4 py-6 text-center text-sm text-muted-foreground">
           {t("common.noData", { defaultValue: "Ù„Ø§ ØªÙˆØ¬Ø¯ Ø·Ù„Ø¨Ø§Øª Ù…Ù‚ØªØ±Ø­Ø©" })}
         </div>
       ) : (
         <div className="space-y-3">
-          {suggestions.map((seeker) => (
+          {visibleSuggestions.map((seeker, index) => (
             <div
               key={seeker.id}
               className="overflow-hidden rounded-xl border border-border bg-card p-3 shadow-sm"
@@ -2064,6 +2091,19 @@ function ListingSeekerSuggestions({ listingId }: { listingId: number }) {
                       {t("common.view")}
                     </Link>
                   </Button>
+                  {reserveSuggestions.length > 0 && (
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      className="h-7 w-7 p-0"
+                      title={t("common.shuffleSuggestion")}
+                      aria-label={t("common.shuffleSuggestion")}
+                      onClick={() => shuffleSuggestion(index)}
+                    >
+                      <Shuffle className="h-3.5 w-3.5" />
+                    </Button>
+                  )}
                 </div>
               </div>
             </div>

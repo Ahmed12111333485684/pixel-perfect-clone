@@ -43,7 +43,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Building2, MapPin, Plus, Sparkles, LayoutGrid, List } from "lucide-react";
+import { Building2, MapPin, Plus, Sparkles, LayoutGrid, List, Shuffle } from "lucide-react";
 import { RiyalIcon } from "@/components/icons/RiyalIcon";
 import { toast } from "sonner";
 import { ComboboxField } from "@/components/form/ComboboxField";
@@ -369,7 +369,7 @@ function ResidentialSeekersPage() {
     queryKey: ["residential-seeker-suggestions", selected?.id],
     queryFn: () =>
       api<RequestPropertySuggestion[]>(
-        `/api/residential-seekers/${selected?.id}/property-suggestions`,
+        `/api/residential-seekers/${selected?.id}/property-suggestions?limit=30`,
       ),
     enabled: !!selected?.id,
   });
@@ -1188,6 +1188,32 @@ function ResidentialSeekerDialog({
       ? t("residentialSeekers.maxRentalBudget")
       : t("residentialSeekers.maxBudget");
 
+  const [visibleSuggestions, setVisibleSuggestions] = useState<RequestPropertySuggestion[]>(() =>
+    suggestions.slice(0, 5),
+  );
+  const [reserveSuggestions, setReserveSuggestions] = useState<RequestPropertySuggestion[]>(() =>
+    suggestions.slice(5),
+  );
+
+  useEffect(() => {
+    setVisibleSuggestions(suggestions.slice(0, 5));
+    setReserveSuggestions(suggestions.slice(5));
+  }, [suggestions]);
+
+  const shuffleSuggestion = (index: number) => {
+    if (reserveSuggestions.length === 0) return;
+    const pickIndex = Math.floor(Math.random() * reserveSuggestions.length);
+    const replacement = reserveSuggestions[pickIndex];
+    const removed = visibleSuggestions[index];
+    const nextVisible = [...visibleSuggestions];
+    nextVisible[index] = replacement;
+    setVisibleSuggestions(nextVisible);
+    setReserveSuggestions([
+      ...reserveSuggestions.filter((_, i) => i !== pickIndex),
+      removed,
+    ]);
+  };
+
   return (
     <FormDialog
       open={open}
@@ -1519,13 +1545,13 @@ function ResidentialSeekerDialog({
             <div className="rounded-lg border border-dashed border-destructive/40 px-4 py-6 text-center text-sm text-destructive">
               {t("common.error")}
             </div>
-          ) : suggestions.length === 0 ? (
+          ) : visibleSuggestions.length === 0 ? (
             <div className="rounded-lg border border-dashed border-border px-4 py-6 text-center text-sm text-muted-foreground">
               {t("common.noData", { defaultValue: "لا يوجد ترشيحات لهذا الطلب" })}
             </div>
           ) : (
             <div className="space-y-3">
-              {suggestions.map((property) => (
+              {visibleSuggestions.map((property, index) => (
                 <div
                   key={property.id}
                   className="overflow-hidden rounded-xl border border-border bg-card shadow-sm"
@@ -1615,6 +1641,19 @@ function ResidentialSeekerDialog({
                             {t("common.open")}
                           </Link>
                         </Button>
+                        {reserveSuggestions.length > 0 && (
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="ghost"
+                            className="h-7 w-7 p-0"
+                            title={t("common.shuffleSuggestion")}
+                            aria-label={t("common.shuffleSuggestion")}
+                            onClick={() => shuffleSuggestion(index)}
+                          >
+                            <Shuffle className="h-3.5 w-3.5" />
+                          </Button>
+                        )}
                       </div>
                     </div>
                   </div>
