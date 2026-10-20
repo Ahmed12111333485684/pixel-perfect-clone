@@ -57,6 +57,7 @@ import { CITIES, getDistricts } from "@/lib/locations";
 import { FilterBar } from "@/components/search/FilterBar";
 import { QuickFilterBar } from "@/components/search/QuickFilterBar";
 import { useUrlSearchState, matchesQuery, normalizeForSearch } from "@/lib/search";
+import { matchesPhoneQuery } from "@/lib/phone";
 
 export const Route = createFileRoute("/app/residential-seekers")({
   validateSearch: (search: Record<string, unknown>) => ({
@@ -671,22 +672,22 @@ function ResidentialSeekersPage() {
     };
 
     const filtered = items.filter((r) => {
-      const qMatch = matchesQuery(
-        [
-          r.serialNumber,
-          r.fullName,
-          r.mobile,
-          r.mobile2,
-          r.preferredLocation,
-          r.city,
-          r.district,
-          r.requestDescription,
-          r.notes,
-          r.listingType,
-          r.propertyType,
-        ],
-        deferredInputQ,
-      );
+      const qMatch =
+        matchesPhoneQuery([r.mobile, r.mobile2], deferredInputQ) ||
+        matchesQuery(
+          [
+            r.serialNumber,
+            r.fullName,
+            r.preferredLocation,
+            r.city,
+            r.district,
+            r.requestDescription,
+            r.notes,
+            r.listingType,
+            r.propertyType,
+          ],
+          deferredInputQ,
+        );
       const statusMatch = status === "all" || r.status === status;
       const attentionMatch = attention === "all" || inspectionAttentionLevel(r) !== null;
       const listingTypeMatch = matchesListingType(r.listingType, listingType);

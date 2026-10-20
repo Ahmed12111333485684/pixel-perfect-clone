@@ -28,6 +28,7 @@ import { WhatsAppIcon } from "@/components/WhatsAppIcon";
 import { ArrowLeft, ChevronDown, Search, User } from "lucide-react";
 import { formatDate, leadStatusTone } from "@/lib/format";
 import { matchesQuery, useUrlSearchState } from "@/lib/search";
+import { matchesPhoneQuery } from "@/lib/phone";
 
 interface SearchResult<T> {
   total: number;
@@ -180,20 +181,33 @@ function ClientDetailPage() {
   // useDeferredValue can properly schedule them as low-priority work.
   const SECTION_PAGE_SIZE = 25;
 
-  const visibleRecords = useMemo(() => {
+  // Records that match the search term (phone numbers are compared in a
+  // format-insensitive way, so "+966 551620530" still matches "0551620530").
+  const searchedRecords = useMemo(() => {
     if (!client) return [];
     return client.records.filter((record) => {
+      const queryMatch =
+        !deferredInputQ.trim() ||
+        matchesPhoneQuery(record.phones, deferredInputQ) ||
+        matchesQuery(
+          [record.name, ...record.fields.map((field) => field.value)],
+          deferredInputQ,
+        );
+      return queryMatch;
+    });
+  }, [client, deferredInputQ]);
+
+  const visibleRecords = useMemo(() => {
+    if (!client) return [];
+    return searchedRecords.filter((record) => {
       const kindMatch =
         kind === "all" ||
         (kind === "requests" && (record.kind === "seeker" || record.kind === "request")) ||
         (kind === "listings" && record.kind === "listing") ||
         (kind === "leads" && record.kind === "lead");
-      const queryMatch =
-        !deferredInputQ.trim() ||
-        matchesQuery([record.name, record.phones, ...record.fields.map((field) => field.value)], deferredInputQ);
-      return kindMatch && queryMatch;
+      return kindMatch;
     });
-  }, [client, kind, deferredInputQ]);
+  }, [searchedRecords, kind]);
 
   const sections = useMemo(() =>
     KIND_ORDER.map(({ key, labelKey }) => ({
@@ -204,16 +218,24 @@ function ClientDetailPage() {
     [visibleRecords],
   );
 
+  // Counts follow the search term, so a badge never promises rows the list
+  // below cannot show.
+  const searchedCounts = useMemo(() => {
+    const counts = { request: 0, seeker: 0, listing: 0, lead: 0 };
+    for (const record of searchedRecords) counts[record.kind] += 1;
+    return counts;
+  }, [searchedRecords]);
+
   const filterOptions: { value: ClientKindFilter; labelKey: string; count: number }[] = useMemo(() => [
-    { value: "all", labelKey: "clients.filterAll", count: client?.count ?? 0 },
+    { value: "all", labelKey: "clients.filterAll", count: searchedRecords.length },
     {
       value: "requests",
       labelKey: "clients.kindRequests",
-      count: (client?.counts.seeker ?? 0) + (client?.counts.request ?? 0),
+      count: searchedCounts.seeker + searchedCounts.request,
     },
-    { value: "listings", labelKey: "clients.kindListings", count: client?.counts.listing ?? 0 },
-    { value: "leads", labelKey: "clients.kindLeads", count: client?.counts.lead ?? 0 },
-  ], [client]);
+    { value: "listings", labelKey: "clients.kindListings", count: searchedCounts.listing },
+    { value: "leads", labelKey: "clients.kindLeads", count: searchedCounts.lead },
+  ], [searchedRecords, searchedCounts]);
 
   if (!hasAccess) {
     return (
@@ -272,24 +294,24 @@ function ClientDetailPage() {
             </div>
           </div>
           <div className="flex flex-wrap gap-1.5">
-            {client.records.some((record) => record.kind === "seeker") && (
+            {searchedCounts.seeker > 0 && (
               <Badge>
-                {t("clients.kindSeekers")} {client.counts.seeker}
+                {t("clients.kindSeekers")} {searchedCounts.seeker}
               </Badge>
             )}
-            {client.records.some((record) => record.kind === "listing") && (
+            {searchedCounts.listing > 0 && (
               <Badge>
-                {t("clients.kindListings")} {client.counts.listing}
+                {t("clients.kindListings")} {searchedCounts.listing}
               </Badge>
             )}
-            {client.records.some((record) => record.kind === "lead") && (
+            {searchedCounts.lead > 0 && (
               <Badge>
-                {t("clients.kindLeads")} {client.counts.lead}
+                {t("clients.kindLeads")} {searchedCounts.lead}
               </Badge>
             )}
-            {client.records.some((record) => record.kind === "request") && (
+            {searchedCounts.request > 0 && (
               <Badge>
-                {t("clients.kindRequests")} {client.counts.request}
+                {t("clients.kindRequests")} {searchedCounts.request}
               </Badge>
             )}
           </div>

@@ -1,5 +1,7 @@
 import { normalizeForSearch } from "./search";
-import { COUNTRY_CODE_DIGITS } from "./countryCodes";
+import { normalizePhone, MIN_PHONE_DIGITS } from "./phone";
+
+export { normalizePhone, MIN_PHONE_DIGITS } from "./phone";
 
 /**
  * Client aggregation logic. Clients are derived (not stored): records from the
@@ -57,55 +59,9 @@ export function normalizeName(value: string | null | undefined): string {
   return normalizeForSearch(value).replace(TASHKEEL_TATWEEL, "").replace(PUNCTUATION, "");
 }
 
-/**
- * Canonicalizes a phone number: digits only, then normalizes international /
- * local Saudi formats so "+966 50 123 4567", "00966501234567", "050 123 4567"
- * and "501234567" all resolve to "0501234567". Landlines canonicalize the same
- * way, so "0112345678", "+966112345678" and "00966112345678" all resolve to
- * "0112345678".
- *
- * Numbers that declare a non-Saudi country code (via "+" or "00") are kept
- * verbatim with their country code — they are never shaped as Saudi — and their
- * national trunk "0" is dropped, so "+971 0501234567" matches "+971501234567".
- * Unprefixed numbers are assumed Saudi, but only 9-10 digit cores are shaped;
- * anything else passes through untouched.
- */
-export function normalizePhone(value: string | null | undefined): string {
-  const raw = (value ?? "").replace(/\s+/g, "");
-  const digits = raw.replace(/\D+/g, "");
-  if (!digits) return "";
-
-  const declaredInternational = raw.startsWith("+") || digits.startsWith("00");
-  const saudi = digits.startsWith("00966") || digits.startsWith("966");
-
-  let core = digits;
-  if (core.startsWith("00966")) core = core.slice(5);
-  else if (core.startsWith("966")) core = core.slice(3);
-  else if (core.startsWith("00")) core = core.slice(2);
-
-  if (declaredInternational && !saudi) {
-    const code = COUNTRY_CODE_DIGITS.find((c) => core.startsWith(c));
-    if (code) {
-      const national = core.slice(code.length);
-      if (national.startsWith("0")) return `${core.slice(0, code.length)}${national.slice(1)}`;
-    }
-    return core;
-  }
-
-  if (core.length !== 9 && core.length !== 10) return core;
-
-  if (core.startsWith("5") && core.length === 9) return `0${core}`;
-  core = core.replace(/^0+/, "");
-  if (core.length === 9) return `0${core}`;
-  return core;
-}
-
 function unique(values: string[]): string[] {
   return [...new Set(values)];
 }
-
-/** Canonical phone tokens shorter than this are treated as junk, not identifiers. */
-const MIN_PHONE_DIGITS = 7;
 
 function stableHash(text: string): string {
   let h1 = 0xdeadbeef;

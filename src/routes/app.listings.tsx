@@ -38,6 +38,7 @@ import { MediaLightbox } from "@/components/MediaLightbox";
 import { FilterBar } from "@/components/search/FilterBar";
 import { QuickFilterBar } from "@/components/search/QuickFilterBar";
 import { useUrlSearchState, matchesQuery, normalizeForSearch, parseAmount } from "@/lib/search";
+import { matchesPhoneQuery } from "@/lib/phone";
 export const Route = createFileRoute("/app/listings")({
   validateSearch: (search: Record<string, unknown>) => ({
     selected: search.selected ? Number(search.selected) : undefined,
@@ -654,13 +655,15 @@ function CommercialListingsPage() {
     };
 
     return items.filter((record) => {
-      const qMatch = matchesQuery(
-        [
-          record.ownerName, record.deedNumber, record.city, record.district, record.location, record.propertyType, record.propertyStatus, record.offerCode, record.mobile1, record.mobile2, record.listingType, record.listingCategory,
-          ...(record.brokerageContracts ?? []).flatMap((c) => [c.brokerageContract, c.licenseNumber]),
-        ],
-        deferredInputQ,
-      );
+      const qMatch =
+        matchesPhoneQuery([record.mobile1, record.mobile2], deferredInputQ) ||
+        matchesQuery(
+          [
+            record.ownerName, record.deedNumber, record.city, record.district, record.location, record.propertyType, record.propertyStatus, record.offerCode, record.listingType, record.listingCategory,
+            ...(record.brokerageContracts ?? []).flatMap((c) => [c.brokerageContract, c.licenseNumber]),
+          ],
+          deferredInputQ,
+        );
       const deedMatch = matchesQuery([record.deedNumber], deferredDeedQ);
 
       const statusMatch = status === "all" || record.propertyStatus === status;

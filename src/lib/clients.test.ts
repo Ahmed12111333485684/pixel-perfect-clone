@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { matchesPhoneQuery } from "./phone";
 import {
   buildClients,
   clientMatchesQuery,
@@ -245,6 +246,39 @@ describe("clientMatchesQuery (foreign numbers)", () => {
 
   it("matches a query with the trunk 0 entry format", () => {
     expect(clientMatchesQuery(client, "+971 0501234567")).toBe(true);
+  });
+});
+
+describe("client record phone search", () => {
+  // A seeker whose phone was entered in the international format, and a listing
+  // of the same person entered in the local format. Searching the local format
+  // has to find both - the client detail page used to compare the raw strings
+  // and showed an empty list.
+  const records = [
+    record({ kind: "seeker", name: "راكان نايف الشريف", phones: ["+966 551620530"] }),
+    record({ kind: "listing", name: "راكان نايف الشريف", phones: ["0551620530"] }),
+  ];
+
+  it("groups them into one client", () => {
+    const clients = buildClients(records);
+    expect(clients).toHaveLength(1);
+    expect(clients[0].count).toBe(2);
+  });
+
+  it("keeps both records when the detail page filters by the local format", () => {
+    const client = buildClients(records)[0];
+    const visible = client.records.filter((r) =>
+      matchesPhoneQuery(r.phones, "0551620530"),
+    );
+    expect(visible).toHaveLength(2);
+  });
+
+  it("keeps both records when the detail page filters by the international format", () => {
+    const client = buildClients(records)[0];
+    const visible = client.records.filter((r) =>
+      matchesPhoneQuery(r.phones, "+966 551620530"),
+    );
+    expect(visible).toHaveLength(2);
   });
 });
 
