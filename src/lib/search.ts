@@ -1,4 +1,5 @@
 import { useCallback, useMemo } from "react";
+import { matchesPhoneQuery } from "./phone";
 
 /**
  * Client-side search helpers. Frontend-only, no backend or schema involved —
@@ -46,6 +47,26 @@ export function matchesQuery(
 
   if (tokens.length === 0) return false;
   return tokens.every((token) => normJoined.includes(token));
+}
+
+/**
+ * True when the query matches the record - either as plain text, or as a phone
+ * number in any format.
+ *
+ * The plain-text match is kept as-is (a phone is one of the searchable values),
+ * and the phone-aware match is *added* on top of it: it canonicalizes both
+ * sides, so "0551620530" also finds a number stored as "+966 551620530". That
+ * way this is strictly more permissive than a plain text search - it never
+ * hides a record a plain search would have shown (a short digit fragment, for
+ * example, still matches as text).
+ */
+export function matchesTextOrPhoneQuery(
+  values: ReadonlyArray<string | null | undefined | readonly string[]>,
+  phones: ReadonlyArray<string | null | undefined>,
+  query: string,
+): boolean {
+  if (!query.trim()) return true;
+  return matchesQuery(values, query) || matchesPhoneQuery(phones, query);
 }
 
 /**

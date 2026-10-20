@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { api, getStoredToken, setStoredToken, type AuthResponse, type Role } from "./api";
-import { onUnauthorized } from "./session";
+import { notifyUnauthorized, onUnauthorized } from "./session";
 
 interface JwtPayload {
   sub?: string;

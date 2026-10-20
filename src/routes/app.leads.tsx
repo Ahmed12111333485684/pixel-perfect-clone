@@ -547,7 +547,21 @@ function LeadsPage() {
                       <span className="font-mono text-xs">#{selected.commercialListingId}</span>
                       <Link
                         to="/app/listings"
-                        search={{ selected: selected.commercialListingId }}
+                        search={{
+                          selected: selected.commercialListingId,
+                          q: "",
+                          deedQ: "",
+                          status: "all",
+                          dealType: "all",
+                          listingCategory: "all",
+                          propertyType: "all",
+                          roomCount: "all",
+                          city: "",
+                          district: "",
+                          page: 1,
+                          sortBy: "createdAt",
+                          sortDir: "desc",
+                        }}
                         className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
                       >
                         <ExternalLink className="h-3.5 w-3.5" />

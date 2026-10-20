@@ -27,8 +27,7 @@ import { CopyNumber } from "@/components/CopyNumber";
 import { WhatsAppIcon } from "@/components/WhatsAppIcon";
 import { ArrowLeft, ChevronDown, Search, User } from "lucide-react";
 import { formatDate, leadStatusTone } from "@/lib/format";
-import { matchesQuery, useUrlSearchState } from "@/lib/search";
-import { matchesPhoneQuery } from "@/lib/phone";
+import { matchesTextOrPhoneQuery, useUrlSearchState } from "@/lib/search";
 
 interface SearchResult<T> {
   total: number;
@@ -185,16 +184,13 @@ function ClientDetailPage() {
   // format-insensitive way, so "+966 551620530" still matches "0551620530").
   const searchedRecords = useMemo(() => {
     if (!client) return [];
-    return client.records.filter((record) => {
-      const queryMatch =
-        !deferredInputQ.trim() ||
-        matchesPhoneQuery(record.phones, deferredInputQ) ||
-        matchesQuery(
-          [record.name, ...record.fields.map((field) => field.value)],
-          deferredInputQ,
-        );
-      return queryMatch;
-    });
+    return client.records.filter((record) =>
+      matchesTextOrPhoneQuery(
+        [record.name, ...record.phones, ...record.fields.map((field) => field.value)],
+        record.phones,
+        deferredInputQ,
+      ),
+    );
   }, [client, deferredInputQ]);
 
   const visibleRecords = useMemo(() => {

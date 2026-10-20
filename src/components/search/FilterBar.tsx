@@ -106,7 +106,7 @@ export function FilterBar({
                 <FacetSelect
                   label={t("common.district")}
                   value={districtValue}
-                  onValueChange={onDistrictChange}
+                  onValueChange={(value) => onDistrictChange?.(value)}
                   disabled={!city}
                   options={districts.map((d) => ({ value: d, label: d }))}
                 />

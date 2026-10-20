@@ -70,9 +70,9 @@ describe("record converters", () => {
       propertyType: "villa",
       ownerNationalId: "1",
       email: "a@b.com",
-      intent: "buy",
+      intent: "Buy",
       listedPrice: 1000,
-      status: "new",
+      status: "New",
       createdAt: "2024-01-01T00:00:00Z",
     } as Lead;
     const record = leadToClientRecord(item);
