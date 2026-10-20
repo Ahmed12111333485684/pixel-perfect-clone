@@ -36,6 +36,7 @@ import { cn } from "@/lib/utils";
 import { resolveApiAssetUrl } from "@/lib/api";
 import { MediaLightbox } from "@/components/MediaLightbox";
 import { FilterBar } from "@/components/search/FilterBar";
+import { QuickFilterBar } from "@/components/search/QuickFilterBar";
 import { useUrlSearchState, matchesQuery, normalizeForSearch, parseAmount } from "@/lib/search";
 export const Route = createFileRoute("/app/listings")({
   validateSearch: (search: Record<string, unknown>) => ({
@@ -150,6 +151,13 @@ const LISTING_CATEGORY_RESIDENTIAL = "Residential";
 type ListingCategoryValue = typeof LISTING_CATEGORY_COMMERCIAL | typeof LISTING_CATEGORY_RESIDENTIAL;
 type ListingTypeValue = "Rental" | "Sale";
 type CommercialListingStatusKey = "Available" | "Occupied" | "Unavailable";
+
+// Values of the "listing type" facet. The quick shortcut buttons and the
+// facet share them, so a shortcut can never drift from what it filters.
+const DEAL_TYPE_SALE = "sale";
+const DEAL_TYPE_RENTAL = "rental";
+const DEAL_TYPE_RENTAL_COMMERCIAL = "rental_commercial";
+const FILTER_ALL = "all";
 
 const LISTING_CATEGORY_OPTIONS = [
   { value: LISTING_CATEGORY_COMMERCIAL },
@@ -657,17 +665,17 @@ function CommercialListingsPage() {
 
       const statusMatch = status === "all" || record.propertyStatus === status;
 
-      const listingCategoryMatch = listingCategoryFilter === "all"
+      const listingCategoryMatch = listingCategoryFilter === FILTER_ALL
         || normalizeListingCategory(record.listingCategory) === normalizeListingCategory(listingCategoryFilter);
 
       let dealTypeMatch = true;
-      if (dealTypeFilter !== "all") {
+      if (dealTypeFilter !== FILTER_ALL) {
         const lt = (record.listingType ?? "").toLowerCase();
-        if (dealTypeFilter === "sale") {
+        if (dealTypeFilter === DEAL_TYPE_SALE) {
           dealTypeMatch = lt === "sale" || lt === "Ø¨ÙŠØ¹";
-        } else if (dealTypeFilter === "rental") {
+        } else if (dealTypeFilter === DEAL_TYPE_RENTAL) {
           dealTypeMatch = lt === "rental" || lt === "Ø§ÙŠØ¬Ø§Ø±" || lt === "Ø¥ÙŠØ¬Ø§Ø±";
-        } else if (dealTypeFilter === "rental_commercial") {
+        } else if (dealTypeFilter === DEAL_TYPE_RENTAL_COMMERCIAL) {
           const rc = (record.listingCategory ?? "").toLowerCase();
           dealTypeMatch = (lt === "rental" || lt === "Ø§ÙŠØ¬Ø§Ø±" || lt === "Ø¥ÙŠØ¬Ø§Ø±") && (rc === "ØªØ¬Ø§Ø±ÙŠ" || rc === "commercial");
         }
@@ -842,9 +850,9 @@ function CommercialListingsPage() {
             value: dealTypeFilter,
             onValueChange: setDealTypeFilter,
             options: [
-              { value: "sale", label: t("listingType.Sale") },
-              { value: "rental", label: t("listingType.Rental") },
-              { value: "rental_commercial", label: t("residentialSeekers.investment") },
+              { value: DEAL_TYPE_SALE, label: t("listingType.Sale") },
+              { value: DEAL_TYPE_RENTAL, label: t("listingType.Rental") },
+              { value: DEAL_TYPE_RENTAL_COMMERCIAL, label: t("residentialSeekers.investment") },
             ],
           },
           {
@@ -852,8 +860,8 @@ function CommercialListingsPage() {
             value: listingCategoryFilter,
             onValueChange: setListingCategoryFilter,
             options: [
-              { value: "Commercial", label: t("listingCategory.Commercial") },
-              { value: "Residential", label: t("listingCategory.Residential") },
+              { value: LISTING_CATEGORY_COMMERCIAL, label: t("listingCategory.Commercial") },
+              { value: LISTING_CATEGORY_RESIDENTIAL, label: t("listingCategory.Residential") },
             ],
           },
           {
@@ -892,6 +900,41 @@ function CommercialListingsPage() {
               { value: "rentAmount-desc", label: t("common.sortPriceHighest") },
               { value: "rentAmount-asc", label: t("common.sortPriceLowest") },
             ],
+          },
+        ]}
+      />
+
+      <QuickFilterBar
+        groups={[
+          {
+            key: "listingType",
+            value: dealTypeFilter,
+            options: [
+              { value: DEAL_TYPE_RENTAL, label: t("listingType.Rental") },
+              { value: DEAL_TYPE_SALE, label: t("listingType.Sale") },
+            ],
+            onSelect: (value) => setUrlState({ dealType: value, page: 1 }),
+          },
+          {
+            key: "listingCategory",
+            value: listingCategoryFilter,
+            options: [
+              { value: LISTING_CATEGORY_RESIDENTIAL, label: t("listingCategory.Residential") },
+              { value: LISTING_CATEGORY_COMMERCIAL, label: t("listingCategory.Commercial") },
+            ],
+            onSelect: (value) => {
+              // The property type options follow the category, so a type that
+              // no longer belongs to the chosen category is cleared.
+              const options = getPropertyTypeFilterOptions(
+                value === "all" ? null : listingCategoryToArabic(value),
+              );
+              setUrlState({
+                listingCategory: value,
+                propertyType:
+                  propertyType !== "all" && !options.includes(propertyType) ? "all" : propertyType,
+                page: 1,
+              });
+            },
           },
         ]}
       />

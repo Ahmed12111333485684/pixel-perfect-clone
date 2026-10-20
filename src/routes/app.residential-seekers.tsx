@@ -55,6 +55,7 @@ import { cn } from "@/lib/utils";
 import { PhoneField } from "@/components/form/PhoneField";
 import { CITIES, getDistricts } from "@/lib/locations";
 import { FilterBar } from "@/components/search/FilterBar";
+import { QuickFilterBar } from "@/components/search/QuickFilterBar";
 import { useUrlSearchState, matchesQuery, normalizeForSearch } from "@/lib/search";
 
 export const Route = createFileRoute("/app/residential-seekers")({
@@ -96,6 +97,15 @@ interface ResidentialSeekersSearchResult {
 
 const STATUS_DONE = "تم";
 const STATUS_NOT_DONE = "لم يتم";
+
+// Values of the "listing type" and "category" facets. The quick shortcut
+// buttons and the facets share them, so a shortcut can never drift from what
+// it filters.
+const SEEKER_LISTING_TYPE_RENTAL = "Rental";
+const SEEKER_LISTING_TYPE_SALE = "Sale";
+const REQUEST_CATEGORY_RESIDENTIAL = "سكني";
+const REQUEST_CATEGORY_COMMERCIAL = "تجاري";
+const FILTER_ALL = "all";
 
 type InspectionAttention = "overdue" | "today" | null;
 
@@ -822,8 +832,8 @@ function ResidentialSeekersPage() {
             value: listingType,
             onValueChange: setListingType,
             options: [
-              { value: "Rental", label: t("listingType.Rental") },
-              { value: "Sale", label: t("listingType.Sale") },
+              { value: SEEKER_LISTING_TYPE_RENTAL, label: t("listingType.Rental") },
+              { value: SEEKER_LISTING_TYPE_SALE, label: t("listingType.Sale") },
             ],
           },
           {
@@ -871,6 +881,39 @@ function ResidentialSeekersPage() {
               { value: "fullName-asc", label: t("residentialSeekers.sortNameAsc") },
               { value: "fullName-desc", label: t("residentialSeekers.sortNameDesc") },
             ],
+          },
+        ]}
+      />
+
+      <QuickFilterBar
+        groups={[
+          {
+            key: "listingType",
+            value: listingType,
+            options: [
+              { value: SEEKER_LISTING_TYPE_RENTAL, label: t("listingType.Rental") },
+              { value: SEEKER_LISTING_TYPE_SALE, label: t("listingType.Sale") },
+            ],
+            onSelect: (value) => setUrlState({ listingType: value, page: 1 }),
+          },
+          {
+            key: "requestCategory",
+            value: requestCategory,
+            options: [
+              { value: REQUEST_CATEGORY_RESIDENTIAL, label: t("listingCategory.Residential") },
+              { value: REQUEST_CATEGORY_COMMERCIAL, label: t("listingCategory.Commercial") },
+            ],
+            onSelect: (value) => {
+              // The property type options follow the category, so a type that
+              // no longer belongs to the chosen category is cleared.
+              const options = getPropertyTypeFilterOptions(value);
+              setUrlState({
+                requestCategory: value,
+                propertyType:
+                  propertyType !== "all" && !options.includes(propertyType) ? "all" : propertyType,
+                page: 1,
+              });
+            },
           },
         ]}
       />
