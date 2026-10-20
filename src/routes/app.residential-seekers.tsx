@@ -107,6 +107,24 @@ const REQUEST_CATEGORY_RESIDENTIAL = "سكني";
 const REQUEST_CATEGORY_COMMERCIAL = "تجاري";
 const FILTER_ALL = "all";
 
+/**
+ * Spellings of the listing type that mean the same thing. Older records were
+ * imported with the Arabic spelling ("ايجار" / "بيع") while the form stores the
+ * English one ("Rental" / "Sale"), so a filter has to accept both.
+ */
+const SEEKER_LISTING_TYPE_ALIASES: Record<string, string[]> = {
+  [SEEKER_LISTING_TYPE_RENTAL]: [SEEKER_LISTING_TYPE_RENTAL, "ايجار", "إيجار"],
+  [SEEKER_LISTING_TYPE_SALE]: [SEEKER_LISTING_TYPE_SALE, "بيع"],
+};
+
+function matchesListingType(value: string | null | undefined, selected: string): boolean {
+  if (!selected || selected === FILTER_ALL) return true;
+  const aliases = SEEKER_LISTING_TYPE_ALIASES[selected];
+  const normalized = normalizeForSearch(value);
+  if (!aliases) return normalized === normalizeForSearch(selected);
+  return aliases.some((alias) => normalizeForSearch(alias) === normalized);
+}
+
 type InspectionAttention = "overdue" | "today" | null;
 
 function inspectionAttentionLevel(r: ResidentialSeeker): InspectionAttention {
@@ -671,9 +689,7 @@ function ResidentialSeekersPage() {
       );
       const statusMatch = status === "all" || r.status === status;
       const attentionMatch = attention === "all" || inspectionAttentionLevel(r) !== null;
-      const listingTypeMatch =
-        listingType === "all" ||
-        normalizeForSearch(r.listingType) === normalizeForSearch(listingType);
+      const listingTypeMatch = matchesListingType(r.listingType, listingType);
       const requestCategoryMatch =
         requestCategory === "all" ||
         normalizeForSearch(r.requestCategory) === normalizeForSearch(requestCategory);
