@@ -27,7 +27,7 @@ import { PhoneField } from "@/components/form/PhoneField";
 import { ComboboxField } from "@/components/form/ComboboxField";
 import { MultiComboboxField } from "@/components/form/MultiComboboxField";
 import { CITIES, getDistricts } from "@/lib/locations";
-import { getPropertyTypesByCategory } from "@/lib/property-types";
+import { getPropertyTypesByCategory, getPropertyTypeFilterOptions, matchesPropertyType } from "@/lib/property-types";
 import { SALE_PAYMENT_TYPES, RENTAL_PAYMENT_TYPES } from "@/lib/payment-types";
 import { CommercialListingImageManager } from "@/components/CommercialListingImageManager";
 import { cn } from "@/lib/utils";
@@ -43,6 +43,7 @@ export const Route = createFileRoute("/app/listings")({
     status: typeof search.status === "string" && search.status ? search.status : "all",
     dealType: typeof search.dealType === "string" && search.dealType ? search.dealType : "all",
     listingCategory: typeof search.listingCategory === "string" && search.listingCategory ? search.listingCategory : "all",
+    propertyType: typeof search.propertyType === "string" && search.propertyType ? search.propertyType : "all",
     roomCount: typeof search.roomCount === "string" && search.roomCount ? search.roomCount : "all",
     city: typeof search.city === "string" ? search.city : "",
     district: typeof search.district === "string" ? search.district : "",
@@ -328,6 +329,7 @@ function CommercialListingsPage() {
     status: "all",
     dealType: "all",
     listingCategory: "all",
+    propertyType: "all",
     roomCount: "all",
     city: "",
     district: "",
@@ -335,7 +337,7 @@ function CommercialListingsPage() {
     sortBy: "createdAt",
     sortDir: "desc" as "asc" | "desc",
   });
-  const { q, deedQ, status, dealType: dealTypeFilter, listingCategory: listingCategoryFilter, roomCount, city, district, page, sortBy, sortDir } = urlState;
+  const { q, deedQ, status, dealType: dealTypeFilter, listingCategory: listingCategoryFilter, propertyType, roomCount, city, district, page, sortBy, sortDir } = urlState;
   const [pageSize, setPageSize] = usePageSize();
   // --- debounced search inputs ---
   const [inputQ, setInputQ] = useState(q);
@@ -359,7 +361,20 @@ function CommercialListingsPage() {
   const deferredDeedQ = useDeferredValue(inputDeedQ);
   const setStatus = (value: string) => setUrlState({ status: value, page: 1 });
   const setDealTypeFilter = (value: string) => setUrlState({ dealType: value, page: 1 });
-  const setListingCategoryFilter = (value: string) => setUrlState({ listingCategory: value, page: 1 });
+  const setPropertyTypeFilter = (value: string) => setUrlState({ propertyType: value, page: 1 });
+  // The property type options follow the category, so a type that no longer
+  // belongs to the chosen category is cleared instead of matching nothing.
+  const setListingCategoryFilter = (value: string) => {
+    const options = getPropertyTypeFilterOptions(
+      value === "all" ? null : listingCategoryToArabic(value),
+    );
+    setUrlState({
+      listingCategory: value,
+      propertyType:
+        propertyType !== "all" && !options.includes(propertyType) ? "all" : propertyType,
+      page: 1,
+    });
+  };
   const setRoomCount = (value: string) => setUrlState({ roomCount: value, page: 1 });
   const setCity = (value: string) => setUrlState({ city: value, district: "", page: 1 });
   const setDistrict = (value: string) => setUrlState({ district: value, page: 1 });
@@ -490,7 +505,7 @@ function CommercialListingsPage() {
   const handleReset = () => {
     setInputQ("");
     setInputDeedQ("");
-    setUrlState({ q: "", deedQ: "", status: "all", dealType: "all", listingCategory: "all", roomCount: "all", city: "", district: "", page: 1 });
+    setUrlState({ q: "", deedQ: "", status: "all", dealType: "all", listingCategory: "all", propertyType: "all", roomCount: "all", city: "", district: "", page: 1 });
   };
 
   const handleCreate = async (e: React.FormEvent<HTMLFormElement>, publishing: PublishingState, contracts: BrokerageContractFormValue[]) => {
@@ -607,6 +622,15 @@ function CommercialListingsPage() {
     { key: "employee", header: t("common.employee"), cell: (r) => r.employee || t("common.notProvided"), sortable: true },
   ];
 
+  // The property type options follow the selected category.
+  const propertyTypeOptions = useMemo(
+    () =>
+      getPropertyTypeFilterOptions(
+        listingCategoryFilter === "all" ? null : listingCategoryToArabic(listingCategoryFilter),
+      ),
+    [listingCategoryFilter],
+  );
+
   // Client-side filtering so `Ø±Ù‚Ù… Ø§Ù„ØµÙƒ` (deedNumber) and every facet is searchable
   const filteredListings = useMemo(() => {
     const items = listings.data ?? [];
@@ -653,9 +677,11 @@ function CommercialListingsPage() {
           ? Number(record.roomsCount ?? "0") >= 6
           : record.roomsCount === roomCount);
 
-      return qMatch && deedMatch && statusMatch && listingCategoryMatch && dealTypeMatch && roomCountMatch && cityMatch(record) && districtMatch(record);
+      const propertyTypeMatch = matchesPropertyType(record.propertyType, propertyType);
+
+      return qMatch && deedMatch && statusMatch && listingCategoryMatch && dealTypeMatch && roomCountMatch && propertyTypeMatch && cityMatch(record) && districtMatch(record);
     });
-  }, [listings.data, deferredInputQ, deferredDeedQ, status, listingCategoryFilter, dealTypeFilter, roomCount, city, district]);
+  }, [listings.data, deferredInputQ, deferredDeedQ, status, listingCategoryFilter, dealTypeFilter, roomCount, propertyType, city, district]);
 
   const totalPages = Math.max(1, Math.ceil(filteredListings.length / pageSize));
 
@@ -767,6 +793,7 @@ function CommercialListingsPage() {
           status !== "all" ? status : "",
           dealTypeFilter !== "all" ? dealTypeFilter : "",
           listingCategoryFilter !== "all" ? listingCategoryFilter : "",
+          propertyType !== "all" ? propertyType : "",
           roomCount !== "all" ? roomCount : "",
           city,
           district,
@@ -826,6 +853,12 @@ function CommercialListingsPage() {
               { value: "Commercial", label: t("listingCategory.Commercial") },
               { value: "Residential", label: t("listingCategory.Residential") },
             ],
+          },
+          {
+            label: t("commercialListings.propertyType"),
+            value: propertyType,
+            onValueChange: setPropertyTypeFilter,
+            options: propertyTypeOptions.map((type) => ({ value: type, label: type })),
           },
           {
             label: t("commercialListings.roomsCount"),

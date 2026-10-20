@@ -25,6 +25,8 @@ import { PageSizeSelect } from "@/components/PageSizeSelect";
 import {
   PROPERTY_CATEGORIES,
   getPropertyTypesByCategory,
+  getPropertyTypeFilterOptions,
+  matchesPropertyType,
   localizePropertyType,
 } from "@/lib/property-types";
 import { NATIONALITIES } from "@/lib/nationalities";
@@ -65,6 +67,10 @@ export const Route = createFileRoute("/app/residential-seekers")({
     requestCategory:
       typeof search.requestCategory === "string" && search.requestCategory
         ? search.requestCategory
+        : "all",
+    propertyType:
+      typeof search.propertyType === "string" && search.propertyType
+        ? search.propertyType
         : "all",
     roomCount:
       typeof search.roomCount === "string" && search.roomCount
@@ -225,6 +231,7 @@ function ResidentialSeekersPage() {
     status: "all",
     listingType: "all",
     requestCategory: "all",
+    propertyType: "all",
     roomCount: "all",
     city: "",
     district: "",
@@ -233,7 +240,7 @@ function ResidentialSeekersPage() {
     sortBy: "createdAt",
     sortDir: "desc" as "asc" | "desc",
   });
-  const { q, status, listingType, requestCategory, roomCount, city, district, attention, page, sortBy, sortDir } =
+  const { q, status, listingType, requestCategory, propertyType, roomCount, city, district, attention, page, sortBy, sortDir } =
     urlState;
   const [pageSize, setPageSize] = usePageSize();
   // --- debounced search ---
@@ -249,7 +256,18 @@ function ResidentialSeekersPage() {
   const deferredInputQ = useDeferredValue(inputQ);
   const setStatus = (value: string) => setUrlState({ status: value, page: 1 });
   const setListingType = (value: string) => setUrlState({ listingType: value, page: 1 });
-  const setRequestCategory = (value: string) => setUrlState({ requestCategory: value, page: 1 });
+  const setPropertyTypeFilter = (value: string) => setUrlState({ propertyType: value, page: 1 });
+  // The property type options follow the category, so a type that no longer
+  // belongs to the chosen category is cleared instead of matching nothing.
+  const setRequestCategory = (value: string) => {
+    const options = getPropertyTypeFilterOptions(value);
+    setUrlState({
+      requestCategory: value,
+      propertyType:
+        propertyType !== "all" && !options.includes(propertyType) ? "all" : propertyType,
+      page: 1,
+    });
+  };
   const setRoomCount = (value: string) => setUrlState({ roomCount: value, page: 1 });
   const setCity = (value: string) => setUrlState({ city: value, district: "", page: 1 });
   const setDistrict = (value: string) => setUrlState({ district: value, page: 1 });
@@ -384,7 +402,7 @@ function ResidentialSeekersPage() {
 
   const handleReset = () => {
     setInputQ("");
-    setUrlState({ q: "", status: "all", listingType: "all", requestCategory: "all", roomCount: "all", city: "", district: "", attention: "all", page: 1 });
+    setUrlState({ q: "", status: "all", listingType: "all", requestCategory: "all", propertyType: "all", roomCount: "all", city: "", district: "", attention: "all", page: 1 });
   };
 
   const handleCreate = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -586,6 +604,12 @@ function ResidentialSeekersPage() {
     },
   ];
 
+  // The property type options follow the selected category.
+  const propertyTypeOptions = useMemo(
+    () => getPropertyTypeFilterOptions(requestCategory),
+    [requestCategory],
+  );
+
   const filteredSeekers = useMemo(() => {
     const items = seekers.data ?? [];
     const locationMatch = (r: ResidentialSeeker) => {
@@ -648,6 +672,7 @@ function ResidentialSeekersPage() {
         (roomCount === "6"
           ? (r.roomCount ?? 0) >= 6
           : String(r.roomCount) === roomCount);
+      const propertyTypeMatch = matchesPropertyType(r.propertyType, propertyType);
       return (
         qMatch &&
         statusMatch &&
@@ -655,6 +680,7 @@ function ResidentialSeekersPage() {
         listingTypeMatch &&
         requestCategoryMatch &&
         roomCountMatch &&
+        propertyTypeMatch &&
         locationMatch(r)
       );
     });
@@ -706,7 +732,7 @@ function ResidentialSeekersPage() {
           ? 1
           : 2;
     return [...sorted].sort((a, b) => urgencyOf(a) - urgencyOf(b));
-  }, [seekers.data, deferredInputQ, status, listingType, requestCategory, roomCount, city, district, attention, sortBy, sortDir]);
+  }, [seekers.data, deferredInputQ, status, listingType, requestCategory, propertyType, roomCount, city, district, attention, sortBy, sortDir]);
 
   const totalPages = Math.max(1, Math.ceil(filteredSeekers.length / pageSize));
 
@@ -754,6 +780,7 @@ function ResidentialSeekersPage() {
             status !== "all" ? status : "",
             listingType !== "all" ? listingType : "",
             requestCategory !== "all" ? requestCategory : "",
+            propertyType !== "all" ? propertyType : "",
             roomCount !== "all" ? roomCount : "",
             city,
             district,
@@ -807,6 +834,12 @@ function ResidentialSeekersPage() {
               value: cat,
               label: t(`listingCategory.${cat === "سكني" ? "Residential" : "Commercial"}`),
             })),
+          },
+          {
+            label: t("residentialSeekers.propertyType"),
+            value: propertyType,
+            onValueChange: setPropertyTypeFilter,
+            options: propertyTypeOptions.map((type) => ({ value: type, label: type })),
           },
           {
             label: t("residentialSeekers.roomCount"),
