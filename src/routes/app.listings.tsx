@@ -2,13 +2,14 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { memo, useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { api, fetchPartnersLookup, createPartner, fetchListingSeriesOptions, type CommercialListing, type ListingSeriesOption, type Partner, type PartnerLookup, type CommercialListingImage, type UserDto, type Amenity, type SeekerSuggestion, ApiError } from "@/lib/api";
+import { api, fetchPartnersLookup, createPartner, fetchListingSeriesOptions, fetchListingShare, enableListingShare, disableListingShare, type ListingShare, type CommercialListing, type ListingSeriesOption, type Partner, type PartnerLookup, type CommercialListingImage, type UserDto, type Amenity, type SeekerSuggestion, ApiError } from "@/lib/api";
 import { syncCreated, syncUpdated, syncRemoved } from "@/lib/queryCache";
 import { PartnerDialog } from "@/components/partners/PartnerDialog";
 import { useAuth } from "@/lib/auth";
 import { todayLocal, formatDateTime12h, formatDate } from "@/lib/format";
 import { usePageSize } from "@/hooks/use-page-size";
 import { useSuggestionShuffle } from "@/hooks/use-suggestion-shuffle";
+import { getFriendlyErrorMessage } from "@/lib/errorUtils";
 import { PageSizeSelect } from "@/components/PageSizeSelect";
 import { PageHeader, StatusBadge } from "@/components/PageHeader";
 import { DataTable, type Column } from "@/components/DataTable";
@@ -20,8 +21,9 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Switch } from "@/components/ui/switch";
 import { ListingLocationMap } from "@/components/ListingLocationMap";
-import { Plus, X, LayoutGrid, List, FileImage, MapPin, Sparkles, User, Shuffle } from "lucide-react";
+import { Plus, X, LayoutGrid, List, FileImage, MapPin, Sparkles, User, Shuffle, Copy, Check } from "lucide-react";
 import { toast } from "sonner";
 import { PhoneField } from "@/components/form/PhoneField";
 import { ComboboxField } from "@/components/form/ComboboxField";
@@ -1486,9 +1488,10 @@ function CommercialListingDialog({
               )}
             </div>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-col gap-3">
             <PublicVisibleCheckbox publicVisible={publicVisible} setPublicVisible={setPublicVisible} readOnly={readOnly} />
             <input type="hidden" name="publicVisible" value={String(publicVisible)} />
+            <ListingShareControl listingId={listing?.id} readOnly={readOnly} />
           </div>
         </div>
       </div>
@@ -1879,6 +1882,120 @@ function PublicVisibleCheckbox({ publicVisible, setPublicVisible, readOnly }: { 
       <div className="space-y-1">
         <Label htmlFor="publicVisible" className="text-sm font-medium">{t("commercialListings.publicVisible")}</Label>
       </div>
+    </div>
+  );
+}
+
+/**
+ * Private share link for a listing.
+ *
+ * Anyone holding the link can open the listing on its public page, but the
+ * listing stays out of the public index. Toggling it on mints a fresh token,
+ * so a link that escaped can be retired by switching sharing off and on again.
+ */
+function ListingShareControl({ listingId, readOnly }: { listingId?: number; readOnly: boolean }) {
+  const { t } = useTranslation();
+  const qc = useQueryClient();
+  const [busy, setBusy] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  const { data, isLoading } = useQuery({
+    queryKey: ["listing-share", listingId],
+    queryFn: () => fetchListingShare(listingId as number),
+    enabled: !!listingId,
+  });
+
+  const token = data?.token ?? null;
+  const shareUrl = token && listingId
+    ? `${window.location.origin}/available-properties/${listingId}?token=${encodeURIComponent(token)}`
+    : null;
+
+  const setShare = (next: ListingShare) => {
+    qc.setQueryData(["listing-share", listingId], next);
+  };
+
+  const toggleShare = async (next: boolean) => {
+    if (!listingId) return;
+    setBusy(true);
+    try {
+      if (next) {
+        const res = await enableListingShare(listingId);
+        setShare(res);
+        toast.success(t("commercialListings.shareLinkCreated"));
+      } else {
+        await disableListingShare(listingId);
+        setShare({ enabled: false, token: null });
+        toast.success(t("commercialListings.shareLinkRevoked"));
+      }
+    } catch (error) {
+      toast.error(getFriendlyErrorMessage(error, t));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const copyLink = async () => {
+    if (!shareUrl) return;
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1500);
+    } catch {
+      setCopied(false);
+    }
+  };
+
+  if (!listingId) {
+    return (
+      <div className="rounded-lg border border-dashed border-border bg-background px-3 py-3">
+        <p className="text-sm font-medium">{t("commercialListings.privateShare")}</p>
+        <p className="text-xs text-muted-foreground">{t("commercialListings.privateShareSaveFirst")}</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-2 rounded-lg border border-border bg-background px-3 py-3">
+      <div className="flex items-center gap-3">
+        <Switch
+          id="listingShare"
+          checked={data?.enabled ?? false}
+          onCheckedChange={(checked) => toggleShare(checked === true)}
+          disabled={readOnly || busy || isLoading}
+        />
+        <div className="space-y-1">
+          <Label htmlFor="listingShare" className="text-sm font-medium">
+            {t("commercialListings.privateShare")}
+          </Label>
+          {!data?.enabled && (
+            <p className="text-xs text-muted-foreground">{t("commercialListings.privateShareHint")}</p>
+          )}
+        </div>
+      </div>
+
+      {shareUrl && (
+        <div className="flex items-center gap-2">
+          <code
+            dir="ltr"
+            className="min-w-0 flex-1 truncate rounded-md bg-muted px-2 py-1.5 font-mono text-xs text-muted-foreground"
+            title={shareUrl}
+          >
+            {shareUrl}
+          </code>
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            className="h-8 shrink-0 gap-1.5"
+            onClick={copyLink}
+            title={t("commercialListings.copyShareLink")}
+            aria-label={t("commercialListings.copyShareLink")}
+          >
+            {copied ? <Check className="h-3.5 w-3.5 text-green-600" /> : <Copy className="h-3.5 w-3.5" />}
+            {t("commercialListings.copyShareLink")}
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

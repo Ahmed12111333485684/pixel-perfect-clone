@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate, useSearch } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
@@ -43,11 +43,13 @@ export const Route = createFileRoute("/available-properties/$id")({
       { name: "description", content: loaderData?.description ?? "Property details and photos." },
     ],
   }),
-  loader: async ({ params }) => {
+  loader: async ({ params, location }) => {
     try {
       const id = Number(params.id);
       if (isNaN(id)) return null;
-      const listing = await fetchPublicListing(id);
+      // A privately shared listing is opened with a token in the query string.
+      const token = readShareToken(location.search);
+      const listing = await fetchPublicListing(id, token);
       const title = listing.adText1 || listing.offerCode || `Property #${listing.id}`;
       const description = listing.adText2 || `${listing.propertyType || "Property"} in ${listing.city || listing.location || "Saudi Arabia"}`;
       return { title: `${title} — Nour Consultancy`, description };
@@ -58,15 +60,31 @@ export const Route = createFileRoute("/available-properties/$id")({
   component: AvailablePropertyDetailPage,
 });
 
+/**
+ * Reads the private share token from a raw search params object. The route
+ * deliberately has no validateSearch, so the token is read from the location
+ * rather than declared as a search param - that keeps navigation to this
+ * route free of a required `search` argument.
+ */
+function readShareToken(search: unknown): string | undefined {
+  if (!search || typeof search !== "object") return undefined;
+  const token = (search as { token?: unknown }).token;
+  return typeof token === "string" && token ? token : undefined;
+}
+
 function AvailablePropertyDetailPage() {
   const { id } = Route.useParams();
   const numericId = Number(id);
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
 
+  // A privately shared listing carries its token in the query string.
+  const search = useSearch({ strict: false });
+  const shareToken = readShareToken(search);
+
   const { data: listing, isLoading, error } = useQuery({
-    queryKey: ["public-listing", numericId],
-    queryFn: () => fetchPublicListing(numericId),
+    queryKey: ["public-listing", numericId, shareToken],
+    queryFn: () => fetchPublicListing(numericId, shareToken),
     enabled: !isNaN(numericId),
   });
 

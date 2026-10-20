@@ -519,6 +519,12 @@ const en = {
     seriesRB: "Rental – commercial",
     seriesRN: "Rental – residential",
     publicVisible: "Show on public page",
+    privateShare: "Private share link",
+    privateShareHint: "Anyone with the link can open this listing. It stays out of the public list.",
+    privateShareSaveFirst: "Save the listing first to enable a private link.",
+    shareLinkCreated: "Private link created",
+    shareLinkRevoked: "Private link revoked",
+    copyShareLink: "Copy link",
     chooseCategoryFirst: "Choose a property category first",
     openInGoogleMaps: "Open in Google Maps",
 
@@ -1331,6 +1337,12 @@ const ar = {
     seriesRB: "عروض المكتب الايجارية (تجاري)",
     seriesRN: "عروض المكتب الايجارية (سكني)",
     publicVisible: "عرض في الصفحة العامة",
+    privateShare: "مشاركة خاصة",
+    privateShareHint: "أي شخص يملك الرابط يمكنه فتح هذا الإعلان، مع بقائه خارج القائمة العامة.",
+    privateShareSaveFirst: "احفظ الإعلان أولاً لتفعيل الرابط الخاص.",
+    shareLinkCreated: "تم إنشاء الرابط الخاص",
+    shareLinkRevoked: "تم إلغاء الرابط الخاص",
+    copyShareLink: "نسخ الرابط",
     chooseCategoryFirst: "اختر تصنيف العقار أولاً",
 
     channels: {

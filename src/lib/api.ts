@@ -914,15 +914,37 @@ export function deleteAmenityPhoto(amenityId: number, url: string) {
   return api(`/api/amenities/${amenityId}/photos`, { method: "DELETE", query: { url } });
 }
 
-export async function fetchPublicListing(id: number): Promise<PublicListing> {
+export async function fetchPublicListing(id: number, token?: string | null): Promise<PublicListing> {
+  const query = token ? { token } : undefined;
   try {
-    return await api<PublicListing>(`/public/listings/${id}`, { anonymous: true });
+    return await api<PublicListing>(`/public/listings/${id}`, { anonymous: true, query });
   } catch (err) {
+    // A privately shared listing is not in the public index, so the
+    // fetch-all fallback can never find it - and would pull the entire
+    // public list for nothing. Only fall back when there is no token.
+    if (token) throw err;
     // Fallback: fetch all public listings and locate by ID if direct route returns error
     const listings = await api<PublicListing[]>("/public/listings", { anonymous: true });
     const found = listings.find((l) => l.id === id);
     if (!found) throw err;
     return found;
   }
+}
+
+export interface ListingShare {
+  enabled: boolean;
+  token?: string | null;
+}
+
+export function fetchListingShare(listingId: number) {
+  return api<ListingShare>(`/api/commercial-listings/${listingId}/share`);
+}
+
+export function enableListingShare(listingId: number) {
+  return api<ListingShare>(`/api/commercial-listings/${listingId}/share`, { method: "POST" });
+}
+
+export function disableListingShare(listingId: number) {
+  return api<void>(`/api/commercial-listings/${listingId}/share`, { method: "DELETE" });
 }
 
