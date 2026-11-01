@@ -31,6 +31,7 @@ import {
   Check,
   MessageCircle,
   ExternalLink,
+  Phone,
 } from "lucide-react";
 import { RiyalIcon } from "@/components/icons/RiyalIcon";
 import { ListingLocationMap } from "@/components/ListingLocationMap";
@@ -112,7 +113,7 @@ function AvailablePropertyDetailPage() {
     const text = encodeURIComponent(
       `مرحباً شركة نور الاستشارة، أود الاستفسار عن العقار المعروض:\n- الكود/المرجع: ${code}\n- العنوان: ${title}\n- الرابط: ${typeof window !== "undefined" ? window.location.href : ""}`
     );
-    return `https://wa.me/966500000000?text=${text}`; // Adjust phone if configured in environment
+    return `https://wa.me/966597948787`; // Adjust phone if configured in environment
   };
 
   if (isLoading) {
@@ -298,9 +299,8 @@ function AvailablePropertyDetailPage() {
                       key={img.id}
                       type="button"
                       onClick={() => setActiveIndex(idx)}
-                      className={`relative h-20 w-24 shrink-0 overflow-hidden rounded-lg border-2 transition ${
-                        idx === activeIndex ? "border-gold ring-2 ring-gold/30" : "border-transparent opacity-70 hover:opacity-100"
-                      }`}
+                      className={`relative h-20 w-24 shrink-0 overflow-hidden rounded-lg border-2 transition ${idx === activeIndex ? "border-gold ring-2 ring-gold/30" : "border-transparent opacity-70 hover:opacity-100"
+                        }`}
                     >
                       <MediaPreview
                         src={resolveApiAssetUrl(img.url)}
@@ -421,16 +421,6 @@ function AvailablePropertyDetailPage() {
 
                 <Button
                   asChild
-                  className="w-full gap-2 py-6 text-base font-semibold bg-emerald-600 hover:bg-emerald-700 text-white shadow-md"
-                >
-                  <a href={getWhatsAppUrl()} target="_blank" rel="noopener noreferrer">
-                    <MessageCircle className="h-5 w-5" />
-                    {t("publicProperties.contactWhatsApp", { defaultValue: "Contact via WhatsApp" })}
-                  </a>
-                </Button>
-
-                <Button
-                  asChild
                   variant="default"
                   className="w-full gap-2 py-6 text-base font-semibold bg-gold-gradient text-gold-foreground hover:opacity-95 shadow-gold"
                 >
@@ -439,6 +429,90 @@ function AvailablePropertyDetailPage() {
                     {t("landing.findProperty", { defaultValue: "Request / Inquire Property" })}
                   </Link>
                 </Button>
+
+                <Button
+                  asChild
+                  className="w-full gap-2 py-6 text-base font-semibold bg-emerald-600 hover:bg-emerald-700 text-white shadow-md"
+                >
+                  <a href={getWhatsAppUrl()} target="_blank" rel="noopener noreferrer">
+                    <MessageCircle className="h-5 w-5" />
+                    {t("publicProperties.contactWhatsApp", { defaultValue: "Contact via WhatsApp" })}
+                  </a>
+                </Button>
+                {/* Contact Numbers */}
+                <div className="rounded-xl border border-border bg-muted/30 p-4 space-y-4">
+                  <div className="flex items-center gap-2">
+                    <Phone className="h-4 w-4 text-gold" />
+                    <h4 className="text-sm font-bold text-foreground">
+                      أرقام التواصل
+                    </h4>
+                  </div>
+
+                  {/* Sales Department */}
+                  <div className="space-y-2">
+                    <p className="text-xs font-bold text-muted-foreground">
+                      ▪️ قسم المبيعات
+                    </p>
+
+                    {[
+                      { label: "مبيعات 1", phone: "0595090915" },
+                      { label: "مبيعات 2", phone: "0593051707" },
+                      { label: "مبيعات 3", phone: "0591120797" },
+                    ].map((contact) => (
+                      <a
+                        key={contact.phone}
+                        href={`tel:${contact.phone}`}
+                        dir="rtl"
+                        className="flex items-center justify-between rounded-lg bg-card px-3 py-2 text-sm hover:bg-muted transition-colors"
+                      >
+                        <span className="text-muted-foreground">{contact.label}</span>
+                        <span className="font-semibold text-foreground" dir="ltr">
+                          {contact.phone}
+                        </span>
+                      </a>
+                    ))}
+                  </div>
+
+                  <div className="border-t border-border" />
+
+                  {/* Customer Service */}
+                  <div className="space-y-2">
+                    <p className="text-xs font-bold text-muted-foreground">
+                      ▪️ خدمة العملاء
+                    </p>
+
+                    <a
+                      href="tel:0597948787"
+                      dir="rtl"
+                      className="flex items-center justify-between rounded-lg bg-card px-3 py-2 text-sm hover:bg-muted transition-colors"
+                    >
+                      <span className="text-muted-foreground">خدمة العملاء</span>
+                      <span className="font-semibold text-foreground" dir="ltr">
+                        0597948787
+                      </span>
+                    </a>
+                  </div>
+
+                  <div className="border-t border-border" />
+
+                  {/* Abu Abdulaziz */}
+                  <div className="space-y-2">
+                    <p className="text-xs font-bold text-muted-foreground">
+                      ▪️ التواصل المباشر
+                    </p>
+
+                    <a
+                      href="tel:0580604454"
+                      dir="rtl"
+                      className="flex items-center justify-between rounded-lg bg-card px-3 py-2 text-sm hover:bg-muted transition-colors"
+                    >
+                      <span className="text-muted-foreground">أبو عبدالعزيز</span>
+                      <span className="font-semibold text-foreground" dir="ltr">
+                        0580604454
+                      </span>
+                    </a>
+                  </div>
+                </div>
               </div>
 
               <div className="rounded-xl bg-muted/50 p-4 text-xs text-muted-foreground space-y-1.5">
