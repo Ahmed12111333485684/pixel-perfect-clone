@@ -23,7 +23,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
 import { ListingLocationMap } from "@/components/ListingLocationMap";
-import { Plus, X, LayoutGrid, List, MapPin, Sparkles, User, Shuffle, Copy, Check } from "lucide-react";
+import { Plus, X, LayoutGrid, List, FileImage, MapPin, Sparkles, User, Shuffle, Copy, Check } from "lucide-react";
 import { toast } from "sonner";
 import { PhoneField } from "@/components/form/PhoneField";
 import { ComboboxField } from "@/components/form/ComboboxField";
@@ -453,15 +453,12 @@ function CommercialListingsPage() {
   });
 
   const openLightbox = (listing: CommercialListing, startIndex: number) => {
-    const images = listing.images ?? [];
     setLightboxImages(
-      images.length > 0
-        ? images.map((i) => ({
-            src: resolveApiAssetUrl(i.url),
-            alt: i.originalFileName,
-            mimeType: i.mimeType,
-          }))
-        : [{ src: "/listing-placeholder.png", alt: t("common.noImage") }],
+      (listing.images ?? []).map((i) => ({
+        src: resolveApiAssetUrl(i.url),
+        alt: i.originalFileName,
+        mimeType: i.mimeType,
+      })),
     );
     setLightboxIndex(startIndex);
   };
@@ -1017,18 +1014,9 @@ function CommercialListingsPage() {
                     </div>
                   </div>
                 ) : (
-                  <div
-                    className="w-full sm:w-1/3 aspect-video sm:aspect-square overflow-hidden rounded-lg bg-muted relative group/img cursor-zoom-in flex-shrink-0"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      openLightbox(r, 0);
-                    }}
-                  >
-                    <img
-                      src="/listing-placeholder.png"
-                      alt={t("common.noImage")}
-                      className="w-full h-full object-cover transition-transform duration-300 group-hover/img:scale-105"
-                    />
+                  <div className="w-full sm:w-1/3 aspect-video sm:aspect-square flex flex-col items-center justify-center rounded-lg border border-dashed bg-muted/50 text-muted-foreground flex-shrink-0">
+                    <FileImage className="mb-1 h-6 w-6 opacity-20" />
+                    <span className="text-[10px] uppercase tracking-wider">{t("common.noImage")}</span>
                   </div>
                 )}
 
