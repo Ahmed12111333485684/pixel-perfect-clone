@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useEffect, useMemo, useState } from "react";
+import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
 import { api, resolveApiAssetUrl, type PublicListing } from "@/lib/api";
@@ -12,7 +12,13 @@ import { PageHeader } from "@/components/PageHeader";
 import { PublicFooter } from "@/components/PublicFooter";
 import { MediaPreview } from "@/components/MediaPreview";
 import { formatDate } from "@/lib/format";
-import { parseAmount, normalizeForSearch } from "@/lib/search";
+import { parseAmount, normalizeForSearch, matchesQuery, useUrlSearchState } from "@/lib/search";
+import { getPropertyTypeFilterOptions, matchesPropertyType } from "@/lib/property-types";
+import { getFriendlyErrorMessage } from "@/lib/errorUtils";
+import { usePageSize } from "@/hooks/use-page-size";
+import { PageSizeSelect } from "@/components/PageSizeSelect";
+import { FilterBar } from "@/components/search/FilterBar";
+import { QuickFilterBar } from "@/components/search/QuickFilterBar";
 import {
   Building2,
   MapPin,
@@ -22,8 +28,6 @@ import {
   ChevronRight,
   X,
   ZoomIn,
-  Search,
-  FilterX,
   Tag,
   Layers,
   DoorOpen,
@@ -31,9 +35,110 @@ import {
 } from "lucide-react";
 import { RiyalIcon } from "@/components/icons/RiyalIcon";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
+
+const LISTING_TYPE_RENTAL = "Rental";
+const LISTING_TYPE_SALE = "Sale";
+const LISTING_CATEGORY_RESIDENTIAL = "Residential";
+const LISTING_CATEGORY_COMMERCIAL = "Commercial";
+// Investment is a virtual category: commercial listings that are rented
+// (mirrors the legacy Arabic "استثماري" listing type / the RB series).
+const LISTING_CATEGORY_INVESTMENT = "Investment";
+const FILTER_ALL = "all";
+
+function listingCategoryToArabic(category: string): string {
+  return category === LISTING_CATEGORY_RESIDENTIAL ? "سكني" : "تجاري";
+}
+
+/**
+ * True when a stored listing type means "for sale". Lead-approved listings
+ * historically stored "ForSale" rather than "Sale", so both spellings (and the
+ * Arabic equivalents) are accepted.
+ */
+function isSaleListing(value: string | null | undefined): boolean {
+  const normalized = normalizeForSearch(value);
+  return (
+    normalized === normalizeForSearch(LISTING_TYPE_SALE) ||
+    normalized === normalizeForSearch("ForSale") ||
+    normalized === normalizeForSearch("بيع") ||
+    normalized === normalizeForSearch("للبيع") ||
+    normalized === normalizeForSearch("تمليك")
+  );
+}
+
+function matchesListingType(value: string | null | undefined, selected: string): boolean {
+  if (!selected || selected === FILTER_ALL) return true;
+  // Only "for sale" is treated as sale; every other value (including the
+  // legacy "ForSale"/Arabic spellings) is treated as rental by default.
+  return selected === LISTING_TYPE_SALE ? isSaleListing(value) : !isSaleListing(value);
+}
+
+function matchesListingCategory(
+  value: string | null | undefined,
+  selected: string,
+  listingType: string | null | undefined,
+): boolean {
+  if (!selected || selected === FILTER_ALL) return true;
+  const normalized = normalizeForSearch(value);
+  const isResidential =
+    normalized === normalizeForSearch(LISTING_CATEGORY_RESIDENTIAL) ||
+    normalized === normalizeForSearch("سكني");
+  // A missing category is treated as commercial (the historical default).
+  const isCommercial =
+    !normalized ||
+    normalized === normalizeForSearch(LISTING_CATEGORY_COMMERCIAL) ||
+    normalized === normalizeForSearch("تجاري") ||
+    normalized === normalizeForSearch("تجارى");
+
+  if (selected === LISTING_CATEGORY_RESIDENTIAL) return isResidential;
+  // Investment = commercial rental (covers the legacy "استثماري" type, which
+  // is not a sale type, so it is treated as a rental here).
+  if (selected === LISTING_CATEGORY_INVESTMENT) {
+    return isCommercial && !isSaleListing(listingType);
+  }
+  return isCommercial;
+}
 
 export const Route = createFileRoute("/available-properties/")({
+  validateSearch: (
+    search: Record<string, unknown>,
+  ): {
+    q?: string;
+    listingType?: string;
+    listingCategory?: string;
+    propertyType?: string;
+    roomCount?: string;
+    city?: string;
+    district?: string;
+    minBudget?: string;
+    maxBudget?: string;
+    page?: number;
+    sortBy?: string;
+    sortDir?: "asc" | "desc";
+  } => ({
+    q: typeof search.q === "string" ? search.q : "",
+    listingType:
+      typeof search.listingType === "string" && search.listingType
+        ? search.listingType
+        : FILTER_ALL,
+    listingCategory:
+      typeof search.listingCategory === "string" && search.listingCategory
+        ? search.listingCategory
+        : FILTER_ALL,
+    propertyType:
+      typeof search.propertyType === "string" && search.propertyType
+        ? search.propertyType
+        : FILTER_ALL,
+    roomCount:
+      typeof search.roomCount === "string" && search.roomCount ? search.roomCount : FILTER_ALL,
+    city: typeof search.city === "string" ? search.city : "",
+    district: typeof search.district === "string" ? search.district : "",
+    minBudget: typeof search.minBudget === "string" ? search.minBudget : "",
+    maxBudget: typeof search.maxBudget === "string" ? search.maxBudget : "",
+    page: typeof search.page === "number" && search.page > 0 ? search.page : 1,
+    sortBy: typeof search.sortBy === "string" ? search.sortBy : "createdAt",
+    sortDir: search.sortDir === "asc" ? "asc" : "desc",
+  }),
   head: () => ({
     meta: [
       { title: "Available Properties — Nour Consultancy" },
@@ -46,79 +151,247 @@ export const Route = createFileRoute("/available-properties/")({
   component: AvailablePropertiesPage,
 });
 
-const PROPERTY_TYPES = [
-  "Apartment", "Villa", "Office", "Building", "Land", "Shop", "Showroom", "Warehouse", "RestHouse", "Other"
-] as const;
-
 function AvailablePropertiesPage() {
   const { t } = useTranslation();
 
-  const [formState, setFormState] = useState({
-    listingType: "",
-    location: "",
+  const [urlState, setUrlState] = useUrlSearchState(Route, {
+    q: "",
+    listingType: FILTER_ALL,
+    listingCategory: FILTER_ALL,
+    propertyType: FILTER_ALL,
+    roomCount: FILTER_ALL,
+    city: "",
+    district: "",
+    minBudget: "",
     maxBudget: "",
-    propertyType: "",
+    page: 1,
+    sortBy: "createdAt",
+    sortDir: "desc" as "asc" | "desc",
   });
+  const {
+    q,
+    listingType,
+    listingCategory,
+    propertyType,
+    roomCount,
+    city,
+    district,
+    minBudget,
+    maxBudget,
+    page,
+    sortBy,
+    sortDir,
+  } = urlState;
+  const [pageSize, setPageSize] = usePageSize();
 
-  const [filters, setFilters] = useState<typeof formState | null>(null);
-
-  const { data: listings, isLoading } = useQuery({
+  const {
+    data: listings,
+    isLoading,
+    error,
+  } = useQuery({
     queryKey: ["public-listings"],
     queryFn: () => api<PublicListing[]>("/public/listings", { anonymous: true }),
   });
 
-  const filtered = useMemo(() => {
-    if (!listings) return [];
-    let result = listings;
-    if (filters) {
-      if (filters.listingType) {
-        result = result.filter(l =>
-          l.listingType?.toLowerCase() === filters.listingType.toLowerCase()
-        );
-      }
-      if (filters.propertyType) {
-        result = result.filter(l =>
-          l.propertyType?.toLowerCase() === filters.propertyType.toLowerCase()
-        );
-      }
-      if (filters.location) {
-        const q = normalizeForSearch(filters.location);
-        result = result.filter(l => {
-          const cityMatch = normalizeForSearch(l.city ?? "").includes(q);
-          const districtMatch = Array.isArray(l.district)
-            ? l.district.some(d => normalizeForSearch(d).includes(q))
-            : normalizeForSearch(String(l.district ?? "")).includes(q);
-          const locationMatch = normalizeForSearch(l.location ?? "").includes(q);
-          return cityMatch || districtMatch || locationMatch;
-        });
-      }
-      if (filters.maxBudget) {
-        const budget = parseAmount(filters.maxBudget);
-        if (budget !== null) {
-          result = result.filter(l => {
-            const price = parseAmount(l.rentAmount ?? "");
-            return price !== null && price <= budget;
-          });
-        }
-      }
-    }
-    return result;
-  }, [listings, filters]);
+  // --- debounced search input ---
+  const [inputQ, setInputQ] = useState(q);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    setInputQ(q);
+  }, [q]);
+  useEffect(
+    () => () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    },
+    [],
+  );
+  const setInputQDebounced = (value: string) => {
+    setInputQ(value);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => setUrlState({ q: value, page: 1 }), 250);
+  };
+  const deferredQ = useDeferredValue(inputQ);
+  // -------------------------------
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    setFilters({
-      listingType: formState.listingType,
-      location: formState.location,
-      maxBudget: formState.maxBudget,
-      propertyType: formState.propertyType,
+  const setListingType = (value: string) => setUrlState({ listingType: value, page: 1 });
+  const setPropertyType = (value: string) => setUrlState({ propertyType: value, page: 1 });
+  const setListingCategory = (value: string) => {
+    // FacetSelect reports "All" as "", so both "" and "all" mean "no category".
+    const category = !value || value === FILTER_ALL ? null : listingCategoryToArabic(value);
+    const options = getPropertyTypeFilterOptions(category);
+    setUrlState({
+      listingCategory: value,
+      propertyType:
+        propertyType !== FILTER_ALL && !options.includes(propertyType) ? FILTER_ALL : propertyType,
+      page: 1,
+    });
+  };
+  const setRoomCount = (value: string) => setUrlState({ roomCount: value, page: 1 });
+  const setCity = (value: string) => setUrlState({ city: value, district: "", page: 1 });
+  const setDistrict = (value: string) => setUrlState({ district: value, page: 1 });
+  const setMinBudget = (value: string) => setUrlState({ minBudget: value, page: 1 });
+  const setMaxBudget = (value: string) => setUrlState({ maxBudget: value, page: 1 });
+  const setSortBy = (value: string) => setUrlState({ sortBy: value, page: 1 });
+  const setSortDir = (value: "asc" | "desc") => setUrlState({ sortDir: value, page: 1 });
+  const setPage = (value: number | ((current: number) => number)) =>
+    setUrlState((prev) => ({
+      page: typeof value === "function" ? value(prev.page) : Math.max(1, value),
+    }));
+
+  const handleReset = () => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    setInputQ("");
+    setUrlState({
+      q: "",
+      listingType: FILTER_ALL,
+      listingCategory: FILTER_ALL,
+      propertyType: FILTER_ALL,
+      roomCount: FILTER_ALL,
+      city: "",
+      district: "",
+      minBudget: "",
+      maxBudget: "",
+      page: 1,
+      sortBy: "createdAt",
+      sortDir: "desc",
     });
   };
 
-  const clearSearch = () => {
-    setFormState({ listingType: "", location: "", maxBudget: "", propertyType: "" });
-    setFilters(null);
-  };
+  const propertyTypeOptions = useMemo(
+    () =>
+      getPropertyTypeFilterOptions(
+        !listingCategory || listingCategory === FILTER_ALL
+          ? null
+          : listingCategoryToArabic(listingCategory),
+      ),
+    [listingCategory],
+  );
+
+  const filtered = useMemo(() => {
+    const items = listings ?? [];
+    const normalizedCity = normalizeForSearch(city);
+    const normalizedDistrict = normalizeForSearch(district);
+    const min = parseAmount(minBudget);
+    const max = parseAmount(maxBudget);
+
+    return items.filter((listing) => {
+      const qMatch = matchesQuery(
+        [
+          listing.offerCode,
+          listing.adText1,
+          listing.adText2,
+          listing.listingType,
+          listing.listingCategory,
+          listing.propertyType,
+          listing.propertyStatus,
+          listing.city,
+          listing.district,
+          listing.location,
+          listing.roomsCount,
+          listing.paymentType,
+          ...(listing.amenities ?? []).map((amenity) => amenity.name),
+        ],
+        deferredQ,
+      );
+
+      const listingTypeMatch = matchesListingType(listing.listingType, listingType);
+      const listingCategoryMatch = matchesListingCategory(
+        listing.listingCategory,
+        listingCategory,
+        listing.listingType,
+      );
+      const propertyTypeMatch = matchesPropertyType(listing.propertyType, propertyType);
+      const roomCountMatch =
+        roomCount === FILTER_ALL ||
+        (roomCount === "6"
+          ? Number(listing.roomsCount ?? "0") >= 6
+          : listing.roomsCount === roomCount);
+
+      const cityMatch = !normalizedCity || normalizeForSearch(listing.city) === normalizedCity;
+      const districtMatch =
+        !normalizedDistrict ||
+        (Array.isArray(listing.district)
+          ? listing.district.some((d) => normalizeForSearch(d) === normalizedDistrict)
+          : normalizeForSearch(String(listing.district ?? "")).includes(normalizedDistrict));
+
+      const price = parseAmount(listing.rentAmount);
+      const budgetMatch =
+        (min === null || (price !== null && price >= min)) &&
+        (max === null || (price !== null && price <= max));
+
+      return (
+        qMatch &&
+        listingTypeMatch &&
+        listingCategoryMatch &&
+        propertyTypeMatch &&
+        roomCountMatch &&
+        cityMatch &&
+        districtMatch &&
+        budgetMatch
+      );
+    });
+  }, [
+    listings,
+    deferredQ,
+    listingType,
+    listingCategory,
+    propertyType,
+    roomCount,
+    city,
+    district,
+    minBudget,
+    maxBudget,
+  ]);
+
+  const sorted = useMemo(() => {
+    const dir = sortDir === "asc" ? 1 : -1;
+    return [...filtered].sort((a, b) => {
+      let av: number | string;
+      let bv: number | string;
+      switch (sortBy) {
+        case "rentAmount":
+          av = parseAmount(a.rentAmount) ?? Number.MIN_SAFE_INTEGER;
+          bv = parseAmount(b.rentAmount) ?? Number.MIN_SAFE_INTEGER;
+          break;
+        case "contactDate":
+          av = a.contactDate ?? "";
+          bv = b.contactDate ?? "";
+          break;
+        default:
+          av = a.createdAt ?? "";
+          bv = b.createdAt ?? "";
+      }
+      if (av === bv) return 0;
+      const cmp =
+        typeof av === "number" && typeof bv === "number"
+          ? av - bv
+          : String(av).localeCompare(String(bv), "ar");
+      return cmp * dir;
+    });
+  }, [filtered, sortBy, sortDir]);
+
+  const totalPages = Math.max(1, Math.ceil(sorted.length / pageSize));
+
+  useEffect(() => {
+    setPage((current) => Math.min(current, totalPages));
+  }, [totalPages]);
+
+  const visibleListings = useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return sorted.slice(start, start + pageSize);
+  }, [sorted, page, pageSize]);
+
+  const activeFilterCount = [
+    q,
+    listingType !== FILTER_ALL ? listingType : "",
+    listingCategory !== FILTER_ALL ? listingCategory : "",
+    propertyType !== FILTER_ALL ? propertyType : "",
+    roomCount !== FILTER_ALL ? roomCount : "",
+    city,
+    district,
+    minBudget,
+    maxBudget,
+  ].filter(Boolean).length;
 
   return (
     <div className="min-h-screen bg-background">
@@ -153,83 +426,217 @@ function AvailablePropertiesPage() {
       <section className="mx-auto max-w-7xl px-6 py-12">
         <PageHeader title={t("publicProperties.title")} subtitle={t("publicProperties.subtitle")} />
 
-        <div className="mb-8 rounded-2xl border border-border bg-card p-6 shadow-sm">
-          <form onSubmit={handleSearch} className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium text-muted-foreground">{t("common.intent")}</label>
-              <Select value={formState.listingType} onValueChange={(v) => setFormState(s => ({ ...s, listingType: v }))}>
-                <SelectTrigger>
-                  <SelectValue placeholder={t("common.all")} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Rental">{t("listingType.Rental")}</SelectItem>
-                  <SelectItem value="Sale">{t("listingType.Sale")}</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+        <FilterBar
+          city={city}
+          district={district}
+          onCityChange={setCity}
+          onDistrictChange={setDistrict}
+          onReset={handleReset}
+          activeCount={activeFilterCount}
+          search={
+            <>
+              <div className="min-w-[220px] flex-1">
+                <Label htmlFor="q" className="text-xs font-medium">
+                  {t("common.search")}
+                </Label>
+                <Input
+                  id="q"
+                  placeholder={t("common.search")}
+                  value={inputQ}
+                  onChange={(e) => setInputQDebounced(e.target.value)}
+                  className="mt-1 w-full"
+                />
+              </div>
+              <div className="w-32">
+                <Label htmlFor="minBudget" className="text-xs font-medium">
+                  {t("common.minBudget")}
+                </Label>
+                <Input
+                  id="minBudget"
+                  type="number"
+                  min="0"
+                  placeholder="0"
+                  value={minBudget}
+                  onChange={(e) => setMinBudget(e.target.value)}
+                  className="mt-1 w-full"
+                />
+              </div>
+              <div className="w-32">
+                <Label htmlFor="maxBudget" className="text-xs font-medium">
+                  {t("common.maxBudget")}
+                </Label>
+                <Input
+                  id="maxBudget"
+                  type="number"
+                  min="0"
+                  placeholder="50000"
+                  value={maxBudget}
+                  onChange={(e) => setMaxBudget(e.target.value)}
+                  className="mt-1 w-full"
+                />
+              </div>
+            </>
+          }
+          facets={[
+            {
+              label: t("common.intent"),
+              value: listingType,
+              onValueChange: setListingType,
+              options: [
+                { value: LISTING_TYPE_RENTAL, label: t("listingType.Rental") },
+                { value: LISTING_TYPE_SALE, label: t("listingType.Sale") },
+              ],
+            },
+            {
+              label: t("commercialListings.listingCategory"),
+              value: listingCategory,
+              onValueChange: setListingCategory,
+              options: [
+                { value: LISTING_CATEGORY_RESIDENTIAL, label: t("listingCategory.Residential") },
+                { value: LISTING_CATEGORY_COMMERCIAL, label: t("listingCategory.Commercial") },
+                {
+                  value: LISTING_CATEGORY_INVESTMENT,
+                  label: t("residentialSeekers.investment"),
+                },
+              ],
+            },
+            {
+              label: t("common.type"),
+              value: propertyType,
+              onValueChange: setPropertyType,
+              options: propertyTypeOptions.map((type) => ({ value: type, label: type })),
+            },
+            {
+              label: t("common.rooms"),
+              value: roomCount,
+              onValueChange: setRoomCount,
+              options: [
+                { value: "1", label: "1" },
+                { value: "2", label: "2" },
+                { value: "3", label: "3" },
+                { value: "4", label: "4" },
+                { value: "5", label: "5" },
+                { value: "6", label: "6+" },
+              ],
+            },
+            {
+              label: t("common.sortBy"),
+              value: `${sortBy}-${sortDir}`,
+              allowAll: false,
+              onValueChange: (val) => {
+                const [key, dir] = val.split("-");
+                setSortBy(key);
+                setSortDir(dir as "asc" | "desc");
+              },
+              options: [
+                { value: "createdAt-desc", label: t("common.sortNewest") },
+                { value: "createdAt-asc", label: t("common.sortOldest") },
+                { value: "rentAmount-desc", label: t("common.sortPriceHighest") },
+                { value: "rentAmount-asc", label: t("common.sortPriceLowest") },
+              ],
+            },
+          ]}
+        />
 
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium text-muted-foreground">{t("common.type")}</label>
-              <Select value={formState.propertyType} onValueChange={(v) => setFormState(s => ({ ...s, propertyType: v }))}>
-                <SelectTrigger>
-                  <SelectValue placeholder={t("common.all")} />
-                </SelectTrigger>
-                <SelectContent>
-                  {PROPERTY_TYPES.map(type => (
-                    <SelectItem key={type} value={type}>{t(`propertyType.${type}`)}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+        <QuickFilterBar
+          groups={[
+            {
+              key: "listingType",
+              value: listingType,
+              options: [
+                { value: LISTING_TYPE_RENTAL, label: t("listingType.Rental") },
+                { value: LISTING_TYPE_SALE, label: t("listingType.Sale") },
+              ],
+              onSelect: (value) => setUrlState({ listingType: value, page: 1 }),
+            },
+            {
+              key: "listingCategory",
+              value: listingCategory,
+              options: [
+                { value: LISTING_CATEGORY_RESIDENTIAL, label: t("listingCategory.Residential") },
+                { value: LISTING_CATEGORY_COMMERCIAL, label: t("listingCategory.Commercial") },
+                {
+                  value: LISTING_CATEGORY_INVESTMENT,
+                  label: t("residentialSeekers.investment"),
+                },
+              ],
+              onSelect: (value) => {
+                const options = getPropertyTypeFilterOptions(
+                  !value || value === FILTER_ALL ? null : listingCategoryToArabic(value),
+                );
+                setUrlState({
+                  listingCategory: value,
+                  propertyType:
+                    propertyType !== FILTER_ALL && !options.includes(propertyType)
+                      ? FILTER_ALL
+                      : propertyType,
+                  page: 1,
+                });
+              },
+            },
+          ]}
+        />
 
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium text-muted-foreground">{t("common.location")}</label>
-              <Input
-                placeholder={t("common.city")}
-                value={formState.location}
-                onChange={(e) => setFormState(s => ({ ...s, location: e.target.value }))}
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="text-xs font-medium text-muted-foreground">{t("common.maxBudget")}</label>
-              <Input
-                type="number"
-                placeholder="50000"
-                value={formState.maxBudget}
-                onChange={(e) => setFormState(s => ({ ...s, maxBudget: e.target.value }))}
-              />
-            </div>
-
-            <div className="flex items-end gap-2">
-              <Button type="submit" className="w-full bg-gold-gradient text-gold-foreground hover:opacity-95">
-                <Search className="me-2 h-4 w-4" />
-                {t("common.search")}
-              </Button>
-              {filters && (
-                <Button type="button" variant="outline" size="icon" onClick={clearSearch} title={t("common.cancel")}>
-                  <FilterX className="h-4 w-4" />
-                </Button>
-              )}
-            </div>
-          </form>
-        </div>
-
-        {filtered.length > 0 ? (
-          <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-            {filtered.map((listing) => (
-              <ListingCard key={listing.id} listing={listing} />
-            ))}
-          </div>
-        ) : isLoading ? (
+        {isLoading ? (
           <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
             {Array.from({ length: 6 }).map((_, index) => (
               <div key={index} className="h-64 rounded-2xl border border-border bg-card/60" />
             ))}
           </div>
+        ) : error ? (
+          <div className="rounded-2xl border border-border bg-card p-8 text-center text-destructive shadow-card">
+            {getFriendlyErrorMessage(error, t)}
+          </div>
+        ) : sorted.length > 0 ? (
+          <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+            {visibleListings.map((listing) => (
+              <ListingCard key={listing.id} listing={listing} />
+            ))}
+          </div>
         ) : (
           <div className="rounded-2xl border border-border bg-card p-8 text-center text-muted-foreground shadow-card">
             {t("publicProperties.empty")}
+          </div>
+        )}
+
+        {sorted.length > 0 && (
+          <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-4">
+              <PageSizeSelect
+                value={pageSize}
+                onChange={(v) => {
+                  setPageSize(v);
+                  setPage(1);
+                }}
+              />
+              <div className="text-sm text-muted-foreground">
+                {t("common.skip", { defaultValue: "Showing" })} {(page - 1) * pageSize + 1}
+                {" - "}
+                {Math.min(page * pageSize, sorted.length)} {t("common.of", { defaultValue: "of" })}{" "}
+                {sorted.length}
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={page === 1}
+              >
+                {t("common.previous")}
+              </Button>
+              <div className="flex items-center gap-2">
+                <span className="text-sm">{page}</span>
+              </div>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                disabled={page >= totalPages}
+              >
+                {t("common.next")}
+              </Button>
+            </div>
           </div>
         )}
       </section>
@@ -264,7 +671,10 @@ function ListingCard({ listing }: { listing: PublicListing }) {
         onClick={handleCardClick}
       >
         <div>
-          <div className="relative aspect-[16/10] overflow-hidden rounded-xl border border-border bg-muted" onClick={(e) => e.stopPropagation()}>
+          <div
+            className="relative aspect-[16/10] overflow-hidden rounded-xl border border-border bg-muted"
+            onClick={(e) => e.stopPropagation()}
+          >
             {activeImage ? (
               <>
                 <button
@@ -344,7 +754,11 @@ function ListingCard({ listing }: { listing: PublicListing }) {
                 {listing.offerCode || `#${listing.id}`}
               </div>
               <h2 className="mt-1 text-xl font-semibold hover:text-gold transition">
-                <Link to="/available-properties/$id" params={{ id: String(listing.id) }} onClick={(e) => e.stopPropagation()}>
+                <Link
+                  to="/available-properties/$id"
+                  params={{ id: String(listing.id) }}
+                  onClick={(e) => e.stopPropagation()}
+                >
                   {listing.adText1 || listing.offerCode || `#${listing.id}`}
                 </Link>
               </h2>
@@ -355,7 +769,11 @@ function ListingCard({ listing }: { listing: PublicListing }) {
             {listing.city && (
               <div className="flex items-start gap-2">
                 <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-gold" />
-                <span>{[listing.city, ...(Array.isArray(listing.district) ? listing.district : [])].filter(Boolean).join(" - ")}</span>
+                <span>
+                  {[listing.city, ...(Array.isArray(listing.district) ? listing.district : [])]
+                    .filter(Boolean)
+                    .join(" - ")}
+                </span>
               </div>
             )}
             {!listing.city && listing.location && (
@@ -376,7 +794,11 @@ function ListingCard({ listing }: { listing: PublicListing }) {
             {listing.propertyType && (
               <div className="flex items-center gap-2">
                 <Home className="h-4 w-4 text-gold" />
-                <span>{t(`propertyType.${listing.propertyType}`, { defaultValue: listing.propertyType })}</span>
+                <span>
+                  {t(`propertyType.${listing.propertyType}`, {
+                    defaultValue: listing.propertyType,
+                  })}
+                </span>
               </div>
             )}
             <div className="flex items-center gap-2">
@@ -387,10 +809,12 @@ function ListingCard({ listing }: { listing: PublicListing }) {
 
           <div className="mt-5 grid gap-3 sm:grid-cols-2">
             <PriceCard
-              label={listing.listingType === "Sale" ? t("common.salePrice") : t("common.monthlyRent")}
+              label={
+                isSaleListing(listing.listingType) ? t("common.salePrice") : t("common.monthlyRent")
+              }
               value={listing.rentAmount}
             />
-            {listing.listingType !== "Sale" && listing.rentAmount && (
+            {!isSaleListing(listing.listingType) && listing.rentAmount && (
               <PriceCard label={t("common.paymentType")} value={listing.paymentType} />
             )}
           </div>
@@ -432,19 +856,22 @@ function ListingCard({ listing }: { listing: PublicListing }) {
         </div>
       </article>
 
-      {lightboxOpen && activeImage && typeof document !== "undefined" && createPortal(
-        <ImageLightbox
-          images={images.map((i) => ({
-            url: resolveApiAssetUrl(i.url),
-            alt: i.originalFileName || listing.offerCode || "",
-            fileName: i.originalFileName,
-          }))}
-          index={activeIndex}
-          onIndexChange={setActiveIndex}
-          onClose={() => setLightboxOpen(false)}
-        />,
-        document.body,
-      )}
+      {lightboxOpen &&
+        activeImage &&
+        typeof document !== "undefined" &&
+        createPortal(
+          <ImageLightbox
+            images={images.map((i) => ({
+              url: resolveApiAssetUrl(i.url),
+              alt: i.originalFileName || listing.offerCode || "",
+              fileName: i.originalFileName,
+            }))}
+            index={activeIndex}
+            onIndexChange={setActiveIndex}
+            onClose={() => setLightboxOpen(false)}
+          />,
+          document.body,
+        )}
     </>
   );
 }
@@ -561,7 +988,9 @@ function PriceCard({ label, value }: { label: string; value?: string | null }) {
             <span>{value}</span>
             <RiyalIcon className="h-4 w-4" />
           </span>
-        ) : "—"}
+        ) : (
+          "—"
+        )}
       </div>
     </div>
   );

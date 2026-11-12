@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from "react";
+import { useCallback, useMemo, useRef } from "react";
 import { matchesPhoneQuery } from "./phone";
 
 /**
@@ -76,7 +76,12 @@ export function matchesTextOrPhoneQuery(
  */
 export function parseAmount(value: string | null | undefined): number | null {
   if (!value) return null;
-  const cleaned = String(value).replace(/[^\d.,]/g, "").replace(/,/g, "");
+  const cleaned = String(value)
+    .replace(/[^\d.,]/g, "")
+    .replace(/,/g, "");
+  // Number("") is 0, which would silently turn unparseable values into a zero
+  // filter - treat an empty result as "no amount" instead.
+  if (!cleaned) return null;
   const num = Number(cleaned);
   return Number.isFinite(num) ? num : null;
 }
@@ -84,24 +89,47 @@ export function parseAmount(value: string | null | undefined): number | null {
 type SearchUpdater = (prev: Record<string, unknown>) => Record<string, unknown>;
 
 /**
+ * Drops values that are empty or already equal to their default, so navigation
+ * only writes the parameters the user actually changed. Without this the
+ * router serializes every validated default into the URL.
+ */
+function withoutDefaults<S extends object>(next: S, defaults: S): Partial<S> {
+  const result: Record<string, unknown> = {};
+  for (const key of Object.keys(next)) {
+    const value = (next as Record<string, unknown>)[key];
+    if (value === undefined || value === null || value === "") continue;
+    if (value === (defaults as Record<string, unknown>)[key]) continue;
+    result[key] = value;
+  }
+  return result as Partial<S>;
+}
+
+/**
  * Binds component filter state to the URL search params of a file route.
  * `state` is derived from the current route search merged over `defaults`;
- * `update(patch)` navigates (replace, to avoid history spam) with the patch.
+ * `update(patch)` navigates (replace, to avoid history spam) with only the
+ * changed, non-default values.
  */
-export function useUrlSearchState<S>(
+export function useUrlSearchState<S extends object>(
   route: any,
   defaults: S,
 ): readonly [S, (patch: Partial<S> | ((prev: S) => Partial<S>)) => void] {
   const search = route.useSearch();
   const navigate = route.useNavigate();
   const state = useMemo<S>(() => ({ ...defaults, ...search }), [JSON.stringify(search)]);
+  const defaultsRef = useRef(defaults);
+  defaultsRef.current = defaults;
   const update = useCallback(
     (patch: Partial<S> | ((prev: S) => Partial<S>)) => {
       navigate({
-        search: (prev: any) => ({
-          ...prev,
-          ...(typeof patch === "function" ? patch(prev as S) : patch),
-        }),
+        search: (prev: any) => {
+          const merged = {
+            ...defaultsRef.current,
+            ...prev,
+            ...(typeof patch === "function" ? patch(prev as S) : patch),
+          } as S;
+          return withoutDefaults(merged, defaultsRef.current);
+        },
         replace: true,
       } as any);
     },

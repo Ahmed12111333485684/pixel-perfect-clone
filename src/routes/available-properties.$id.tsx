@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { PublicFooter } from "@/components/PublicFooter";
 import { MediaPreview } from "@/components/MediaPreview";
 import { formatDate } from "@/lib/format";
+import { normalizeForSearch } from "@/lib/search";
 import {
   Building2,
   MapPin,
@@ -37,14 +38,36 @@ import { RiyalIcon } from "@/components/icons/RiyalIcon";
 import { ListingLocationMap } from "@/components/ListingLocationMap";
 import { toast } from "sonner";
 
+/**
+ * True when a stored listing type means "for sale". Lead-approved listings
+ * historically stored "ForSale" instead of "Sale", so both are accepted.
+ */
+function isSaleListing(value: string | null | undefined): boolean {
+  const normalized = normalizeForSearch(value);
+  return (
+    normalized === normalizeForSearch("Sale") ||
+    normalized === normalizeForSearch("ForSale") ||
+    normalized === normalizeForSearch("بيع") ||
+    normalized === normalizeForSearch("للبيع") ||
+    normalized === normalizeForSearch("تمليك")
+  );
+}
+
+interface ListingDetailLoaderData {
+  listing: PublicListing;
+  title: string;
+  description: string;
+  fetchedAt: number;
+}
+
 export const Route = createFileRoute("/available-properties/$id")({
-  head: ({ loaderData }: { loaderData?: any }) => ({
+  head: ({ loaderData }: { loaderData?: ListingDetailLoaderData | null }) => ({
     meta: [
       { title: loaderData?.title ?? "Property Details — Nour Consultancy" },
       { name: "description", content: loaderData?.description ?? "Property details and photos." },
     ],
   }),
-  loader: async ({ params, location }) => {
+  loader: async ({ params, location }): Promise<ListingDetailLoaderData | null> => {
     try {
       const id = Number(params.id);
       if (isNaN(id)) return null;
@@ -52,8 +75,10 @@ export const Route = createFileRoute("/available-properties/$id")({
       const token = readShareToken(location.search);
       const listing = await fetchPublicListing(id, token);
       const title = listing.adText1 || listing.offerCode || `Property #${listing.id}`;
-      const description = listing.adText2 || `${listing.propertyType || "Property"} in ${listing.city || listing.location || "Saudi Arabia"}`;
-      return { title: `${title} — Nour Consultancy`, description };
+      const description =
+        listing.adText2 ||
+        `${listing.propertyType || "Property"} in ${listing.city || listing.location || "Saudi Arabia"}`;
+      return { listing, title: `${title} — Nour Consultancy`, description, fetchedAt: Date.now() };
     } catch {
       return null;
     }
@@ -83,10 +108,20 @@ function AvailablePropertyDetailPage() {
   const search = useSearch({ strict: false });
   const shareToken = readShareToken(search);
 
-  const { data: listing, isLoading, error } = useQuery({
+  // The route loader already fetched this listing for the document metadata;
+  // reuse it as the query's initial data so the page does not fetch it twice.
+  const loaderData = Route.useLoaderData() as ListingDetailLoaderData | null | undefined;
+
+  const {
+    data: listing,
+    isLoading,
+    error,
+  } = useQuery({
     queryKey: ["public-listing", numericId, shareToken],
     queryFn: () => fetchPublicListing(numericId, shareToken),
     enabled: !isNaN(numericId),
+    initialData: loaderData?.listing,
+    initialDataUpdatedAt: loaderData?.fetchedAt,
   });
 
   const [activeIndex, setActiveIndex] = useState(0);
@@ -98,12 +133,23 @@ function AvailablePropertyDetailPage() {
     .sort((a, b) => a.sortOrder - b.sortOrder || a.id - b.id);
   const activeImage = images[activeIndex] ?? images[0];
 
-  const handleShare = () => {
+  const handleShare = async () => {
     if (typeof window === "undefined") return;
-    navigator.clipboard.writeText(window.location.href);
-    setCopied(true);
-    toast.success(t("publicProperties.linkCopied", { defaultValue: "Link copied to clipboard!" }));
-    setTimeout(() => setCopied(false), 2500);
+    try {
+      if (!navigator.clipboard?.writeText) throw new Error("Clipboard API unavailable");
+      await navigator.clipboard.writeText(window.location.href);
+      setCopied(true);
+      toast.success(
+        t("publicProperties.linkCopied", { defaultValue: "Link copied to clipboard!" }),
+      );
+      setTimeout(() => setCopied(false), 2500);
+    } catch {
+      toast.error(
+        t("publicProperties.shareFailed", {
+          defaultValue: "Could not copy the link. Please copy it from the address bar.",
+        }),
+      );
+    }
   };
 
   const getWhatsAppUrl = () => {
@@ -111,9 +157,11 @@ function AvailablePropertyDetailPage() {
     const title = listing.adText1 || listing.offerCode || `#${listing.id}`;
     const code = listing.offerCode || `#${listing.id}`;
     const text = encodeURIComponent(
-      `مرحباً شركة نور الاستشارة، أود الاستفسار عن العقار المعروض:\n- الكود/المرجع: ${code}\n- العنوان: ${title}\n- الرابط: ${typeof window !== "undefined" ? window.location.href : ""}`
+      `مرحباً شركة نور الاستشارة، أود الاستفسار عن العقار المعروض:\n- الكود/المرجع: ${code}\n- العنوان: ${title}\n- الرابط: ${typeof window !== "undefined" ? window.location.href : ""}`,
     );
-    return `https://wa.me/966597948787`; // Adjust phone if configured in environment
+    // Configurable via VITE_WHATSAPP_NUMBER; falls back to the office number.
+    const phone = (import.meta.env.VITE_WHATSAPP_NUMBER as string | undefined) ?? "966597948787";
+    return `https://wa.me/${phone}?text=${text}`;
   };
 
   if (isLoading) {
@@ -138,12 +186,21 @@ function AvailablePropertyDetailPage() {
         <div className="mx-auto max-w-7xl px-6 py-20 text-center">
           <div className="mx-auto flex max-w-md flex-col items-center gap-4 rounded-2xl border border-border bg-card p-8 shadow-card">
             <Info className="h-12 w-12 text-muted-foreground" />
-            <h1 className="text-2xl font-bold">{t("error.notFound", { defaultValue: "Property not found" })}</h1>
+            <h1 className="text-2xl font-bold">
+              {t("error.notFound", { defaultValue: "Property not found" })}
+            </h1>
             <p className="text-sm text-muted-foreground">
-              {t("publicProperties.empty", { defaultValue: "The property listing you are looking for is no longer available or has been removed." })}
+              {t("publicProperties.empty", {
+                defaultValue:
+                  "The property listing you are looking for is no longer available or has been removed.",
+              })}
             </p>
             <Button asChild className="bg-gold-gradient text-gold-foreground">
-              <Link to="/available-properties">{t("publicProperties.backToProperties", { defaultValue: "Back to Available Properties" })}</Link>
+              <Link to="/available-properties">
+                {t("publicProperties.backToProperties", {
+                  defaultValue: "Back to Available Properties",
+                })}
+              </Link>
             </Button>
           </div>
         </div>
@@ -152,7 +209,9 @@ function AvailablePropertyDetailPage() {
     );
   }
 
-  const priceLabel = listing.listingType === "Sale" ? t("common.salePrice") : t("common.monthlyRent");
+  const priceLabel = isSaleListing(listing.listingType)
+    ? t("common.salePrice")
+    : t("common.monthlyRent");
 
   return (
     <div className="min-h-screen bg-background">
@@ -168,7 +227,9 @@ function AvailablePropertyDetailPage() {
             className="text-muted-foreground hover:text-foreground"
           >
             <ArrowLeft className="me-2 h-4 w-4 rtl:rotate-180" />
-            {t("publicProperties.backToProperties", { defaultValue: "Back to Available Properties" })}
+            {t("publicProperties.backToProperties", {
+              defaultValue: "Back to Available Properties",
+            })}
           </Button>
 
           <Button
@@ -177,8 +238,16 @@ function AvailablePropertyDetailPage() {
             onClick={handleShare}
             className="gap-2 border-border shadow-sm hover:border-gold/50"
           >
-            {copied ? <Check className="h-4 w-4 text-emerald-500" /> : <Share2 className="h-4 w-4 text-gold" />}
-            <span>{copied ? t("publicProperties.linkCopied", { defaultValue: "Copied!" }) : t("publicProperties.shareProperty", { defaultValue: "Share Property" })}</span>
+            {copied ? (
+              <Check className="h-4 w-4 text-emerald-500" />
+            ) : (
+              <Share2 className="h-4 w-4 text-gold" />
+            )}
+            <span>
+              {copied
+                ? t("publicProperties.linkCopied", { defaultValue: "Copied!" })
+                : t("publicProperties.shareProperty", { defaultValue: "Share Property" })}
+            </span>
           </Button>
         </div>
 
@@ -188,7 +257,9 @@ function AvailablePropertyDetailPage() {
             <div>
               <div className="flex flex-wrap items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 <Badge variant="outline" className="border-gold/40 text-gold bg-gold/5">
-                  {listing.listingType ? t(`listingType.${listing.listingType}`, { defaultValue: listing.listingType }) : t("common.forRent")}
+                  {listing.listingType
+                    ? t(`listingType.${isSaleListing(listing.listingType) ? "Sale" : "Rental"}`)
+                    : t("common.forRent")}
                 </Badge>
                 {listing.offerCode && (
                   <Badge variant="secondary" className="gap-1 font-mono">
@@ -209,7 +280,11 @@ function AvailablePropertyDetailPage() {
                 <div className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
                   <MapPin className="h-4 w-4 shrink-0 text-gold" />
                   <span>
-                    {[listing.city, listing.location, ...(Array.isArray(listing.district) ? listing.district : [])]
+                    {[
+                      listing.city,
+                      listing.location,
+                      ...(Array.isArray(listing.district) ? listing.district : []),
+                    ]
                       .filter(Boolean)
                       .join(" - ")}
                   </span>
@@ -218,7 +293,9 @@ function AvailablePropertyDetailPage() {
             </div>
 
             <div className="rounded-xl border border-gold/30 bg-gold/5 p-4 text-end">
-              <div className="text-xs uppercase tracking-wide text-muted-foreground">{priceLabel}</div>
+              <div className="text-xs uppercase tracking-wide text-muted-foreground">
+                {priceLabel}
+              </div>
               <div className="mt-1 text-2xl font-bold text-foreground">
                 {listing.rentAmount ? (
                   <span className="inline-flex items-center gap-1">
@@ -229,9 +306,10 @@ function AvailablePropertyDetailPage() {
                   "—"
                 )}
               </div>
-              {listing.paymentType && listing.listingType !== "Sale" && (
+              {listing.paymentType && !isSaleListing(listing.listingType) && (
                 <div className="mt-1 text-xs text-muted-foreground">
-                  {t("common.paymentType")}: <span className="font-medium text-foreground">{listing.paymentType}</span>
+                  {t("common.paymentType")}:{" "}
+                  <span className="font-medium text-foreground">{listing.paymentType}</span>
                 </div>
               )}
             </div>
@@ -268,7 +346,9 @@ function AvailablePropertyDetailPage() {
                       <>
                         <button
                           type="button"
-                          onClick={() => setActiveIndex((i) => (i - 1 + images.length) % images.length)}
+                          onClick={() =>
+                            setActiveIndex((i) => (i - 1 + images.length) % images.length)
+                          }
                           className="absolute start-4 top-1/2 grid h-10 w-10 -translate-y-1/2 place-items-center rounded-full bg-black/45 text-white backdrop-blur transition hover:bg-black/70 rtl:rotate-180"
                         >
                           <ChevronLeft className="h-6 w-6" />
@@ -299,8 +379,11 @@ function AvailablePropertyDetailPage() {
                       key={img.id}
                       type="button"
                       onClick={() => setActiveIndex(idx)}
-                      className={`relative h-20 w-24 shrink-0 overflow-hidden rounded-lg border-2 transition ${idx === activeIndex ? "border-gold ring-2 ring-gold/30" : "border-transparent opacity-70 hover:opacity-100"
-                        }`}
+                      className={`relative h-20 w-24 shrink-0 overflow-hidden rounded-lg border-2 transition ${
+                        idx === activeIndex
+                          ? "border-gold ring-2 ring-gold/30"
+                          : "border-transparent opacity-70 hover:opacity-100"
+                      }`}
                     >
                       <MediaPreview
                         src={resolveApiAssetUrl(img.url)}
@@ -321,22 +404,48 @@ function AvailablePropertyDetailPage() {
               </h2>
               <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
                 {listing.propertyType && (
-                  <SpecBox icon={<Home className="h-4 w-4" />} label={t("common.type")} value={t(`propertyType.${listing.propertyType}`, { defaultValue: listing.propertyType })} />
+                  <SpecBox
+                    icon={<Home className="h-4 w-4" />}
+                    label={t("common.type")}
+                    value={t(`propertyType.${listing.propertyType}`, {
+                      defaultValue: listing.propertyType,
+                    })}
+                  />
                 )}
                 {listing.roomsCount && (
-                  <SpecBox icon={<DoorOpen className="h-4 w-4" />} label={t("common.rooms")} value={`${listing.roomsCount} ${t("common.rooms")}`} />
+                  <SpecBox
+                    icon={<DoorOpen className="h-4 w-4" />}
+                    label={t("common.rooms")}
+                    value={`${listing.roomsCount} ${t("common.rooms")}`}
+                  />
                 )}
                 {listing.buildingAge && (
-                  <SpecBox icon={<Building2 className="h-4 w-4" />} label={t("common.buildingAge")} value={`${listing.buildingAge} ${t("common.yearsOld")}`} />
+                  <SpecBox
+                    icon={<Building2 className="h-4 w-4" />}
+                    label={t("common.buildingAge")}
+                    value={`${listing.buildingAge} ${t("common.yearsOld")}`}
+                  />
                 )}
                 {listing.hasElevator && (
-                  <SpecBox icon={<Layers className="h-4 w-4" />} label={t("common.elevator")} value={listing.hasElevator} />
+                  <SpecBox
+                    icon={<Layers className="h-4 w-4" />}
+                    label={t("common.elevator")}
+                    value={listing.hasElevator}
+                  />
                 )}
                 {listing.availableUnits && (
-                  <SpecBox icon={<Layers className="h-4 w-4" />} label={t("commercialListings.availableUnits")} value={listing.availableUnits} />
+                  <SpecBox
+                    icon={<Layers className="h-4 w-4" />}
+                    label={t("commercialListings.availableUnits")}
+                    value={listing.availableUnits}
+                  />
                 )}
                 {listing.offerCode && (
-                  <SpecBox icon={<Hash className="h-4 w-4" />} label={t("commercialListings.offerCode")} value={listing.offerCode} />
+                  <SpecBox
+                    icon={<Hash className="h-4 w-4" />}
+                    label={t("commercialListings.offerCode")}
+                    value={listing.offerCode}
+                  />
                 )}
               </div>
             </div>
@@ -393,7 +502,9 @@ function AvailablePropertyDetailPage() {
                     rel="noopener noreferrer"
                   >
                     <MapPin className="h-4 w-4 text-gold" />
-                    <span>{t("common.openInGoogleMaps", { defaultValue: "Open in Google Maps" })}</span>
+                    <span>
+                      {t("common.openInGoogleMaps", { defaultValue: "Open in Google Maps" })}
+                    </span>
                     <ExternalLink className="h-3.5 w-3.5 text-muted-foreground" />
                   </a>
                 </Button>
@@ -405,8 +516,12 @@ function AvailablePropertyDetailPage() {
           <div className="space-y-6">
             <div className="sticky top-24 rounded-2xl border border-border bg-card p-6 shadow-card space-y-6">
               <div>
-                <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{t("common.propertyId")}</span>
-                <h3 className="text-xl font-bold text-foreground mt-0.5">{listing.offerCode || `#${listing.id}`}</h3>
+                <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  {t("common.propertyId")}
+                </span>
+                <h3 className="text-xl font-bold text-foreground mt-0.5">
+                  {listing.offerCode || `#${listing.id}`}
+                </h3>
               </div>
 
               <div className="space-y-3 pt-2 border-t border-border">
@@ -415,8 +530,14 @@ function AvailablePropertyDetailPage() {
                   variant="outline"
                   className="w-full gap-2 py-6 text-base font-semibold border-border hover:border-gold/50"
                 >
-                  {copied ? <Check className="h-5 w-5 text-emerald-500" /> : <Share2 className="h-5 w-5 text-gold" />}
-                  {copied ? t("publicProperties.linkCopied", { defaultValue: "Link Copied!" }) : t("publicProperties.shareProperty", { defaultValue: "Share Property Link" })}
+                  {copied ? (
+                    <Check className="h-5 w-5 text-emerald-500" />
+                  ) : (
+                    <Share2 className="h-5 w-5 text-gold" />
+                  )}
+                  {copied
+                    ? t("publicProperties.linkCopied", { defaultValue: "Link Copied!" })
+                    : t("publicProperties.shareProperty", { defaultValue: "Share Property Link" })}
                 </Button>
 
                 <Button
@@ -436,23 +557,21 @@ function AvailablePropertyDetailPage() {
                 >
                   <a href={getWhatsAppUrl()} target="_blank" rel="noopener noreferrer">
                     <MessageCircle className="h-5 w-5" />
-                    {t("publicProperties.contactWhatsApp", { defaultValue: "Contact via WhatsApp" })}
+                    {t("publicProperties.contactWhatsApp", {
+                      defaultValue: "Contact via WhatsApp",
+                    })}
                   </a>
                 </Button>
                 {/* Contact Numbers */}
                 <div className="rounded-xl border border-border bg-muted/30 p-4 space-y-4">
                   <div className="flex items-center gap-2">
                     <Phone className="h-4 w-4 text-gold" />
-                    <h4 className="text-sm font-bold text-foreground">
-                      أرقام التواصل
-                    </h4>
+                    <h4 className="text-sm font-bold text-foreground">أرقام التواصل</h4>
                   </div>
 
                   {/* Sales Department */}
                   <div className="space-y-2">
-                    <p className="text-xs font-bold text-muted-foreground">
-                      ▪️ قسم المبيعات
-                    </p>
+                    <p className="text-xs font-bold text-muted-foreground">▪️ قسم المبيعات</p>
 
                     {[
                       { label: "مبيعات 1", phone: "0595090915" },
@@ -477,9 +596,7 @@ function AvailablePropertyDetailPage() {
 
                   {/* Customer Service */}
                   <div className="space-y-2">
-                    <p className="text-xs font-bold text-muted-foreground">
-                      ▪️ خدمة العملاء
-                    </p>
+                    <p className="text-xs font-bold text-muted-foreground">▪️ خدمة العملاء</p>
 
                     <a
                       href="tel:0597948787"
@@ -497,9 +614,7 @@ function AvailablePropertyDetailPage() {
 
                   {/* Abu Abdulaziz */}
                   <div className="space-y-2">
-                    <p className="text-xs font-bold text-muted-foreground">
-                      ▪️ التواصل المباشر
-                    </p>
+                    <p className="text-xs font-bold text-muted-foreground">▪️ التواصل المباشر</p>
 
                     <a
                       href="tel:0580604454"
@@ -526,19 +641,22 @@ function AvailablePropertyDetailPage() {
       </main>
 
       {/* Lightbox Portal */}
-      {lightboxOpen && activeImage && typeof document !== "undefined" && createPortal(
-        <ImageLightbox
-          images={images.map((i) => ({
-            url: resolveApiAssetUrl(i.url),
-            alt: i.originalFileName || listing.offerCode || "",
-            fileName: i.originalFileName,
-          }))}
-          index={activeIndex}
-          onIndexChange={setActiveIndex}
-          onClose={() => setLightboxOpen(false)}
-        />,
-        document.body,
-      )}
+      {lightboxOpen &&
+        activeImage &&
+        typeof document !== "undefined" &&
+        createPortal(
+          <ImageLightbox
+            images={images.map((i) => ({
+              url: resolveApiAssetUrl(i.url),
+              alt: i.originalFileName || listing.offerCode || "",
+              fileName: i.originalFileName,
+            }))}
+            index={activeIndex}
+            onIndexChange={setActiveIndex}
+            onClose={() => setLightboxOpen(false)}
+          />,
+          document.body,
+        )}
 
       <PublicFooter />
     </div>
@@ -576,7 +694,15 @@ function HeaderBar() {
   );
 }
 
-function SpecBox({ icon, label, value }: { icon: React.ReactNode; label: string; value: React.ReactNode }) {
+function SpecBox({
+  icon,
+  label,
+  value,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: React.ReactNode;
+}) {
   return (
     <div className="rounded-xl border border-border bg-muted/30 p-3.5">
       <div className="flex items-center gap-1.5 text-xs uppercase tracking-wide text-muted-foreground">
