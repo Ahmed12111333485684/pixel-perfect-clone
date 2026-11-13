@@ -163,6 +163,8 @@ function attentionRowClass(level: InspectionAttention): string {
   return "";
 }
 
+const EMPTY_SELECT_VALUE = "__none__";
+
 const RESIDENTIAL_FIELDS = [
   "serialNumber",
   "requestDate",
@@ -215,6 +217,7 @@ function buildResidentialPayload(fd: FormData, original?: ResidentialSeeker | nu
 
   RESIDENTIAL_FIELDS.forEach((key) => {
     let value: string | null = readFieldValue(fd, key);
+    if (value === EMPTY_SELECT_VALUE) value = "";
     const originalValue = original?.[key as ResidentialFieldKey];
     const numericFields = ["roomCount", "familyCount", "maxBudget", "requiredSpace"];
     const unchanged =
@@ -1388,6 +1391,7 @@ function ResidentialSeekerDialog({
             label={t("common.employee")}
             defaultValue={seeker?.employee ?? ""}
             readOnly={readOnly || usersLoading}
+            allowEmpty
             options={users.map((u) => ({ value: u.username, label: u.fullName || u.username }))}
           />
           <SelectField
@@ -1395,6 +1399,7 @@ function ResidentialSeekerDialog({
             label={t("residentialSeekers.receiver")}
             defaultValue={seeker?.receiver ?? ""}
             readOnly={readOnly || usersLoading}
+            allowEmpty
             options={users.map((u) => ({ value: u.username, label: u.fullName || u.username }))}
           />
           {readOnly ? (
@@ -1517,6 +1522,8 @@ function ResidentialSeekerDialog({
               label={t("residentialSeekers.propertyType")}
               defaultValue={propertyType}
               readOnly={readOnly || !requestCategory}
+              value={propertyType}
+              allowEmpty
               onValueChange={setPropertyType}
               options={getPropertyTypesByCategory(requestCategory).map((type) => ({
                 value: type,
@@ -1894,6 +1901,7 @@ function SelectField({
   options,
   onValueChange,
   value,
+  allowEmpty,
   showOther,
   otherValue,
   onOtherValueChange,
@@ -1905,11 +1913,21 @@ function SelectField({
   options: Array<{ value: string; label: string }>;
   onValueChange?: (value: string) => void;
   value?: string;
+  allowEmpty?: boolean;
   showOther?: boolean;
   otherValue?: string;
   onOtherValueChange?: (value: string) => void;
 }) {
+  const { t } = useTranslation();
   const isOther = value === "__other__";
+  const currentValue = value !== undefined ? value : defaultValue;
+  const controlledValue =
+    value !== undefined ? (allowEmpty && !value ? EMPTY_SELECT_VALUE : value) : undefined;
+  const initialValue = allowEmpty && !defaultValue ? EMPTY_SELECT_VALUE : defaultValue;
+  const hasCurrentOption = options.some((option) => option.value === currentValue);
+  const handleValueChange = (next: string) => {
+    onValueChange?.(allowEmpty && next === EMPTY_SELECT_VALUE ? "" : next);
+  };
   return (
     <div className="space-y-2">
       <Label htmlFor={id} className="text-xs font-medium">
@@ -1924,20 +1942,26 @@ function SelectField({
       )}
       <Select
         name={showOther ? undefined : id}
-        defaultValue={defaultValue}
+        defaultValue={initialValue}
         disabled={readOnly}
-        value={value}
-        onValueChange={onValueChange}
+        value={controlledValue}
+        onValueChange={handleValueChange}
       >
         <SelectTrigger id={id} className="mt-1">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
+          {allowEmpty && (
+            <SelectItem value={EMPTY_SELECT_VALUE}>{t("common.notSpecified")}</SelectItem>
+          )}
           {options.map((option) => (
             <SelectItem key={option.value} value={option.value}>
               {option.label}
             </SelectItem>
           ))}
+          {currentValue && currentValue !== EMPTY_SELECT_VALUE && !hasCurrentOption && (
+            <SelectItem value={currentValue}>{currentValue}</SelectItem>
+          )}
           {showOther && <SelectItem value="__other__">اخري</SelectItem>}
         </SelectContent>
       </Select>

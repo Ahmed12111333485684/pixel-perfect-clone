@@ -6,7 +6,88 @@ import { Check, ChevronDown, ChevronUp } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
-const Select = SelectPrimitive.Root;
+type SelectProps = React.ComponentPropsWithoutRef<typeof SelectPrimitive.Root>;
+
+const VISUALLY_HIDDEN_STYLE: React.CSSProperties = {
+  position: "absolute",
+  border: 0,
+  width: 1,
+  height: 1,
+  padding: 0,
+  margin: -1,
+  overflow: "hidden",
+  clip: "rect(0 0 0 0)",
+  whiteSpace: "nowrap",
+};
+
+/**
+ * Radix renders a hidden native <select> for form submission. When the current
+ * value does not match any SelectItem (notably an empty value), the browser
+ * falls back to selecting the first option, which silently submits the wrong
+ * record. We keep Radix's visible select controlled and render our own hidden
+ * native select that only ever contains the actual value.
+ */
+function Select({
+  name,
+  required,
+  disabled,
+  form,
+  value,
+  defaultValue,
+  onValueChange,
+  children,
+  ...props
+}: SelectProps) {
+  const isControlled = value !== undefined;
+  const [uncontrolledValue, setUncontrolledValue] = React.useState(defaultValue ?? "");
+  const currentValue = isControlled ? (value ?? "") : uncontrolledValue;
+
+  React.useEffect(() => {
+    if (!isControlled) {
+      setUncontrolledValue(defaultValue ?? "");
+    }
+  }, [defaultValue, isControlled]);
+
+  const handleValueChange = React.useCallback(
+    (next: string) => {
+      if (!isControlled) {
+        setUncontrolledValue(next);
+      }
+      onValueChange?.(next);
+    },
+    [isControlled, onValueChange],
+  );
+
+  return (
+    <>
+      <SelectPrimitive.Root
+        {...props}
+        value={currentValue}
+        onValueChange={handleValueChange}
+        disabled={disabled}
+        form={form}
+      >
+        {children}
+      </SelectPrimitive.Root>
+      {name ? (
+        <select
+          name={name}
+          required={required}
+          disabled={disabled}
+          form={form}
+          value={currentValue}
+          onChange={() => undefined}
+          aria-hidden="true"
+          tabIndex={-1}
+          style={VISUALLY_HIDDEN_STYLE}
+        >
+          <option value={currentValue} />
+        </select>
+      ) : null}
+    </>
+  );
+}
+Select.displayName = "Select";
 
 const SelectGroup = SelectPrimitive.Group;
 
