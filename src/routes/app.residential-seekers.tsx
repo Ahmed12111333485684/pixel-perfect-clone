@@ -56,12 +56,18 @@ import { PhoneField } from "@/components/form/PhoneField";
 import { CITIES, getDistricts } from "@/lib/locations";
 import { FilterBar } from "@/components/search/FilterBar";
 import { QuickFilterBar } from "@/components/search/QuickFilterBar";
-import { useUrlSearchState, matchesTextOrPhoneQuery, normalizeForSearch } from "@/lib/search";
+import {
+  useUrlSearchState,
+  matchesTextOrPhoneQuery,
+  normalizeForSearch,
+  parseAmount,
+} from "@/lib/search";
 
 export const Route = createFileRoute("/app/residential-seekers")({
   validateSearch: (search: Record<string, unknown>) => ({
     selected: search.selected ? Number(search.selected) : undefined,
     q: typeof search.q === "string" ? search.q : "",
+    maxBudget: typeof search.maxBudget === "string" ? search.maxBudget : "",
     status: typeof search.status === "string" && search.status ? search.status : "all",
     listingType:
       typeof search.listingType === "string" && search.listingType ? search.listingType : "all",
@@ -256,6 +262,7 @@ function ResidentialSeekersPage() {
   const [urlState, setUrlState] = useUrlSearchState(Route, {
     selected: undefined as number | undefined,
     q: "",
+    maxBudget: "",
     status: "all",
     listingType: "all",
     requestCategory: "all",
@@ -268,7 +275,7 @@ function ResidentialSeekersPage() {
     sortBy: "createdAt",
     sortDir: "desc" as "asc" | "desc",
   });
-  const { q, status, listingType, requestCategory, propertyType, roomCount, city, district, attention, page, sortBy, sortDir } =
+  const { q, maxBudget, status, listingType, requestCategory, propertyType, roomCount, city, district, attention, page, sortBy, sortDir } =
     urlState;
   const [pageSize, setPageSize] = usePageSize();
   // --- debounced search ---
@@ -300,6 +307,7 @@ function ResidentialSeekersPage() {
   const setCity = (value: string) => setUrlState({ city: value, district: "", page: 1 });
   const setDistrict = (value: string) => setUrlState({ district: value, page: 1 });
   const setAttention = (value: string) => setUrlState({ attention: value, page: 1 });
+  const setMaxBudget = (value: string) => setUrlState({ maxBudget: value, page: 1 });
   const setSortBy = (value: string) => setUrlState({ sortBy: value, page: 1 });
   const setSortDir = (value: "asc" | "desc") => setUrlState({ sortDir: value, page: 1 });
   const setPage = (value: number | ((current: number) => number)) =>
@@ -430,7 +438,7 @@ function ResidentialSeekersPage() {
 
   const handleReset = () => {
     setInputQ("");
-    setUrlState({ q: "", status: "all", listingType: "all", requestCategory: "all", propertyType: "all", roomCount: "all", city: "", district: "", attention: "all", page: 1 });
+    setUrlState({ q: "", maxBudget: "", status: "all", listingType: "all", requestCategory: "all", propertyType: "all", roomCount: "all", city: "", district: "", attention: "all", page: 1 });
   };
 
   const handleCreate = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -640,6 +648,9 @@ function ResidentialSeekersPage() {
 
   const filteredSeekers = useMemo(() => {
     const items = seekers.data ?? [];
+    // "Max budget" limit: keep requests whose budget is at or below this
+    // amount. Requests without a parseable budget are excluded while active.
+    const budgetLimit = parseAmount(maxBudget);
     const locationMatch = (r: ResidentialSeeker) => {
       const normalizedCity = city ? normalizeForSearch(city) : "";
       const normalizedDistrict = district ? normalizeForSearch(district) : "";
@@ -700,6 +711,9 @@ function ResidentialSeekersPage() {
           ? (r.roomCount ?? 0) >= 6
           : String(r.roomCount) === roomCount);
       const propertyTypeMatch = matchesPropertyType(r.propertyType, propertyType);
+      const requestBudget = parseAmount(r.maxBudget);
+      const budgetMatch =
+        budgetLimit === null || (requestBudget !== null && requestBudget <= budgetLimit);
       return (
         qMatch &&
         statusMatch &&
@@ -708,6 +722,7 @@ function ResidentialSeekersPage() {
         requestCategoryMatch &&
         roomCountMatch &&
         propertyTypeMatch &&
+        budgetMatch &&
         locationMatch(r)
       );
     });
@@ -759,7 +774,7 @@ function ResidentialSeekersPage() {
           ? 1
           : 2;
     return [...sorted].sort((a, b) => urgencyOf(a) - urgencyOf(b));
-  }, [seekers.data, deferredInputQ, status, listingType, requestCategory, propertyType, roomCount, city, district, attention, sortBy, sortDir]);
+  }, [seekers.data, deferredInputQ, maxBudget, status, listingType, requestCategory, propertyType, roomCount, city, district, attention, sortBy, sortDir]);
 
   const totalPages = Math.max(1, Math.ceil(filteredSeekers.length / pageSize));
 
@@ -804,6 +819,7 @@ function ResidentialSeekersPage() {
         activeCount={
           [
             q,
+            maxBudget,
             status !== "all" ? status : "",
             listingType !== "all" ? listingType : "",
             requestCategory !== "all" ? requestCategory : "",
@@ -815,18 +831,34 @@ function ResidentialSeekersPage() {
           ].filter(Boolean).length
         }
         search={
-          <div className="min-w-[220px] flex-1">
-            <Label htmlFor="q" className="text-xs font-medium">
-              {t("common.search")}
-            </Label>
-            <Input
-              id="q"
-              placeholder={t("residentialSeekers.searchPlaceholder")}
-              value={inputQ}
-              onChange={(e) => setInputQDebounced(e.target.value)}
-              className="mt-1 w-full"
-            />
-          </div>
+          <>
+            <div className="min-w-[220px] flex-1">
+              <Label htmlFor="q" className="text-xs font-medium">
+                {t("common.search")}
+              </Label>
+              <Input
+                id="q"
+                placeholder={t("residentialSeekers.searchPlaceholder")}
+                value={inputQ}
+                onChange={(e) => setInputQDebounced(e.target.value)}
+                className="mt-1 w-full"
+              />
+            </div>
+            <div className="w-40">
+              <Label htmlFor="maxBudget" className="text-xs font-medium">
+                {t("residentialSeekers.maxBudget")}
+              </Label>
+              <Input
+                id="maxBudget"
+                type="number"
+                min="0"
+                placeholder="0"
+                value={maxBudget}
+                onChange={(e) => setMaxBudget(e.target.value)}
+                className="mt-1 w-full"
+              />
+            </div>
+          </>
         }
         facets={[
           {

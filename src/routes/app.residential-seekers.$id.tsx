@@ -14,6 +14,7 @@ function ResidentialSeekersRedirect() {
       search={{
         selected: Number(id),
         q: "",
+        maxBudget: "",
         status: "all",
         listingType: "all",
         requestCategory: "all",
