@@ -18,7 +18,8 @@ import { getFriendlyErrorMessage } from "@/lib/errorUtils";
 import { syncCreated, syncUpdated, syncRemoved } from "@/lib/queryCache";
 import { PartnerDialog } from "@/components/partners/PartnerDialog";
 import { useAuth } from "@/lib/auth";
-import { todayLocal } from "@/lib/format";
+import { todayLocal, todayLocalDdMmYyyy, formatDateTime12h } from "@/lib/format";
+import { exportToExcel, type ExcelColumn } from "@/lib/excelExport";
 import { usePageSize } from "@/hooks/use-page-size";
 import { useSuggestionShuffle } from "@/hooks/use-suggestion-shuffle";
 import { PageSizeSelect } from "@/components/PageSizeSelect";
@@ -46,7 +47,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Building2, MapPin, Plus, Sparkles, LayoutGrid, List, Shuffle } from "lucide-react";
+import { Building2, MapPin, Plus, Sparkles, LayoutGrid, List, Shuffle, Download, Loader2 } from "lucide-react";
 import { RiyalIcon } from "@/components/icons/RiyalIcon";
 import { toast } from "sonner";
 import { ComboboxField } from "@/components/form/ComboboxField";
@@ -258,7 +259,7 @@ function truncateText(value: string, max: number) {
 }
 
 function ResidentialSeekersPage() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const auth = useAuth();
   const qc = useQueryClient();
 
@@ -281,6 +282,7 @@ function ResidentialSeekersPage() {
   const { q, maxBudget, status, listingType, requestCategory, propertyType, roomCount, city, district, attention, page, sortBy, sortDir } =
     urlState;
   const [pageSize, setPageSize] = usePageSize();
+  const [exporting, setExporting] = useState(false);
   // --- debounced search ---
   const [inputQ, setInputQ] = useState(q);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -643,6 +645,46 @@ function ResidentialSeekersPage() {
     },
   ];
 
+  const exportColumns: ExcelColumn<ResidentialSeeker>[] = [
+    { header: t("residentialSeekers.serialNumber"), value: (r) => r.serialNumber, width: 16, text: true },
+    { header: t("residentialSeekers.requestDate"), value: (r) => r.requestDate, width: 14 },
+    { header: t("residentialSeekers.reviewDate"), value: (r) => r.reviewDate, width: 14 },
+    { header: t("residentialSeekers.inspectionDate"), value: (r) => r.inspectionDate, width: 14 },
+    { header: t("residentialSeekers.status"), value: (r) => (r.status ? statusLabel(r.status) : ""), width: 12 },
+    { header: t("residentialSeekers.fullName"), value: (r) => r.fullName, width: 24 },
+    { header: t("common.phone"), value: (r) => r.mobile, width: 18, text: true },
+    { header: t("residentialSeekers.mobile2"), value: (r) => r.mobile2, width: 18, text: true },
+    { header: t("residentialSeekers.nationality"), value: (r) => r.nationality, width: 14 },
+    { header: t("residentialSeekers.requestDescription"), value: (r) => r.requestDescription, width: 40 },
+    { header: t("residentialSeekers.maxBudget"), value: (r) => parseAmount(r.maxBudget), width: 14 },
+    { header: t("residentialSeekers.paymentType"), value: (r) => r.paymentType, width: 16 },
+    { header: t("residentialSeekers.listingType"), value: (r) => (r.listingType ? t(`listingType.${r.listingType}`, { defaultValue: r.listingType }) : ""), width: 14 },
+    { header: t("residentialSeekers.propertyType"), value: (r) => (r.propertyType ? localizePropertyType(t, r.propertyType) : ""), width: 18 },
+    { header: t("residentialSeekers.preferredLocation"), value: (r) => r.preferredLocation, width: 22 },
+    { header: t("common.city"), value: (r) => r.city, width: 14 },
+    { header: t("common.district"), value: (r) => (Array.isArray(r.district) ? r.district.join(" - ") : r.district), width: 18 },
+    { header: t("residentialSeekers.employee"), value: (r) => r.employee, width: 20 },
+    { header: t("residentialSeekers.receiver"), value: (r) => r.receiver, width: 20 },
+    { header: t("residentialSeekers.sourceChannel"), value: (r) => (toSourceChannelArray(r.sourceChannel) ?? []).join(" - "), width: 20 },
+    { header: t("residentialSeekers.profession"), value: (r) => r.profession, width: 16 },
+    { header: t("residentialSeekers.familyCount"), value: (r) => r.familyCount, width: 14 },
+    { header: t("residentialSeekers.roomCount"), value: (r) => r.roomCount, width: 10 },
+    { header: t("residentialSeekers.activity"), value: (r) => r.activity, width: 16 },
+    { header: t("residentialSeekers.requiredSpace"), value: (r) => r.requiredSpace, width: 16 },
+    {
+      header: t("residentialSeekers.requestCategory"),
+      value: (r) => (r.requestCategory === REQUEST_CATEGORY_RESIDENTIAL
+        ? t("listingCategory.Residential")
+        : r.requestCategory === REQUEST_CATEGORY_COMMERCIAL
+          ? t("listingCategory.Commercial")
+          : r.requestCategory),
+      width: 16,
+    },
+    { header: t("common.notes"), value: (r) => r.notes, width: 30 },
+    { header: t("common.createdAt"), value: (r) => (r.createdAt ? formatDateTime12h(r.createdAt) : ""), width: 20 },
+    { header: t("common.updatedAt"), value: (r) => (r.updatedAt ? formatDateTime12h(r.updatedAt) : ""), width: 20 },
+  ];
+
   // The property type options follow the selected category.
   const propertyTypeOptions = useMemo(
     () => getPropertyTypeFilterOptions(requestCategory),
@@ -779,6 +821,29 @@ function ResidentialSeekersPage() {
     return [...sorted].sort((a, b) => urgencyOf(a) - urgencyOf(b));
   }, [seekers.data, deferredInputQ, maxBudget, status, listingType, requestCategory, propertyType, roomCount, city, district, attention, sortBy, sortDir]);
 
+  const handleExport = async () => {
+    if (!isAdmin || exporting) return;
+    if (filteredSeekers.length === 0) {
+      toast.error(t("common.exportEmpty"));
+      return;
+    }
+    setExporting(true);
+    try {
+      await exportToExcel({
+        fileName: `الطلبات_${todayLocalDdMmYyyy()}.xlsx`,
+        sheet: t("residentialSeekers.exportSheet"),
+        columns: exportColumns,
+        rows: filteredSeekers,
+        rightToLeft: i18n.dir() === "rtl",
+      });
+      toast.success(t("common.exportSuccess"));
+    } catch (error) {
+      toast.error(getFriendlyErrorMessage(error, t));
+    } finally {
+      setExporting(false);
+    }
+  };
+
   const totalPages = Math.max(1, Math.ceil(filteredSeekers.length / pageSize));
 
   const visibleSeekers = useMemo(() => {
@@ -804,11 +869,21 @@ function ResidentialSeekersPage() {
         title={t("residentialSeekers.pageTitle")}
         subtitle={t("residentialSeekers.pageSubtitle")}
         actions={
-          canManage ? (
-            <Button onClick={() => setCreating(true)}>
-              <Plus className="me-1 h-4 w-4" />
-              {t("common.add")}
-            </Button>
+          isAdmin || canManage ? (
+            <div className="flex flex-wrap items-center gap-2">
+              {isAdmin && (
+                <Button variant="outline" onClick={handleExport} disabled={exporting}>
+                  {exporting ? <Loader2 className="me-1 h-4 w-4 animate-spin" /> : <Download className="me-1 h-4 w-4" />}
+                  {exporting ? t("common.exporting") : t("common.exportExcel")}
+                </Button>
+              )}
+              {canManage && (
+                <Button onClick={() => setCreating(true)}>
+                  <Plus className="me-1 h-4 w-4" />
+                  {t("common.add")}
+                </Button>
+              )}
+            </div>
           ) : undefined
         }
       />

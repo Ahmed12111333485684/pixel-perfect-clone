@@ -6,7 +6,8 @@ import { api, fetchPartnersLookup, createPartner, fetchListingSeriesOptions, fet
 import { syncCreated, syncUpdated, syncRemoved } from "@/lib/queryCache";
 import { PartnerDialog } from "@/components/partners/PartnerDialog";
 import { useAuth } from "@/lib/auth";
-import { todayLocal, formatDateTime12h, formatDate } from "@/lib/format";
+import { todayLocal, todayLocalDdMmYyyy, formatDateTime12h, formatDate } from "@/lib/format";
+import { exportToExcel, type ExcelColumn } from "@/lib/excelExport";
 import { usePageSize } from "@/hooks/use-page-size";
 import { useSuggestionShuffle } from "@/hooks/use-suggestion-shuffle";
 import { getFriendlyErrorMessage } from "@/lib/errorUtils";
@@ -23,7 +24,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
 import { ListingLocationMap } from "@/components/ListingLocationMap";
-import { Plus, X, LayoutGrid, List, FileImage, MapPin, Sparkles, User, Shuffle, Copy, Check } from "lucide-react";
+import { Plus, X, LayoutGrid, List, FileImage, MapPin, Sparkles, User, Shuffle, Copy, Check, Download, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { PhoneField } from "@/components/form/PhoneField";
 import { ComboboxField } from "@/components/form/ComboboxField";
@@ -328,7 +329,7 @@ function buildCommercialPayload(
 }
 
 function CommercialListingsPage() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const auth = useAuth();
   const qc = useQueryClient();
 
@@ -349,6 +350,8 @@ function CommercialListingsPage() {
   });
   const { q, deedQ, status, dealType: dealTypeFilter, listingCategory: listingCategoryFilter, propertyType, roomCount, city, district, page, sortBy, sortDir } = urlState;
   const [pageSize, setPageSize] = usePageSize();
+  const [exporting, setExporting] = useState(false);
+  const isAdmin = auth.hasRole("Admin");
   // --- debounced search inputs ---
   const [inputQ, setInputQ] = useState(q);
   const [inputDeedQ, setInputDeedQ] = useState(deedQ);
@@ -632,6 +635,72 @@ function CommercialListingsPage() {
     { key: "employee", header: t("common.employee"), cell: (r) => r.employee || t("common.notProvided"), sortable: true },
   ];
 
+  const exportColumns: ExcelColumn<CommercialListing>[] = [
+    { header: t("commercialListings.contactDate"), value: (r) => r.contactDate, width: 14 },
+    { header: t("commercialListings.listingCategory"), value: (r) => (r.listingCategory ? listingCategoryLabel(r.listingCategory) : ""), width: 16 },
+    { header: t("commercialListings.propertyStatus"), value: (r) => (r.propertyStatus ? statusLabel(r.propertyStatus) : ""), width: 14 },
+    {
+      header: t("commercialListings.dealThrough"),
+      value: (r) => {
+        const normalized = normalizeValue(r.dealThrough);
+        if (normalized === DEAL_THROUGH_OWNER) return t("commercialListings.dealThroughOwner");
+        if (normalized === DEAL_THROUGH_OFFICE) return t("commercialListings.dealThroughOffice");
+        return r.dealThrough ?? "";
+      },
+      width: 16,
+    },
+    { header: t("commercialListings.listingType"), value: (r) => r.listingType, width: 14 },
+    { header: t("common.employee"), value: (r) => r.employee, width: 20 },
+    { header: t("commercialListings.ownerName"), value: (r) => r.ownerName, width: 24 },
+    { header: t("commercialListings.mobile1"), value: (r) => r.mobile1, width: 18, text: true },
+    { header: t("commercialListings.mobile2"), value: (r) => r.mobile2, width: 18, text: true },
+    { header: t("commercialListings.deedNumber"), value: (r) => r.deedNumber, width: 18, text: true },
+    { header: t("commercialListings.propertyType"), value: (r) => (r.propertyType ? t(`propertyType.${r.propertyType}`, { defaultValue: r.propertyType }) : ""), width: 16 },
+    { header: t("commercialListings.roomsCount"), value: (r) => parseAmount(r.roomsCount), width: 10 },
+    { header: t("commercialListings.buildingAge"), value: (r) => parseAmount(r.buildingAge), width: 12 },
+    { header: t("commercialListings.hasElevator"), value: (r) => r.hasElevator, width: 12 },
+    { header: t("commercialListings.availableUnits"), value: (r) => parseAmount(r.availableUnits), width: 12 },
+    { header: t("commercialListings.rentAmount"), value: (r) => parseAmount(r.rentAmount), width: 14 },
+    { header: t("commercialListings.paymentType"), value: (r) => r.paymentType, width: 14 },
+    { header: t("commercialListings.brokerageContracts"), value: (r) => r.brokerageContracts?.length ?? 0, width: 12 },
+    {
+      header: t("commercialListings.brokerageContractReferences"),
+      value: (r) => (r.brokerageContracts ?? [])
+        .map((contract) => [contract.brokerageContract, contract.licenseNumber, contract.contractExpiry].filter(Boolean).join(" / "))
+        .filter(Boolean)
+        .join(" ; "),
+      width: 30,
+    },
+    { header: t("commercialListings.broker"), value: (r) => (Array.isArray(r.broker) ? r.broker.join(" - ") : r.broker), width: 20 },
+    { header: t("commercialListings.offerCode"), value: (r) => r.offerCode, width: 16, text: true },
+    { header: t("commercialListings.isOfficeListing"), value: (r) => (r.isOfficeListing ? t("common.yes") : t("common.no")), width: 12 },
+    { header: t("commercialListings.publicVisible"), value: (r) => (r.publicVisible ? t("common.yes") : t("common.no")), width: 12 },
+    { header: t("commercialListings.hasKey"), value: (r) => (r.hasKey ? t("common.yes") : t("common.no")), width: 12 },
+    { header: t("commercialListings.keyHolder"), value: (r) => r.keyHolder, width: 16 },
+    { header: t("commercialListings.guardPhone"), value: (r) => r.guardPhone, width: 18, text: true },
+    { header: t("commercialListings.adNumber"), value: (r) => r.adNumber, width: 14, text: true },
+    { header: t("commercialListings.licenseNumber"), value: (r) => r.licenseNumber, width: 18, text: true },
+    { header: t("commercialListings.contractExpiry"), value: (r) => r.contractExpiry, width: 14 },
+    { header: t("commercialListings.adText1"), value: (r) => r.adText1, width: 40 },
+    { header: t("commercialListings.adText2"), value: (r) => r.adText2, width: 40 },
+    {
+      header: t("commercialListings.publishingChannels"),
+      value: (r) => PUBLISHING_CHANNELS
+        .filter((channel) => isPublished(r[channel.key] as string | null | undefined))
+        .map((channel) => t(channel.labelKey))
+        .join(" - "),
+      width: 30,
+    },
+    { header: t("common.city"), value: (r) => r.city, width: 14 },
+    { header: t("common.district"), value: (r) => (Array.isArray(r.district) ? r.district.join(" - ") : r.district), width: 18 },
+    { header: t("commercialListings.location"), value: (r) => r.location, width: 24 },
+    { header: t("nav.amenities", { defaultValue: "Amenities" }), value: (r) => (r.amenities ?? []).map((amenity) => amenity.name).join(" - "), width: 24 },
+    { header: t("commercialListings.coordinates"), value: (r) => r.coordinates, width: 20, text: true },
+    { header: t("common.notes"), value: (r) => r.notes, width: 30 },
+    { header: t("common.createdAt"), value: (r) => (r.createdAt ? formatDateTime12h(r.createdAt) : ""), width: 20 },
+    { header: t("common.updatedAt"), value: (r) => (r.updatedAt ? formatDateTime12h(r.updatedAt) : ""), width: 20 },
+  ];
+
   // The property type options follow the selected category.
   const propertyTypeOptions = useMemo(
     () =>
@@ -693,6 +762,29 @@ function CommercialListingsPage() {
       return qMatch && deedMatch && statusMatch && listingCategoryMatch && dealTypeMatch && roomCountMatch && propertyTypeMatch && cityMatch(record) && districtMatch(record);
     });
   }, [listings.data, deferredInputQ, deferredDeedQ, status, listingCategoryFilter, dealTypeFilter, roomCount, propertyType, city, district]);
+
+  const handleExport = async () => {
+    if (!isAdmin || exporting) return;
+    if (filteredListings.length === 0) {
+      toast.error(t("common.exportEmpty"));
+      return;
+    }
+    setExporting(true);
+    try {
+      await exportToExcel({
+        fileName: `العروض_${todayLocalDdMmYyyy()}.xlsx`,
+        sheet: t("commercialListings.exportSheet"),
+        columns: exportColumns,
+        rows: filteredListings,
+        rightToLeft: i18n.dir() === "rtl",
+      });
+      toast.success(t("common.exportSuccess"));
+    } catch (error) {
+      toast.error(getFriendlyErrorMessage(error, t));
+    } finally {
+      setExporting(false);
+    }
+  };
 
   const totalPages = Math.max(1, Math.ceil(filteredListings.length / pageSize));
 
@@ -783,11 +875,21 @@ function CommercialListingsPage() {
         title={t("commercialListings.pageTitle")}
         subtitle={t("commercialListings.pageSubtitle")}
         actions={
-          canManage ? (
-            <Button onClick={() => setCreating(true)}>
-              <Plus className="me-1 h-4 w-4" />
-              {t("common.add")}
-            </Button>
+          isAdmin || canManage ? (
+            <div className="flex flex-wrap items-center gap-2">
+              {isAdmin && (
+                <Button variant="outline" onClick={handleExport} disabled={exporting}>
+                  {exporting ? <Loader2 className="me-1 h-4 w-4 animate-spin" /> : <Download className="me-1 h-4 w-4" />}
+                  {exporting ? t("common.exporting") : t("common.exportExcel")}
+                </Button>
+              )}
+              {canManage && (
+                <Button onClick={() => setCreating(true)}>
+                  <Plus className="me-1 h-4 w-4" />
+                  {t("common.add")}
+                </Button>
+              )}
+            </div>
           ) : undefined
         }
       />
