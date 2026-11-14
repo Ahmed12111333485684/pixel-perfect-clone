@@ -656,7 +656,7 @@ function ResidentialSeekersPage() {
     { header: t("residentialSeekers.mobile2"), value: (r) => r.mobile2, width: 18, text: true },
     { header: t("residentialSeekers.nationality"), value: (r) => r.nationality, width: 14 },
     { header: t("residentialSeekers.requestDescription"), value: (r) => r.requestDescription, width: 40 },
-    { header: t("residentialSeekers.maxBudget"), value: (r) => parseAmount(r.maxBudget), width: 14 },
+    { header: t("residentialSeekers.maxBudget"), value: (r) => parseAmount(r.maxBudget), width: 14, numberFormat: "#,##0.00" },
     { header: t("residentialSeekers.paymentType"), value: (r) => r.paymentType, width: 16 },
     { header: t("residentialSeekers.listingType"), value: (r) => (r.listingType ? t(`listingType.${r.listingType}`, { defaultValue: r.listingType }) : ""), width: 14 },
     { header: t("residentialSeekers.propertyType"), value: (r) => (r.propertyType ? localizePropertyType(t, r.propertyType) : ""), width: 18 },
@@ -668,7 +668,7 @@ function ResidentialSeekersPage() {
     { header: t("residentialSeekers.sourceChannel"), value: (r) => (toSourceChannelArray(r.sourceChannel) ?? []).join(" - "), width: 20 },
     { header: t("residentialSeekers.profession"), value: (r) => r.profession, width: 16 },
     { header: t("residentialSeekers.familyCount"), value: (r) => r.familyCount, width: 14 },
-    { header: t("residentialSeekers.roomCount"), value: (r) => r.roomCount, width: 10 },
+    { header: t("residentialSeekers.roomCount"), value: (r) => r.roomCount, width: 10, numberFormat: "0" },
     { header: t("residentialSeekers.activity"), value: (r) => r.activity, width: 16 },
     { header: t("residentialSeekers.requiredSpace"), value: (r) => r.requiredSpace, width: 16 },
     {

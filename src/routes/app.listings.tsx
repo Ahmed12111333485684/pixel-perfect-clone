@@ -637,6 +637,8 @@ function CommercialListingsPage() {
 
   const exportColumns: ExcelColumn<CommercialListing>[] = [
     { header: t("commercialListings.contactDate"), value: (r) => r.contactDate, width: 14 },
+    { header: t("commercialListings.offerCode"), value: (r) => r.offerCode, width: 16, text: true },
+
     { header: t("commercialListings.listingCategory"), value: (r) => (r.listingCategory ? listingCategoryLabel(r.listingCategory) : ""), width: 16 },
     { header: t("commercialListings.propertyStatus"), value: (r) => (r.propertyStatus ? statusLabel(r.propertyStatus) : ""), width: 14 },
     {
@@ -656,13 +658,13 @@ function CommercialListingsPage() {
     { header: t("commercialListings.mobile2"), value: (r) => r.mobile2, width: 18, text: true },
     { header: t("commercialListings.deedNumber"), value: (r) => r.deedNumber, width: 18, text: true },
     { header: t("commercialListings.propertyType"), value: (r) => (r.propertyType ? t(`propertyType.${r.propertyType}`, { defaultValue: r.propertyType }) : ""), width: 16 },
-    { header: t("commercialListings.roomsCount"), value: (r) => parseAmount(r.roomsCount), width: 10 },
-    { header: t("commercialListings.buildingAge"), value: (r) => parseAmount(r.buildingAge), width: 12 },
+    { header: t("commercialListings.roomsCount"), value: (r) => parseAmount(r.roomsCount), width: 10, numberFormat: "0" },
+    { header: t("commercialListings.buildingAge"), value: (r) => parseAmount(r.buildingAge), width: 12, numberFormat: "0" },
     { header: t("commercialListings.hasElevator"), value: (r) => r.hasElevator, width: 12 },
-    { header: t("commercialListings.availableUnits"), value: (r) => parseAmount(r.availableUnits), width: 12 },
-    { header: t("commercialListings.rentAmount"), value: (r) => parseAmount(r.rentAmount), width: 14 },
+    { header: t("commercialListings.availableUnits"), value: (r) => parseAmount(r.availableUnits), width: 12, numberFormat: "0" },
+    { header: t("commercialListings.rentAmount"), value: (r) => parseAmount(r.rentAmount), width: 14, numberFormat: "#,##0.00" },
     { header: t("commercialListings.paymentType"), value: (r) => r.paymentType, width: 14 },
-    { header: t("commercialListings.brokerageContracts"), value: (r) => r.brokerageContracts?.length ?? 0, width: 12 },
+    { header: t("commercialListings.brokerageContracts"), value: (r) => r.brokerageContracts?.length ?? 0, width: 12, numberFormat: "0" },
     {
       header: t("commercialListings.brokerageContractReferences"),
       value: (r) => (r.brokerageContracts ?? [])
@@ -672,7 +674,6 @@ function CommercialListingsPage() {
       width: 30,
     },
     { header: t("commercialListings.broker"), value: (r) => (Array.isArray(r.broker) ? r.broker.join(" - ") : r.broker), width: 20 },
-    { header: t("commercialListings.offerCode"), value: (r) => r.offerCode, width: 16, text: true },
     { header: t("commercialListings.isOfficeListing"), value: (r) => (r.isOfficeListing ? t("common.yes") : t("common.no")), width: 12 },
     { header: t("commercialListings.publicVisible"), value: (r) => (r.publicVisible ? t("common.yes") : t("common.no")), width: 12 },
     { header: t("commercialListings.hasKey"), value: (r) => (r.hasKey ? t("common.yes") : t("common.no")), width: 12 },
@@ -772,7 +773,7 @@ function CommercialListingsPage() {
     setExporting(true);
     try {
       await exportToExcel({
-        fileName: `العروض_${todayLocalDdMmYyyy()}.xlsx`,
+        fileName: `العروض_${todayLocalDdMmYyyy().replace(/(\d{2})(\d{2})(\d{4})/, "$1_$2_$3")}.xlsx`,
         sheet: t("commercialListings.exportSheet"),
         columns: exportColumns,
         rows: filteredListings,

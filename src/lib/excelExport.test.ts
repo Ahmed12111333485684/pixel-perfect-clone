@@ -9,6 +9,11 @@ interface Row {
   active?: boolean | null;
 }
 
+const border = {
+  borderColor: "#E2E8F0",
+  borderStyle: "thin",
+};
+
 const columns: ExcelColumn<Row>[] = [
   { header: "Name", value: (row) => row.name },
   { header: "Amount", value: (row) => row.amount },
@@ -17,7 +22,7 @@ const columns: ExcelColumn<Row>[] = [
 ];
 
 describe("buildSheetData", () => {
-  it("builds a styled header row followed by data rows", () => {
+  it("builds a styled header row followed by bordered data rows", () => {
     const sheet = buildSheetData(columns, [{ name: "Ali", amount: 1200, phone: "0501234567", active: true }]);
 
     expect(sheet).toHaveLength(2);
@@ -25,32 +30,46 @@ describe("buildSheetData", () => {
       value: "Name",
       type: String,
       fontWeight: "bold",
-      backgroundColor: "#F1F5F9",
-      align: "left",
-      wrap: true,
+      backgroundColor: "#1F2A44",
+      textColor: "#FFFFFF",
+      align: "center",
+      alignVertical: "center",
+      height: 24,
+      borderColor: "#CBD5E1",
+      borderStyle: "thin",
     });
     expect(sheet[1]).toEqual([
-      { value: "Ali", type: String, format: "@" },
-      1200,
-      { value: "0501234567", type: String, format: "@" },
-      true,
+      { value: "Ali", type: String, format: "@", align: "left", ...border },
+      { value: 1200, ...border },
+      { value: "0501234567", type: String, format: "@", align: "left", ...border },
+      { value: true, ...border },
     ]);
   });
 
-  it("keeps identifier columns as text and turns empty values into blank cells", () => {
+  it("keeps identifier columns as text and styles empty cells", () => {
     const sheet = buildSheetData(columns, [{ name: "", amount: null, phone: "0012345", active: null }]);
 
     expect(sheet[1]).toEqual([
-      null,
-      null,
-      { value: "0012345", type: String, format: "@" },
-      null,
+      { ...border },
+      { ...border },
+      { value: "0012345", type: String, format: "@", align: "left", ...border },
+      { ...border },
     ]);
   });
 
-  it("aligns headers to the right for RTL sheets", () => {
-    const sheet = buildSheetData(columns, [], true);
+  it("applies number formats", () => {
+    const moneyColumns: ExcelColumn<Row>[] = [
+      { header: "Amount", value: (row) => row.amount, numberFormat: "#,##0.00" },
+    ];
+    const sheet = buildSheetData(moneyColumns, [{ amount: 1200.5 }]);
 
-    expect(sheet[0][0]).toMatchObject({ align: "right" });
+    expect(sheet[1]).toEqual([{ value: 1200.5, format: "#,##0.00", ...border }]);
+  });
+
+  it("centers headers and aligns text data to the sheet direction", () => {
+    const sheet = buildSheetData(columns, [{ name: "Ali" }], true);
+
+    expect(sheet[0][0]).toMatchObject({ align: "center" });
+    expect(sheet[1][0]).toMatchObject({ align: "right" });
   });
 });

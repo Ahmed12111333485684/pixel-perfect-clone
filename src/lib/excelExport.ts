@@ -7,7 +7,24 @@ export interface ExcelColumn<T> {
   value: (row: T) => ExcelCellValue;
   width?: number;
   text?: boolean;
+  numberFormat?: string;
 }
+
+const HEADER_STYLE = {
+  fontWeight: "bold",
+  backgroundColor: "#1F2A44",
+  textColor: "#FFFFFF",
+  align: "center",
+  alignVertical: "center",
+  height: 24,
+  borderColor: "#CBD5E1",
+  borderStyle: "thin",
+} as const;
+
+const DATA_BORDER = {
+  borderColor: "#E2E8F0",
+  borderStyle: "thin",
+} as const;
 
 export interface ExportToExcelOptions<T> {
   fileName: string;
@@ -17,18 +34,28 @@ export interface ExportToExcelOptions<T> {
   rightToLeft?: boolean;
 }
 
-function toCell(value: ExcelCellValue, text = false): Cell {
-  if (value === null || value === undefined || value === "") return null;
+function toCell(
+  value: ExcelCellValue,
+  text = false,
+  numberFormat?: string,
+  align: "left" | "right" = "left",
+): Cell {
+  if (value === null || value === undefined || value === "") return { ...DATA_BORDER };
   if (text) {
-    return { value: String(value), type: String, format: "@" };
+    return { value: String(value), type: String, format: "@", align, ...DATA_BORDER };
   }
   if (typeof value === "number") {
-    return Number.isFinite(value) ? value : String(value);
+    if (!Number.isFinite(value)) {
+      return { value: String(value), type: String, format: "@", align, ...DATA_BORDER };
+    }
+    return numberFormat
+      ? { value, format: numberFormat, ...DATA_BORDER }
+      : { value, ...DATA_BORDER };
   }
   if (typeof value === "boolean" || value instanceof Date) {
-    return value;
+    return { value, ...DATA_BORDER };
   }
-  return { value, type: String, format: "@" };
+  return { value, type: String, format: "@", align, ...DATA_BORDER };
 }
 
 export function buildSheetData<T>(
@@ -39,15 +66,13 @@ export function buildSheetData<T>(
   const headerRow = columns.map((column) => ({
     value: column.header,
     type: String,
-    fontWeight: "bold" as const,
-    backgroundColor: "#F1F5F9",
-    align: rightToLeft ? ("right" as const) : ("left" as const),
-    wrap: true,
+    ...HEADER_STYLE,
   }));
+  const dataAlign = rightToLeft ? "right" : "left";
 
   return [
     headerRow,
-    ...rows.map((row) => columns.map((column) => toCell(column.value(row), column.text))),
+    ...rows.map((row) => columns.map((column) => toCell(column.value(row), column.text, column.numberFormat, dataAlign))),
   ];
 }
 
