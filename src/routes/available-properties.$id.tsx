@@ -569,64 +569,15 @@ function AvailablePropertyDetailPage() {
                     <h4 className="text-sm font-bold text-foreground">أرقام التواصل</h4>
                   </div>
 
-                  {/* Sales Department */}
-                  <div className="space-y-2">
-                    <p className="text-xs font-bold text-muted-foreground">▪️ قسم المبيعات</p>
-
-                    {[
-                      { label: "مبيعات 1", phone: "0595090915" },
-                      { label: "مبيعات 2", phone: "0593051707" },
-                      { label: "مبيعات 3", phone: "0591120797" },
-                    ].map((contact) => (
-                      <a
-                        key={contact.phone}
-                        href={`tel:${contact.phone}`}
-                        dir="rtl"
-                        className="flex items-center justify-between rounded-lg bg-card px-3 py-2 text-sm hover:bg-muted transition-colors"
-                      >
-                        <span className="text-muted-foreground">{contact.label}</span>
-                        <span className="font-semibold text-foreground" dir="ltr">
-                          {contact.phone}
-                        </span>
-                      </a>
-                    ))}
-                  </div>
-
-                  <div className="border-t border-border" />
-
-                  {/* Customer Service */}
-                  <div className="space-y-2">
-                    <p className="text-xs font-bold text-muted-foreground">▪️ خدمة العملاء</p>
-
-                    <a
-                      href="tel:0597948787"
-                      dir="rtl"
-                      className="flex items-center justify-between rounded-lg bg-card px-3 py-2 text-sm hover:bg-muted transition-colors"
-                    >
-                      <span className="text-muted-foreground">خدمة العملاء</span>
-                      <span className="font-semibold text-foreground" dir="ltr">
-                        0597948787
-                      </span>
-                    </a>
-                  </div>
-
-                  <div className="border-t border-border" />
-
-                  {/* Abu Abdulaziz */}
-                  <div className="space-y-2">
-                    <p className="text-xs font-bold text-muted-foreground">▪️ التواصل المباشر</p>
-
-                    <a
-                      href="tel:0580604454"
-                      dir="rtl"
-                      className="flex items-center justify-between rounded-lg bg-card px-3 py-2 text-sm hover:bg-muted transition-colors"
-                    >
-                      <span className="text-muted-foreground">أبو عبدالعزيز</span>
-                      <span className="font-semibold text-foreground" dir="ltr">
-                        0580604454
-                      </span>
-                    </a>
-                  </div>
+                  <a
+                    href="tel:0597948787"
+                    dir="rtl"
+                    className="flex items-center justify-between rounded-lg bg-card px-3 py-2 text-sm hover:bg-muted transition-colors"
+                  >
+                    <span className="font-semibold text-foreground" dir="ltr">
+                      0597948787
+                    </span>
+                  </a>
                 </div>
               </div>
 
