@@ -2,7 +2,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { memo, useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { api, fetchPartnersLookup, createPartner, fetchListingSeriesOptions, fetchListingShare, enableListingShare, disableListingShare, type ListingShare, type CommercialListing, type ListingSeriesOption, type Partner, type PartnerLookup, type CommercialListingImage, type UserDto, type Amenity, type SeekerSuggestion, ApiError } from "@/lib/api";
+import { api, fetchPartnersLookup, createPartner, fetchListingSeriesOptions, fetchListingShare, enableListingShare, disableListingShare, resolveMapCoordinates, type ListingShare, type CommercialListing, type ListingSeriesOption, type Partner, type PartnerLookup, type CommercialListingImage, type UserDto, type Amenity, type SeekerSuggestion, ApiError } from "@/lib/api";
 import { syncCreated, syncUpdated, syncRemoved } from "@/lib/queryCache";
 import { PartnerDialog } from "@/components/partners/PartnerDialog";
 import { useAuth } from "@/lib/auth";
@@ -1409,6 +1409,8 @@ function CommercialListingDialog({
   const [selectedCity, setSelectedCity] = useState(listing?.city ?? "");
   const [parentId, setParentId] = useState<number | null>(listing?.parentId ?? null);
   const [coordinates, setCoordinates] = useState<string>(listing?.coordinates ?? "");
+  const [resolvedCoordinates, setResolvedCoordinates] = useState<string | null>(listing?.resolvedCoordinates ?? null);
+  const [resolvingCoordinates, setResolvingCoordinates] = useState(false);
   const [selectedAmenityIds, setSelectedAmenityIds] = useState<number[]>(() => listing?.amenities?.map(a => a.id) ?? []);
   const [contracts, setContracts] = useState<BrokerageContractFormValue[]>(() => {
     const initialContracts = listing?.brokerageContracts?.length ? listing?.brokerageContracts : [null];
@@ -1464,6 +1466,7 @@ function CommercialListingDialog({
       setSelectedCity(listing?.city ?? "");
       setParentId(listing?.parentId ?? null);
       setCoordinates(listing?.coordinates ?? "");
+      setResolvedCoordinates(listing?.resolvedCoordinates ?? null);
       setSelectedAmenityIds(listing?.amenities?.map(a => a.id) ?? []);
       setContracts(listing?.brokerageContracts?.length
         ? listing.brokerageContracts.map((contract) => ({
@@ -1475,6 +1478,24 @@ function CommercialListingDialog({
         : [emptyBrokerageContract()]);
     }
   }, [listing, open]);
+
+  const handleResolveCoordinates = useCallback(async () => {
+    const value = coordinates.trim();
+    if (!value) return;
+    setResolvingCoordinates(true);
+    try {
+      const result = await resolveMapCoordinates(value);
+      setResolvedCoordinates(`${result.lat}, ${result.lng}`);
+    } catch {
+      toast.error(
+        t("map.resolveFailed", {
+          defaultValue: "Could not resolve this link. Paste coordinates instead.",
+        }),
+      );
+    } finally {
+      setResolvingCoordinates(false);
+    }
+  }, [coordinates, t]);
 
   return (
     <FormDialog
@@ -1721,18 +1742,38 @@ function CommercialListingDialog({
           </div>
           <TextField id="location" label={t("commercialListings.location")} defaultValue={listing?.location} readOnly={readOnly} />
           <div className="space-y-3 sm:col-span-2">
-            <TextField
-              id="coordinates"
-              label={t("commercialListings.coordinates")}
-              defaultValue={listing?.coordinates}
-              value={coordinates}
-              onChange={setCoordinates}
-              readOnly={readOnly}
-            />
+            <div className="flex items-end gap-2">
+              <div className="flex-1">
+                <TextField
+                  id="coordinates"
+                  label={t("commercialListings.coordinates")}
+                  defaultValue={listing?.coordinates}
+                  value={coordinates}
+                  onChange={(value) => {
+                    setCoordinates(value);
+                    setResolvedCoordinates(null);
+                  }}
+                  readOnly={readOnly}
+                />
+              </div>
+              {!readOnly && /^https?:\/\//i.test(coordinates.trim()) && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleResolveCoordinates}
+                  disabled={resolvingCoordinates}
+                  className="gap-2"
+                >
+                  {resolvingCoordinates && <Loader2 className="h-4 w-4 animate-spin" />}
+                  {resolvingCoordinates
+                    ? t("map.resolving", { defaultValue: "Resolving…" })
+                    : t("map.resolveLink", { defaultValue: "Resolve link" })}
+                </Button>
+              )}
+            </div>
             <ListingLocationMap
               coordinates={coordinates}
-              onCoordinatesChange={readOnly ? undefined : setCoordinates}
-              editable={!readOnly}
+              resolvedCoordinates={resolvedCoordinates}
             />
             {coordinates && (
               <Button

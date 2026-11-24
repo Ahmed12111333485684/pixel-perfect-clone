@@ -520,6 +520,7 @@ export interface CommercialListing {
   district?: string[] | null;
   location?: string | null;
   coordinates?: string | null;
+  resolvedCoordinates?: string | null;
   hasKey?: boolean | null;
   keyHolder?: string | null;
   guardPhone?: string | null;
@@ -584,6 +585,7 @@ export interface PublicListing {
   district?: string[] | null;
   location?: string | null;
   coordinates?: string | null;
+  resolvedCoordinates?: string | null;
   roomsCount?: string | null;
   buildingAge?: string | null;
   hasElevator?: string | null;
@@ -929,6 +931,15 @@ export async function fetchPublicListing(id: number, token?: string | null): Pro
     if (!found) throw err;
     return found;
   }
+}
+
+export interface ResolvedCoordinates {
+  lat: number;
+  lng: number;
+}
+
+export function resolveMapCoordinates(url: string) {
+  return api<ResolvedCoordinates>("/coordinates/resolve", { query: { url } });
 }
 
 export interface ListingShare {

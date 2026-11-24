@@ -836,6 +836,15 @@ const en = {
       price: "Listed price",
     },
   },
+  map: {
+    title: "Property location map",
+    empty: "No location selected yet.",
+    helperText: "Paste a Google Maps link or coordinates.",
+    openLink: "Open in Google Maps",
+    resolveLink: "Resolve link",
+    resolving: "Resolving…",
+    resolveFailed: "Could not resolve this link. Paste coordinates instead.",
+  },
 };
 
 const ar = {
@@ -1666,6 +1675,15 @@ const ar = {
       propertyName: "العقار",
       price: "السعر",
     },
+  },
+  map: {
+    title: "خريطة موقع العقار",
+    empty: "لم يتم تحديد موقع بعد.",
+    helperText: "الصق رابط خرائط جوجل أو الإحداثيات.",
+    openLink: "افتح في خرائط جوجل",
+    resolveLink: "استخراج الموقع",
+    resolving: "جارٍ الاستخراج…",
+    resolveFailed: "تعذّر استخراج الموقع من الرابط. الصق الإحداثيات بدلاً من ذلك.",
   },
 };
 

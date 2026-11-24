@@ -1,40 +1,85 @@
-import { useEffect, useMemo, useRef } from "react";
-import markerIcon2xUrl from "leaflet/dist/images/marker-icon-2x.png";
-import markerIconUrl from "leaflet/dist/images/marker-icon.png";
-import markerShadowUrl from "leaflet/dist/images/marker-shadow.png";
-import "leaflet/dist/leaflet.css";
+import { useMemo } from "react";
+import { ExternalLink } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 export type ListingCoordinates = {
   lat: number;
   lng: number;
 };
 
-const DEFAULT_CENTER: ListingCoordinates = {
-  lat: 24.7136,
-  lng: 46.6753,
-};
+function isValid(lat: number, lng: number) {
+  return (
+    Number.isFinite(lat) &&
+    Number.isFinite(lng) &&
+    lat >= -90 &&
+    lat <= 90 &&
+    lng >= -180 &&
+    lng <= 180 &&
+    !(lat === 0 && lng === 0)
+  );
+}
 
+/**
+ * Parses coordinates from a raw value: a "lat, lng" string or a full Google
+ * Maps URL. Short share links contain no coordinates and cannot be parsed in
+ * the browser; they are resolved server-side and arrive via resolvedCoordinates.
+ */
 export function parseListingCoordinates(value?: string | null): ListingCoordinates | null {
   if (!value) return null;
-  const matches = value.match(/-?\d+(?:\.\d+)?/g);
-  if (!matches || matches.length < 2) return null;
+  const text = value.trim();
 
-  const lat = Number(matches[0]);
-  const lng = Number(matches[1]);
-  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
-  if (Math.abs(lat) > 90 || Math.abs(lng) > 180) return null;
+  const bare = text.match(/^(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)$/);
+  if (bare) {
+    const lat = Number(bare[1]);
+    const lng = Number(bare[2]);
+    if (isValid(lat, lng)) return { lat, lng };
+  }
 
-  return { lat, lng };
+  // Must be a URL from here on.
+  if (!/^https?:\/\//i.test(text)) return null;
+
+  // Prefer the place pin (!3d!4d) over the viewport (@lat,lng).
+  const markers: Record<number, number> = {};
+  const markerRegex = /!(\d+)d(-?\d+(?:\.\d+)?)/g;
+  let marker: RegExpExecArray | null;
+  while ((marker = markerRegex.exec(text)) !== null) {
+    const index = Number(marker[1]);
+    if (markers[index] === undefined) markers[index] = Number(marker[2]);
+  }
+  if (markers[3] !== undefined && markers[4] !== undefined && isValid(markers[3], markers[4])) {
+    return { lat: markers[3], lng: markers[4] };
+  }
+
+  const query = text.match(/[?&](?:q|query)=(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/i);
+  if (query) {
+    const lat = Number(query[1]);
+    const lng = Number(query[2]);
+    if (isValid(lat, lng)) return { lat, lng };
+  }
+
+  const at = text.match(/@(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/);
+  if (at) {
+    const lat = Number(at[1]);
+    const lng = Number(at[2]);
+    if (isValid(lat, lng)) return { lat, lng };
+  }
+
+  return null;
 }
 
 export function formatListingCoordinates(coords: ListingCoordinates) {
   return `${coords.lat.toFixed(6)}, ${coords.lng.toFixed(6)}`;
 }
 
+function buildEmbedUrl(coords: ListingCoordinates) {
+  return `https://maps.google.com/maps?q=${coords.lat},${coords.lng}&z=15&output=embed`;
+}
+
 type ListingLocationMapProps = {
+  /** Raw value from the field: a Google Maps link or "lat, lng". */
   coordinates?: string | null;
-  onCoordinatesChange?: (value: string) => void;
-  editable?: boolean;
+  /** Server-resolved canonical coordinates (preferred for rendering). */
+  resolvedCoordinates?: string | null;
   className?: string;
   heightClassName?: string;
   emptyMessage?: string;
@@ -43,113 +88,61 @@ type ListingLocationMapProps = {
 
 export function ListingLocationMap({
   coordinates,
-  onCoordinatesChange,
-  editable = false,
+  resolvedCoordinates,
   className,
   heightClassName = "h-72",
-  emptyMessage = "No location selected yet.",
-  helperText = "Click the map to choose a location.",
+  emptyMessage,
+  helperText,
 }: ListingLocationMapProps) {
-  const mapContainerRef = useRef<HTMLDivElement | null>(null);
-  const parsedCoordinates = useMemo(() => parseListingCoordinates(coordinates), [coordinates]);
-  const coordinatesLabel = parsedCoordinates ? formatListingCoordinates(parsedCoordinates) : "";
+  const { t } = useTranslation();
 
-  useEffect(() => {
-    let cancelled = false;
-    let map: import("leaflet").Map | null = null;
-    let marker: import("leaflet").Marker | null = null;
-
-    const setupMap = async () => {
-      if (!mapContainerRef.current) return;
-      const leaflet = await import("leaflet");
-      if (cancelled || !mapContainerRef.current) return;
-
-      delete (leaflet.Icon.Default.prototype as { _getIconUrl?: unknown })._getIconUrl;
-      leaflet.Icon.Default.mergeOptions({
-        iconUrl: markerIconUrl,
-        iconRetinaUrl: markerIcon2xUrl,
-        shadowUrl: markerShadowUrl,
-      });
-
-      const target = parsedCoordinates ?? DEFAULT_CENTER;
-      map = leaflet.map(mapContainerRef.current, {
-        zoomControl: true,
-        attributionControl: true,
-        dragging: true,
-        scrollWheelZoom: false,
-        doubleClickZoom: editable,
-        boxZoom: editable,
-        keyboard: editable,
-      });
-
-      leaflet
-        .tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-          attribution:
-            '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-        })
-        .addTo(map);
-
-      map.setView([target.lat, target.lng], parsedCoordinates ? 15 : 6);
-
-      const syncMarker = (next: ListingCoordinates) => {
-        if (!map) return;
-        const latLng: [number, number] = [next.lat, next.lng];
-        if (!marker) {
-          marker = leaflet.marker(latLng, { draggable: editable }).addTo(map);
-          if (editable) {
-            marker.on("dragend", () => {
-              const pos = marker?.getLatLng();
-              if (!pos) return;
-              onCoordinatesChange?.(
-                formatListingCoordinates({ lat: pos.lat, lng: pos.lng }),
-              );
-            });
-          }
-        } else {
-          marker.setLatLng(latLng);
-        }
-        map.setView(latLng, Math.max(map.getZoom(), parsedCoordinates ? 15 : 12), {
-          animate: false,
-        });
-      };
-
-      if (parsedCoordinates) {
-        syncMarker(parsedCoordinates);
-      }
-
-      if (editable) {
-        map.on("click", (event) => {
-          const next = {
-            lat: event.latlng.lat,
-            lng: event.latlng.lng,
-          };
-          syncMarker(next);
-          onCoordinatesChange?.(formatListingCoordinates(next));
-        });
-      }
-
-      requestAnimationFrame(() => {
-        map?.invalidateSize();
-      });
-    };
-
-    void setupMap();
-
-    return () => {
-      cancelled = true;
-      map?.remove();
-    };
-  }, [editable, onCoordinatesChange, parsedCoordinates]);
+  const parsed = useMemo(
+    () => parseListingCoordinates(resolvedCoordinates) ?? parseListingCoordinates(coordinates),
+    [resolvedCoordinates, coordinates],
+  );
+  const embedUrl = parsed ? buildEmbedUrl(parsed) : null;
+  const label = parsed ? formatListingCoordinates(parsed) : "";
+  const sourceIsUrl = !!coordinates && /^https?:\/\//i.test(coordinates.trim());
 
   return (
     <div className={className}>
-      <div
-        ref={mapContainerRef}
-        className={`overflow-hidden rounded-xl border border-border bg-muted ${heightClassName}`}
-      />
+      {embedUrl ? (
+        <iframe
+          title={t("map.title", { defaultValue: "Property location map" })}
+          src={embedUrl}
+          className={`w-full overflow-hidden rounded-xl border border-border bg-muted ${heightClassName}`}
+          loading="lazy"
+          referrerPolicy="no-referrer-when-downgrade"
+          allowFullScreen
+        />
+      ) : (
+        <div
+          className={`flex flex-col items-center justify-center gap-2 overflow-hidden rounded-xl border border-dashed border-border bg-muted px-4 text-center ${heightClassName}`}
+        >
+          <p className="text-sm text-muted-foreground">
+            {emptyMessage ?? t("map.empty", { defaultValue: "No location selected yet." })}
+          </p>
+          {sourceIsUrl && (
+            <a
+              href={coordinates!.trim()}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 text-sm font-medium text-gold hover:underline"
+            >
+              <ExternalLink className="h-3.5 w-3.5" />
+              {t("map.openLink", { defaultValue: "Open in Google Maps" })}
+            </a>
+          )}
+        </div>
+      )}
       <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
-        <span>{editable ? helperText : emptyMessage}</span>
-        {coordinatesLabel && <span className="font-mono">{coordinatesLabel}</span>}
+        <span>
+          {helperText ??
+            t("map.helperText", {
+              defaultValue: "Paste a Google Maps link or coordinates.",
+            })}
+        </span>
+        {label && <span className="font-mono" dir="ltr">{label}</span>}
       </div>
     </div>
   );

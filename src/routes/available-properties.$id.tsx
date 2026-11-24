@@ -488,16 +488,26 @@ function AvailablePropertyDetailPage() {
             )}
 
             {/* Location & Map Section */}
-            {listing.coordinates && (
+            {(listing.coordinates || listing.resolvedCoordinates) && (
               <div className="rounded-2xl border border-border bg-card p-6 shadow-card">
                 <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold">
                   <MapPin className="h-5 w-5 text-gold" />
                   {t("common.location", { defaultValue: "Property Location" })}
                 </h2>
-                <ListingLocationMap coordinates={listing.coordinates} heightClassName="h-96" />
+                <ListingLocationMap
+                  coordinates={listing.coordinates}
+                  resolvedCoordinates={listing.resolvedCoordinates}
+                  heightClassName="h-96"
+                />
                 <Button asChild variant="outline" className="mt-4 w-full gap-2">
                   <a
-                    href={`https://www.google.com/maps/search/?api=1&query=${listing.coordinates}`}
+                    href={
+                      listing.coordinates?.trim().startsWith("http")
+                        ? listing.coordinates
+                        : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+                            listing.resolvedCoordinates ?? listing.coordinates ?? "",
+                          )}`
+                    }
                     target="_blank"
                     rel="noopener noreferrer"
                   >
